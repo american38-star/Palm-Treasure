@@ -1,8 +1,8 @@
 <template>
-  <div id="app">
+  <div id="app" :class="{ 'rtl': currentLang === 'AR' }">
     <!-- زر تغيير اللغة -->
     <div class="circle-btn lang-btn" @click="toggleLanguageMenu">
-      🌐
+      <i class="fas fa-globe"></i>
       <span class="lang-code">{{ currentLang }}</span>
     </div>
 
@@ -25,7 +25,7 @@
           </div>
           <button class="bubble-close-btn" @click="closeNewYearMessage">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 6L6 18M6 6L18 18" stroke="#666" stroke-width="2" stroke-linecap="round"/>
+              <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
           </button>
         </div>
@@ -69,31 +69,35 @@
     <a class="circle-btn support-btn"
        href="https://t.me/mall_oftheworld"
        target="_blank">
-      🎧
+      <i class="fas fa-headset"></i>
     </a>
 
     <!-- زر انستغرام -->
     <a class="circle-btn instagram-btn"
        href="https://www.instagram.com/mall_oftheworld?igsh=OXR1emp3N2k2d2Yz"
        target="_blank">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M7.8 2H16.2C19.4 2 22 4.6 22 7.8V16.2C22 19.4 19.4 22 16.2 22H7.8C4.6 22 2 19.4 2 16.2V7.8C2 4.6 4.6 2 7.8 2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M12 15.5C13.933 15.5 15.5 13.933 15.5 12C15.5 10.067 13.933 8.5 12 8.5C10.067 8.5 8.5 10.067 8.5 12C8.5 13.933 10.067 15.5 12 15.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M17.5 6.5H17.51" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
+      <i class="fab fa-instagram"></i>
     </a>
 
     <!-- قائمة اللغات -->
-    <div v-if="showLangMenu" class="lang-menu">
-      <div 
-        class="lang-item" 
-        v-for="l in languages" 
-        :key="l.code"
-        @click="setLanguage(l)"
-      >
-        {{ l.name }}
+    <transition name="fade">
+      <div v-if="showLangMenu" class="lang-menu">
+        <div class="lang-menu-header">
+          <i class="fas fa-language"></i>
+          <span>اختر اللغة</span>
+        </div>
+        <div 
+          class="lang-item" 
+          v-for="l in languages" 
+          :key="l.code"
+          @click="setLanguage(l)"
+          :class="{ active: currentLang === l.code }"
+        >
+          <span class="lang-name">{{ l.name }}</span>
+          <span class="lang-code-small">{{ l.code }}</span>
+        </div>
       </div>
-    </div>
+    </transition>
 
     <!-- الصفحات -->
     <router-view />
@@ -101,68 +105,73 @@
     <!-- ⭐ شريط التنقل بدون وميض ⭐ -->
     <BottomNav v-if="authLoaded && showBottomNav" />
 
-    <!-- إعلان Popup -->
-    <div id="companyAd" class="ad-overlay" v-if="showAd">
-      <div class="ad-box">
-        <h2>إعلان</h2>
+    <!-- إعلان Popup فاخر -->
+    <transition name="fade">
+      <div id="companyAd" class="ad-overlay" v-if="showAd" @click.self="closeAd">
+        <div class="ad-box">
+          <div class="ad-header">
+            <h2>
+              <i class="fas fa-crown"></i>
+              إعلان الشركة
+              <i class="fas fa-crown"></i>
+            </h2>
+            <button class="ad-close-btn" @click="closeAd">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
 
-        <div class="ad-content">
-          <p>
-            🎉🎉🎉🎉 مرحبا بالجميع! تأسست Mall of the world في سنغافورة في 20 أغسطس 2021 ومقرها حاليًا في منطقة الأعمال المركزية في سنغافورة. نحن شركة استثمار في التجارة الإلكترونية مع فريق تقني قوي وقوة مالية قوية. يتعاون Mall of the world مع عشرات شركات التجارة الإلكترونية مثل Amazon و eBay و Tiktok و Aliexpress و Alibaba و Shopee ، إلخ. لمساعدة التجار على زيادة مبيعات المنتجات الخاصة بهم ، ويمكننا أيضًا تحقيق أرباح منه. عندما تتصاعد على منصتنا ، تشارك في مساعدة البائعين على زيادة المبيعات ، بحيث يمكنك أيضًا كسب المال منها. حتى يتمكن الجميع من إعادة الشحن بثقة ، هذا مشروع جيد لجني الأموال. 🔇🔇🔇
-            <br><br>
-            👍1: الحد الأدنى لمبلغ إعادة الشحن: 12 USDT ، الحد الأدنى للسحب النقدي: 3 USDT
-            <br>
-            💰2: تستثمر المنصة على مستوى العالم ، لذا فإن الاستثمار يدعم فقط إعادة شحن العملة المشفرة.
-            <br>
-            🌈3: وقت إعادة تعيين المهمة هو الساعة 12 ظهراً في سنغافورة. يمكنك الحصول على الربح من خلال استكمال أوامر التاجر كل يوم (مرة واحدة في اليوم ، صالحة لمدة 365 يومًا).
-            <br>
-            🕯4: يمكنك سحب النقد مرة واحدة فقط في اليوم ، لا يوجد حد زمني ، يمكنك سحب النقد في أي وقت ، ووقت الانسحاب هو 1 إلى 5 دقائق ، والحد الأدنى لمبلغ السحب هو 3 USDT ، ولا يوجد حد أعلى.
-            <br><br>
-            عندما يصل مبلغ إعادة الشحن إلى المبلغ المقابل التالي ، سيتم ترقية الحساب تلقائيًا إلى VIP. كلما زادت مبلغ إعادة الشحن ، كلما زاد عدد USDT في اليوم!
-            <br><br>
-            👍vip1: إعادة شحن 12 USDT ، الإيرادات اليومية 3 USDT
-            <br>
-            👍vip2: إعادة الشحن 52 USDT ، الدخل اليومي 13 USDT
-            <br>
-            👍vip3: إعادة شحن 100 USDT ، الدخل اليومي 26 USDT
-            <br>
-            👍vip4: إعادة شحن 300 USDT ، الدخل اليومي 82 USDT
-            <br>
-            👍VIP5: إعادة شحن 500 USDT ، الدخل اليومي 145 USDT
-            <br>
-            👍vip6: إعادة شحن 1500 USDT ، الدخل اليومي 479 USDT
-            <br>
-            👍VIP7: إعادة شحن 3000 USDT ، الدخل اليومي 1078 USDT
-            <br>
-            👍VIP8: إعادة شحن 5000 USDT ، الدخل اليومي 2000 USDT
-            <br>
-            👍vip9: إعادة شحن 10000 USDT ، الدخل اليومي USDT
-            <br>
-            👍VIP10: إعادة شحن 30000 USDT ، الدخل اليومي 17699 USDT
-            <br>
-            👍VIP11: إعادة شحن 90،000 دولار أمريكي ، الدخل اليومي 81،818 USDT
-            <br><br>
-            يمكن للمستخدمين Mall of the world الترويج لنظامنا الأساسي من خلال روابط التوصية ودعوة أصدقائك للانضمام إلينا على Facebook و Twitter و Instagram و YouTube و Tiktok و Kaokao و WhatsApp و Telegram. عندما يسجل شخص ما وينتهي من Top-Up ، تحصل على مكافأة تصل إلى 9 ٪.
-            <br><br>
-            🤝team المستوى 3 إعادة شحن مكافأة تصل إلى 9 ٪
-            <br>
-            🤝level 1 مكافأة إعادة شحن الأعضاء: 6 ٪
-            <br>
-            🤝level 2 مكافأة إعادة شحن الأعضاء: 2 ٪
-            <br>
-            🤝level 3 مكافأة إعادة شحن الأعضاء: 1 ٪
-            <br>
-            🤑team إعادة شحن المستوى الأول البالغ 1000 دولار أمريكي ، ويمكنك الحصول على 60 USDT
-            <br>
-            🤑team إعادة الشحن الثانوي البالغ 1000 دولار أمريكي ، يمكنك الحصول على 20 USDT
-            <br>
-            🤑team المستوى 3 إعادة شحن 1000 USDT ، ويمكنك الحصول على 10 USDT
-          </p>
+          <div class="ad-content">
+            <div class="ad-welcome">
+              <i class="fas fa-bell"></i>
+              <span>🎉 عرض خاص بمناسبة رأس السنة 🎉</span>
+            </div>
+            
+            <p>
+              🎉🎉🎉🎉 مرحبا بالجميع! تأسست Mall of the world في سنغافورة في 20 أغسطس 2021 ومقرها حاليًا في منطقة الأعمال المركزية في سنغافورة. نحن شركة استثمار في التجارة الإلكترونية مع فريق تقني قوي وقوة مالية قوية.
+            </p>
+            
+            <div class="ad-highlight">
+              <i class="fas fa-handshake"></i>
+              <span>شراكات عالمية مع Amazon, eBay, TikTok, Aliexpress, Alibaba, Shopee</span>
+            </div>
+
+            <div class="ad-stats">
+              <div class="stat-item">
+                <i class="fas fa-coins"></i>
+                <span>الحد الأدنى للشحن: 12 USDT</span>
+              </div>
+              <div class="stat-item">
+                <i class="fas fa-hand-holding-usd"></i>
+                <span>الحد الأدنى للسحب: 3 USDT</span>
+              </div>
+            </div>
+
+            <div class="vip-table">
+              <h3>💎 خطط VIP</h3>
+              <div class="vip-row" v-for="vip in vipPlans" :key="vip.level">
+                <span class="vip-level">VIP {{ vip.level }}</span>
+                <span class="vip-recharge">شحن {{ vip.recharge }} USDT</span>
+                <span class="vip-daily">ربح {{ vip.daily }} USDT/يوم</span>
+              </div>
+            </div>
+
+            <div class="commission-box">
+              <h4>🤝 نظام العمولات</h4>
+              <div class="commission-row">
+                <span>المستوى 1: 6%</span>
+                <span>المستوى 2: 2%</span>
+                <span>المستوى 3: 1%</span>
+              </div>
+            </div>
+          </div>
+
+          <button class="ad-btn" @click="closeAd">
+            <i class="fas fa-check-circle"></i>
+            فهمت وشكراً!
+          </button>
         </div>
-
-        <button @click="closeAd">أنا أعرف</button>
       </div>
-    </div>
+    </transition>
   </div>
 </template>
 
@@ -179,10 +188,24 @@ export default {
       user: null,
 
       showLangMenu: false,
-      currentLang: "AR", // الافتراضي
+      currentLang: "AR",
 
-      showAd: false,  // حالة الإعلان
-      showNewYearMessage: false, // حالة رسالة السنة الجديدة
+      showAd: false,
+      showNewYearMessage: false,
+
+      vipPlans: [
+        { level: 1, recharge: '12', daily: '3' },
+        { level: 2, recharge: '52', daily: '13' },
+        { level: 3, recharge: '100', daily: '26' },
+        { level: 4, recharge: '300', daily: '82' },
+        { level: 5, recharge: '500', daily: '145' },
+        { level: 6, recharge: '1500', daily: '479' },
+        { level: 7, recharge: '3000', daily: '1078' },
+        { level: 8, recharge: '5000', daily: '2000' },
+        { level: 9, recharge: '10000', daily: '4546' },
+        { level: 10, recharge: '30000', daily: '17699' },
+        { level: 11, recharge: '90000', daily: '81818' }
+      ],
 
       languages: [
         { name: "Polski", code: "PL" },
@@ -206,7 +229,6 @@ export default {
   created() {
     const auth = getAuth();
 
-    // استرجاع اللغة المحفوظة
     const saved = localStorage.getItem("app_language");
     if (saved) this.currentLang = saved;
 
@@ -214,9 +236,11 @@ export default {
       this.user = u;
       this.authLoaded = true;
       
-      // إظهار الإعلان بعد تسجيل الدخول
       if (this.user) {
-        this.showAd = true;
+        // إظهار الإعلان بعد تسجيل الدخول مع تأخير بسيط
+        setTimeout(() => {
+          this.showAd = true;
+        }, 1000);
       }
     });
   },
@@ -241,10 +265,13 @@ export default {
       this.currentLang = lang.code;
       localStorage.setItem("app_language", lang.code);
       this.showLangMenu = false;
+      
+      // تغيير اتجاه الصفحة
+      document.documentElement.dir = lang.code === 'AR' ? 'rtl' : 'ltr';
     },
 
     closeAd() {
-      this.showAd = false; // إغلاق الإعلان
+      this.showAd = false;
     },
 
     toggleNewYearMessage() {
@@ -259,97 +286,144 @@ export default {
 </script>
 
 <style>
-body {
+/* استيراد خطوط وأيقونات */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
+
+* {
   margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-/* الأزرار الأساسية - تم التصغير */
+body {
+  font-family: 'Cairo', sans-serif;
+  background: #0A0C10;
+  color: #ffffff;
+  overflow-x: hidden;
+}
+
+#app {
+  min-height: 100vh;
+  position: relative;
+}
+
+/* اتجاه الصفحة */
+#app.rtl {
+  direction: rtl;
+}
+
+/* ===== الأزرار العائمة ===== */
 .circle-btn {
   position: fixed;
-  bottom: 80px; /* تغيير من top إلى bottom */
-  width: 40px; /* تصغير الحجم */
-  height: 40px; /* تصغير الحجم */
-  background: #ffffff;
+  bottom: 80px;
+  width: 45px;
+  height: 45px;
+  background: #11151C;
+  border: 2px solid #D4AF37;
   border-radius: 50%;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  color: #333;
-  font-size: 18px; /* تصغير حجم الخط */
+  color: #D4AF37;
+  font-size: 20px;
   cursor: pointer;
   z-index: 9999;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  flex-direction: column;
-  text-decoration: none;
+  box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
   transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.circle-btn:hover {
+  transform: translateY(-5px) scale(1.1);
+  box-shadow: 0 10px 25px rgba(212, 175, 55, 0.4);
+  background: #D4AF37;
+  color: #0A0C10;
 }
 
 .lang-code {
-  font-size: 9px; /* تصغير حجم كود اللغة */
-  margin-top: -3px;
-  opacity: 0.8;
+  font-size: 10px;
+  font-weight: 700;
+  margin-top: -5px;
+  background: #D4AF37;
+  color: #0A0C10;
+  padding: 2px 4px;
+  border-radius: 4px;
 }
 
-/* وضع الأزرار في أسفل الشاشة بجانب بعضها */
+.lang-btn:hover .lang-code {
+  background: #0A0C10;
+  color: #D4AF37;
+}
+
+/* مواقع الأزرار */
 .lang-btn {
   right: 15px;
-  bottom: 80px; /* نفس ارتفاع بقية الأزرار */
+  background: linear-gradient(135deg, #11151C, #1A1F2A);
 }
 
 .support-btn {
-  right: 65px; /* بعد زر اللغة */
-  bottom: 80px;
+  right: 70px;
 }
 
 .instagram-btn {
-  right: 115px; /* بعد زر الدعم */
-  bottom: 80px;
+  right: 125px;
 }
 
-/* زر بابلوين (سانتا) - تم التصغير */
+.instagram-btn i {
+  font-size: 22px;
+  color: #D4AF37;
+}
+
+.instagram-btn:hover i {
+  color: #0A0C10;
+}
+
+/* ===== زر بابلوين (سانتا) ===== */
 .bubble-chat-btn {
   position: fixed;
-  right: 165px; /* بعد زر انستغرام */
-  bottom: 80px; /* نفس ارتفاع بقية الأزرار */
-  width: 40px; /* تصغير الحجم */
-  height: 40px; /* تصغير الحجم */
-  background: linear-gradient(135deg, #dc2626, #ef4444);
+  right: 180px;
+  bottom: 80px;
+  width: 45px;
+  height: 45px;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
   z-index: 9999;
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+  box-shadow: 0 5px 20px rgba(212, 175, 55, 0.4);
   transition: all 0.3s ease;
+  border: 2px solid #ffffff;
 }
 
 .bubble-chat-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 15px rgba(220, 38, 38, 0.4);
+  transform: translateY(-5px) scale(1.1);
+  box-shadow: 0 10px 30px rgba(212, 175, 55, 0.5);
 }
 
 .bubble-chat-icon {
-  font-size: 20px; /* تصغير الحجم */
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-size: 24px;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.2));
 }
 
 .bubble-notification {
   position: absolute;
-  top: -3px;
-  right: -3px;
+  top: -5px;
+  right: -5px;
   background: #22c55e;
   color: white;
-  width: 16px; /* تصغير الحجم */
-  height: 16px; /* تصغير الحجم */
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  font-size: 10px; /* تصغير حجم الخط */
+  font-size: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   animation: pulse 2s infinite;
+  border: 2px solid #0A0C10;
 }
 
 @keyframes pulse {
@@ -358,23 +432,15 @@ body {
   100% { transform: scale(1); }
 }
 
-/* زر انستغرام - تم التصغير */
-.instagram-btn svg {
-  width: 20px; /* تصغير حجم الأيقونة */
-  height: 20px;
-  fill: none;
-  stroke: #E1306C;
-  stroke-width: 1.5;
-}
-
-/* نافذة بابلوين */
+/* ===== نافذة بابلوين ===== */
 .bubble-chat-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.5);
+  background: rgba(10, 12, 16, 0.8);
+  backdrop-filter: blur(5px);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -383,17 +449,18 @@ body {
 
 .bubble-chat-window {
   width: 90%;
-  max-width: 400px;
-  background: white;
-  border-radius: 16px;
+  max-width: 450px;
+  background: #11151C;
+  border-radius: 30px;
   overflow: hidden;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 0 2px #D4AF37;
   animation: bubbleSlide 0.3s ease;
+  border: 1px solid rgba(212, 175, 55, 0.3);
 }
 
 @keyframes bubbleSlide {
   from {
-    transform: translateY(20px);
+    transform: translateY(30px);
     opacity: 0;
   }
   to {
@@ -403,35 +470,36 @@ body {
 }
 
 .bubble-chat-header {
-  background: linear-gradient(135deg, #dc2626, #ef4444);
-  color: white;
-  padding: 16px;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
+  padding: 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  color: #0A0C10;
 }
 
 .bubble-chat-title {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 15px;
 }
 
 .bubble-avatar {
-  width: 40px;
-  height: 40px;
-  background: white;
+  width: 50px;
+  height: 50px;
+  background: #0A0C10;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
-  color: #dc2626;
+  font-size: 28px;
+  color: #D4AF37;
+  border: 2px solid #D4AF37;
 }
 
 .bubble-sender {
-  font-weight: bold;
-  font-size: 16px;
+  font-weight: 800;
+  font-size: 18px;
 }
 
 .bubble-time {
@@ -440,29 +508,34 @@ body {
 }
 
 .bubble-close-btn {
-  background: none;
+  background: rgba(10, 12, 16, 0.2);
   border: none;
-  color: white;
+  color: #0A0C10;
   cursor: pointer;
-  padding: 5px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
 }
 
 .bubble-close-btn:hover {
-  background: rgba(255,255,255,0.2);
+  background: rgba(10, 12, 16, 0.4);
+  transform: rotate(90deg);
 }
 
-/* جسم المحادثة */
 .bubble-chat-body {
-  padding: 20px;
-  max-height: 400px;
+  padding: 25px;
+  max-height: 500px;
   overflow-y: auto;
+  background: #1A1F2A;
 }
 
 .bubble-message {
   position: relative;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .bubble-received {
@@ -477,70 +550,93 @@ body {
   height: 0;
   border-left: 8px solid transparent;
   border-right: 8px solid transparent;
-  border-top: 8px solid #e5e7eb;
+  border-top: 8px solid #2A2F3A;
 }
 
 .bubble-content {
-  background: #e5e7eb;
-  padding: 12px 16px;
+  background: #2A2F3A;
+  padding: 15px 20px;
   border-radius: 18px;
   border-top-right-radius: 4px;
   display: inline-block;
   max-width: 100%;
   text-align: right;
-  line-height: 1.5;
+  line-height: 1.6;
   font-size: 14px;
+  color: #ffffff;
+  border: 1px solid rgba(212, 175, 55, 0.2);
 }
 
 .bubble-message .bubble-time {
   font-size: 11px;
-  color: #666;
-  margin-top: 4px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 5px;
   text-align: right;
 }
 
-/* تذييل بابلوين */
 .bubble-chat-footer {
-  padding: 16px;
-  background: #f9fafb;
-  border-top: 1px solid #e5e7eb;
+  padding: 20px;
+  background: #11151C;
+  border-top: 1px solid rgba(212, 175, 55, 0.2);
 }
 
 .bubble-action-btn {
   width: 100%;
-  padding: 12px;
-  background: linear-gradient(135deg, #dc2626, #ef4444);
-  color: white;
+  padding: 15px;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
+  color: #0A0C10;
   border: none;
-  border-radius: 12px;
-  font-weight: bold;
+  border-radius: 50px;
+  font-weight: 800;
+  font-size: 16px;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: all 0.3s;
+  box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
 }
 
 .bubble-action-btn:hover {
-  background: linear-gradient(135deg, #b91c1c, #dc2626);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(212, 175, 55, 0.4);
 }
 
-/* قائمة اللغات - تم تعديل موقعها */
+/* ===== قائمة اللغات ===== */
 .lang-menu {
   position: fixed;
-  bottom: 130px; /* فوق الأزرار مباشرة */
+  bottom: 140px;
   right: 15px;
-  width: 130px; /* تصغير الحجم */
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  width: 220px;
+  background: #11151C;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 2px #D4AF37;
   z-index: 9999;
   overflow: hidden;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.lang-menu-header {
+  padding: 15px;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A);
+  color: #0A0C10;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.lang-menu-header i {
+  font-size: 18px;
 }
 
 .lang-item {
-  padding: 8px 10px; /* تصغير الحشو */
-  font-size: 14px; /* تصغير حجم الخط */
+  padding: 12px 15px;
   cursor: pointer;
-  border-bottom: 1px solid #eee;
-  text-align: right;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #ffffff;
+  transition: all 0.2s;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.1);
 }
 
 .lang-item:last-child {
@@ -548,115 +644,295 @@ body {
 }
 
 .lang-item:hover {
-  background: #f5faff;
+  background: #1A1F2A;
+  color: #D4AF37;
 }
 
-/* إعلان Popup */
+.lang-item.active {
+  background: rgba(212, 175, 55, 0.2);
+  color: #D4AF37;
+}
+
+.lang-name {
+  font-size: 14px;
+}
+
+.lang-code-small {
+  font-size: 12px;
+  padding: 3px 8px;
+  background: rgba(212, 175, 55, 0.2);
+  border-radius: 20px;
+  color: #D4AF37;
+}
+
+/* ===== إعلان Popup فاخر ===== */
 .ad-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.6);
+  background: rgba(10, 12, 16, 0.95);
+  backdrop-filter: blur(10px);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 9999;
+  z-index: 10001;
 }
 
 .ad-box {
-  background: #eaf2ff;
+  background: #11151C;
   width: 90%;
-  max-width: 400px;
-  margin: 15% auto;
-  border-radius: 15px;
+  max-width: 500px;
+  border-radius: 30px;
+  overflow: hidden;
+  border: 2px solid #D4AF37;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(212, 175, 55, 0.3);
+}
+
+.ad-header {
+  background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #0A0C10;
+}
+
+.ad-header h2 {
+  margin: 0;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ad-header i {
+  font-size: 24px;
+}
+
+.ad-close-btn {
+  background: rgba(10, 12, 16, 0.2);
+  border: none;
+  color: #0A0C10;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 18px;
+}
+
+.ad-close-btn:hover {
+  background: rgba(10, 12, 16, 0.4);
+  transform: rotate(90deg);
+}
+
+.ad-content {
+  padding: 25px;
+  max-height: 60vh;
+  overflow-y: auto;
+  color: #ffffff;
+  scrollbar-width: thin;
+  scrollbar-color: #D4AF37 #1A1F2A;
+}
+
+.ad-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.ad-content::-webkit-scrollbar-track {
+  background: #1A1F2A;
+}
+
+.ad-content::-webkit-scrollbar-thumb {
+  background: #D4AF37;
+  border-radius: 10px;
+}
+
+.ad-welcome {
+  background: rgba(212, 175, 55, 0.1);
+  padding: 15px;
+  border-radius: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-right: 4px solid #D4AF37;
+}
+
+.ad-welcome i {
+  color: #D4AF37;
+  font-size: 20px;
+}
+
+.ad-highlight {
+  background: #1A1F2A;
+  padding: 15px;
+  border-radius: 16px;
+  margin: 15px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.ad-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.stat-item {
+  background: #1A1F2A;
+  padding: 10px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.stat-item i {
+  color: #D4AF37;
+}
+
+.vip-table {
+  background: #1A1F2A;
+  border-radius: 16px;
+  padding: 15px;
+  margin: 20px 0;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.vip-table h3 {
+  color: #D4AF37;
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.vip-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+  font-size: 13px;
+}
+
+.vip-level {
+  color: #D4AF37;
+  font-weight: 700;
+}
+
+.vip-recharge {
+  color: #F6E27A;
+}
+
+.vip-daily {
+  color: #ffffff;
+}
+
+.commission-box {
+  background: linear-gradient(135deg, #1A1F2A, #11151C);
+  border-radius: 16px;
   padding: 15px;
   text-align: center;
 }
 
-.ad-box h2 {
-  background: #3b82f6;
-  color: white;
-  padding: 10px;
-  border-radius: 10px;
+.commission-box h4 {
+  color: #D4AF37;
+  margin-bottom: 10px;
 }
 
-.ad-content {
-  max-height: 250px;
-  overflow-y: auto;
-  margin: 10px 0;
-  font-size: 14px;
+.commission-row {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  color: #ffffff;
 }
 
-.ad-box button {
-  background: #3b82f6;
-  color: white;
+.ad-btn {
+  width: calc(100% - 40px);
+  margin: 0 20px 25px 20px;
+  padding: 15px;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
+  color: #0A0C10;
   border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
+  border-radius: 50px;
+  font-weight: 800;
+  font-size: 16px;
   cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 5px 20px rgba(212, 175, 55, 0.3);
+}
+
+.ad-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(212, 175, 55, 0.4);
+}
+
+/* حركات */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
 }
 
 /* تكييفات للهواتف */
 @media (max-width: 768px) {
-  /* ضبط المسافات للأزرار في الهواتف */
-  .circle-btn, 
+  .circle-btn,
   .bubble-chat-btn {
-    bottom: 70px; /* رفع قليلاً فوق شريط التنقل */
+    bottom: 70px;
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
   }
   
-  .lang-btn {
-    right: 15px;
-  }
+  .lang-btn { right: 10px; }
+  .support-btn { right: 60px; }
+  .instagram-btn { right: 110px; }
+  .bubble-chat-btn { right: 160px; }
   
-  .support-btn {
-    right: 65px;
-  }
-  
-  .instagram-btn {
-    right: 115px;
-  }
-  
-  .bubble-chat-btn {
-    right: 165px;
+  .lang-menu {
+    bottom: 130px;
+    right: 10px;
+    width: 200px;
   }
   
   .bubble-chat-window {
     width: 95%;
-    max-height: 80vh;
   }
   
-  /* إذا كانت الشاشة صغيرة جداً، نجعل الأزرار أقرب */
-  @media (max-width: 350px) {
-    .circle-btn,
-    .bubble-chat-btn {
-      width: 36px;
-      height: 36px;
-      font-size: 16px;
-      bottom: 75px;
-    }
-    
-    .lang-btn {
-      right: 10px;
-    }
-    
-    .support-btn {
-      right: 55px;
-    }
-    
-    .instagram-btn {
-      right: 100px;
-    }
-    
-    .bubble-chat-btn {
-      right: 145px;
-    }
-    
-    .instagram-btn svg {
-      width: 18px;
-      height: 18px;
-    }
+  .ad-box {
+    width: 95%;
+  }
+}
+
+@media (max-width: 480px) {
+  .lang-btn { right: 5px; }
+  .support-btn { right: 50px; }
+  .instagram-btn { right: 95px; }
+  .bubble-chat-btn { right: 140px; }
+  
+  .circle-btn,
+  .bubble-chat-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 16px;
+  }
+  
+  .bubble-chat-icon {
+    font-size: 20px;
   }
 }
 </style>
