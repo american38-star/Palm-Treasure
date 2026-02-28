@@ -9,21 +9,27 @@
       </div>
 
       <div class="user-box">
-        <div class="welcome">مرحبا، {{ username }}</div>
+        <div class="welcome">مرحباً، {{ username }}</div>
         <div class="balance">الرصيد: <strong>{{ balance }} USDT</strong></div>
       </div>
-
     </div>
 
     <!-- شريط الأزرار -->
     <div class="quick-buttons">
-      <button class="quick-btn">وفر الوقت ⏱</button>
-      <button class="quick-btn">وفر المال 💰</button>
+      <button class="quick-btn">
+        <span class="btn-icon">⏱</span>
+        وفر الوقت
+      </button>
+      <button class="quick-btn">
+        <span class="btn-icon">💰</span>
+        وفر المال
+      </button>
     </div>
 
     <!-- شريط الإعلان -->
     <div class="notice-bar">
-      🔊 شراكة عالمية مع Amazon, eBay, Etsy, Walmart وأكثر!
+      <span class="notice-icon">🔊</span>
+      شراكة عالمية مع Amazon, eBay, Etsy, Walmart وأكثر!
     </div>
 
     <!-- القائمة الرئيسية -->
@@ -40,12 +46,9 @@
         <p>{{ item.title }}</p>
       </div>
 
-      <!-- زر الشركة لعرض الإعلان عند الضغط عليه -->
-      <div
-        class="item"
-        @click="showCompanyAd"
-      >
-        <div class="icon-box">
+      <!-- زر الشركة لعرض الإعلان -->
+      <div class="item company-item" @click="showCompanyAd">
+        <div class="icon-box gold-glow">
           <i class="fas fa-building"></i>
         </div>
         <p>الشركة</p>
@@ -54,71 +57,40 @@
 
     <!-- البانر -->
     <div class="banner">
-      <img src="https://i.ibb.co/H7J3mpm/amazon-banner.jpg" />
+      <img src="https://i.ibb.co/H7J3mpm/amazon-banner.jpg" alt="Amazon Banner" />
     </div>
 
-    <!-- إعلان Popup -->
-    <div id="companyAd" class="ad-overlay" v-if="showAd">
+    <!-- إعلان Popup فاخر -->
+    <div id="companyAd" class="ad-overlay" v-if="showAd" @click.self="closeAd">
       <div class="ad-box">
-        <h2>إعلان</h2>
+        <div class="ad-header">
+          <h2>✨ إعلان الشركة ✨</h2>
+          <button class="close-btn" @click="closeAd">×</button>
+        </div>
 
         <div class="ad-content">
           <p>
             🎉🎉🎉🎉 مرحبا بالجميع! تأسست Mall of the world في سنغافورة في 20 أغسطس 2021 ومقرها حاليًا في منطقة الأعمال المركزية في سنغافورة. نحن شركة استثمار في التجارة الإلكترونية مع فريق تقني قوي وقوة مالية قوية.
-            <br>
+            <br><br>
             يتعاون Mall of the world مع عشرات شركات التجارة الإلكترونية مثل Amazon و eBay و Tiktok و Aliexpress و Alibaba و Shopee ، إلخ. لمساعدة التجار على زيادة مبيعات المنتجات الخاصة بهم ، ويمكننا أيضًا تحقيق أرباح منه.
-            <br><br>
-            👍1: الحد الأدنى لمبلغ إعادة الشحن: 12 USDT ، الحد الأدنى للسحب النقدي: 3 USDT
-            <br>
-            💰2: تستثمر المنصة على مستوى العالم ، لذا فإن الاستثمار يدعم فقط إعادة شحن العملة المشفرة.
-            <br>
-            🌈3: وقت إعادة تعيين المهمة هو الساعة 12 ظهراً في سنغافورة. يمكنك الحصول على الربح من خلال استكمال أوامر التاجر كل يوم (مرة واحدة في اليوم ، صالحة لمدة 365 يومًا).
-            <br>
-            🕯4: يمكنك سحب النقد مرة واحدة فقط في اليوم ، لا يوجد حد زمني ، يمكنك سحب النقد في أي وقت ، ووقت الانسحاب هو 1 إلى 5 دقائق ، والحد الأدنى لمبلغ السحب هو 3 USDT ، ولا يوجد حد أعلى.
-            <br><br>
-            عندما يصل مبلغ إعادة الشحن إلى المبلغ المقابل التالي ، سيتم ترقية الحساب تلقائيًا إلى VIP. كلما زادت مبلغ إعادة الشحن ، كلما زاد عدد USDT في اليوم!
-            <br><br>
-            👍vip1: إعادة شحن 12 USDT ، الإيرادات اليومية 3 USDT
-            <br>
-            👍vip2: إعادة الشحن 52 USDT ، الدخل اليومي 13 USDT
-            <br>
-            👍vip3: إعادة شحن 100 USDT ، الدخل اليومي 26 USDT
-            <br>
-            👍vip4: إعادة شحن 300 USDT ، الدخل اليومي 82 USDT
-            <br>
-            👍VIP5: إعادة شحن 500 USDT ، الدخل اليومي 145 USDT
-            <br>
-            👍vip6: إعادة شحن 1500 USDT ، الدخل اليومي 479 USDT
-            <br>
-            👍VIP7: إعادة شحن 3000 USDT ، الدخل اليومي 1078 USDT
-            <br>
-            👍VIP8: إعادة شحن 5000 USDT ، الدخل اليومي 2000 USDT
-            <br>
-            👍vip9: إعادة شحن 10000 USDT ، الدخل اليومي USDT
-            <br>
-            👍VIP10: إعادة شحن 30000 USDT ، الدخل اليومي 17699 USDT
-            <br>
-            👍VIP11: إعادة شحن 90،000 دولار أمريكي ، الدخل اليومي 81،818 USDT
-            <br><br>
-            يمكن للمستخدمين Mall of the world الترويج لنظامنا الأساسي من خلال روابط التوصية ودعوة أصدقائك للانضمام إلينا على Facebook و Twitter و Instagram و YouTube و Tiktok و Kaokao و WhatsApp و Telegram. عندما يسجل شخص ما وينتهي من Top-Up ، تحصل على مكافأة تصل إلى 9 ٪.
-            <br><br>
-            🤝team المستوى 3 إعادة شحن مكافأة تصل إلى 9 ٪
-            <br>
-            🤝level 1 مكافأة إعادة شحن الأعضاء: 6 ٪
-            <br>
-            🤝level 2 مكافأة إعادة شحن الأعضاء: 2 ٪
-            <br>
-            🤝level 3 مكافأة إعادة شحن الأعضاء: 1 ٪
-            <br>
-            🤑team إعادة شحن المستوى الأول البالغ 1000 دولار أمريكي ، ويمكنك الحصول على 60 USDT
-            <br>
-            🤑team إعادة الشحن الثانوي البالغ 1000 دولار أمريكي ، يمكنك الحصول على 20 USDT
-            <br>
-            🤑team المستوى 3 إعادة شحن 1000 USDT ، ويمكنك الحصول على 10 USDT
           </p>
+          
+          <div class="vip-table">
+            <h3>🎯 خطط الاستثمار VIP</h3>
+            <div class="vip-row" v-for="vip in vipPlans" :key="vip.level">
+              <span class="vip-level">{{ vip.level }}</span>
+              <span class="vip-recharge">💵 {{ vip.recharge }} USDT</span>
+              <span class="vip-daily">📈 {{ vip.daily }} USDT/يوم</span>
+            </div>
+          </div>
+
+          <div class="commission-info">
+            <h3>🤝 نظام العمولات</h3>
+            <p>المستوى 1: 6% | المستوى 2: 2% | المستوى 3: 1%</p>
+          </div>
         </div>
 
-        <button @click="closeAd">أنا أعرف</button>
+        <button class="ad-btn" @click="closeAd">أنا أعرف</button>
       </div>
     </div>
 
@@ -137,7 +109,21 @@ export default {
     return {
       username: "جاري التحميل...",
       balance: 0,
-      showAd: false,  // حالة عرض الإعلان عند الضغط على زر الشركة
+      showAd: false,
+      
+      vipPlans: [
+        { level: 'VIP1', recharge: '12', daily: '3' },
+        { level: 'VIP2', recharge: '52', daily: '13' },
+        { level: 'VIP3', recharge: '100', daily: '26' },
+        { level: 'VIP4', recharge: '300', daily: '82' },
+        { level: 'VIP5', recharge: '500', daily: '145' },
+        { level: 'VIP6', recharge: '1500', daily: '479' },
+        { level: 'VIP7', recharge: '3000', daily: '1078' },
+        { level: 'VIP8', recharge: '5000', daily: '2000' },
+        { level: 'VIP9', recharge: '10000', daily: '5000' },
+        { level: 'VIP10', recharge: '30000', daily: '17699' },
+        { level: 'VIP11', recharge: '90000', daily: '81818' }
+      ],
 
       menu: [
         { title: "تعبئة رصيد", icon: "fas fa-coins", route: "/recharge" },
@@ -155,12 +141,12 @@ export default {
   },
 
   methods: {
-    // 🔥 مراقبة حالة تسجيل الدخول
     watchUser() {
       onAuthStateChanged(auth, async (user) => {
         if (!user) {
           this.username = "غير مسجل";
           this.balance = 0;
+          this.$router.push("/login");
           return;
         }
 
@@ -168,7 +154,6 @@ export default {
       });
     },
 
-    // 🔥 تحميل بيانات المستخدم من Firestore
     async loadUserData(uid, email) {
       try {
         const snap = await getDoc(doc(db, "users", uid));
@@ -192,26 +177,32 @@ export default {
       this.$router.push(route);
     },
 
-    // عرض الإعلان عند الضغط على زر "الشركة"
     showCompanyAd() {
       this.showAd = true;
+      document.body.style.overflow = 'hidden';
     },
 
-    // إغلاق الإعلان
     closeAd() {
       this.showAd = false;
+      document.body.style.overflow = 'auto';
     }
+  },
+
+  beforeUnmount() {
+    document.body.style.overflow = 'auto';
   }
 };
 </script>
 
 <style scoped>
+/* الخلفية الرئيسية - أسود فاخر */
 .home-container {
   direction: rtl;
-  padding: 12px;
-  background: linear-gradient(#0d6efd, #6bb4ff);
+  padding: 16px;
+  background: #0A0C10;
   min-height: 100vh;
-  color: #fff;
+  color: #ffffff;
+  font-family: 'Cairo', sans-serif;
 }
 
 /* الشريط العلوي */
@@ -219,16 +210,29 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: #11151C;
+  padding: 15px 20px;
+  border-radius: 16px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .top-left {
   display: flex;
-  gap: 12px;
+  gap: 15px;
 }
 
 .icon {
-  font-size: 22px;
-  color: white;
+  font-size: 24px;
+  color: #D4AF37;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.icon:hover {
+  color: #F6E27A;
+  transform: scale(1.1);
 }
 
 .user-box {
@@ -237,41 +241,76 @@ export default {
 
 .welcome {
   font-size: 16px;
-  font-weight: bold;
+  font-weight: 600;
+  color: #D4AF37;
+  margin-bottom: 5px;
 }
 
 .balance {
-  margin-top: 4px;
   font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.balance strong {
+  color: #D4AF37;
+  font-size: 18px;
 }
 
 /* شريط الأزرار السريعة */
 .quick-buttons {
   display: flex;
-  gap: 12px;
-  margin-top: 20px;
+  gap: 15px;
+  margin-bottom: 20px;
 }
 
 .quick-btn {
   flex: 1;
-  padding: 12px;
-  background: #ffffff;
-  border: none;
-  border-radius: 12px;
-  font-weight: bold;
-  color: #0d6efd;
+  padding: 14px;
+  background: linear-gradient(135deg, #11151C, #1A1F2A);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 14px;
+  font-weight: 700;
+  color: #D4AF37;
   cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 15px;
+}
+
+.btn-icon {
+  font-size: 20px;
+}
+
+.quick-btn:hover {
+  background: linear-gradient(135deg, #1A1F2A, #11151C);
+  border-color: #D4AF37;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
 }
 
 /* شريط الإعلان */
 .notice-bar {
-  background: #ff5722;
-  color: white;
-  padding: 10px;
-  border-radius: 12px;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
+  color: #0A0C10;
+  padding: 14px 20px;
+  border-radius: 50px;
   text-align: center;
-  margin-top: 18px;
-  font-weight: bold;
+  margin-bottom: 25px;
+  font-weight: 700;
+  font-size: 15px;
+  box-shadow: 0 5px 20px rgba(212, 175, 55, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.notice-icon {
+  font-size: 20px;
 }
 
 /* القائمة الرئيسية */
@@ -279,83 +318,292 @@ export default {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 18px;
-  margin-top: 20px;
+  margin-bottom: 25px;
 }
 
 .item {
-  background: #ffffffaa;
-  color: #000;
-  padding: 22px 10px;
-  border-radius: 22px;
+  background: #11151C;
+  color: #ffffff;
+  padding: 25px 15px;
+  border-radius: 20px;
   text-align: center;
-  font-weight: bold;
+  font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 .item:hover {
-  transform: scale(1.03);
+  transform: translateY(-5px);
+  border-color: #D4AF37;
+  box-shadow: 0 10px 25px rgba(212, 175, 55, 0.2);
 }
 
 .icon-box {
-  font-size: 28px;
-  margin-bottom: 8px;
-  color: #0d6efd;
+  font-size: 32px;
+  margin-bottom: 12px;
+  color: #D4AF37;
+  transition: all 0.3s ease;
+}
+
+.item:hover .icon-box {
+  transform: scale(1.1);
+  color: #F6E27A;
+}
+
+.gold-glow {
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+}
+
+.company-item {
+  background: linear-gradient(135deg, #11151C, #1A1F2A);
+  border: 1px solid #D4AF37;
 }
 
 /* البانر */
-.banner img {
-  width: 100%;
+.banner {
+  margin-top: 20px;
   border-radius: 20px;
-  margin-top: 25px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(212, 175, 55, 0.3);
 }
 
-/* إعلان */
+.banner img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.5s ease;
+}
+
+.banner:hover img {
+  transform: scale(1.05);
+}
+
+/* ===== إعلان فاخر ===== */
 .ad-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.6);
+  background: rgba(10, 12, 16, 0.98);
+  backdrop-filter: blur(10px);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 9999;
+  direction: rtl;
 }
 
 .ad-box {
-  background: #eaf2ff;
+  background: #11151C;
   width: 90%;
-  max-width: 400px;
-  margin: 15% auto;
-  border-radius: 15px;
-  padding: 15px;
+  max-width: 500px;
+  border-radius: 30px;
+  overflow: hidden;
+  border: 2px solid #D4AF37;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.7), 0 0 30px rgba(212, 175, 55, 0.3);
+  animation: fadeInUp 0.5s ease;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ad-header {
+  background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+}
+
+.ad-header h2 {
+  color: #0A0C10;
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  flex: 1;
   text-align: center;
 }
 
-.ad-box h2 {
-  background: #3b82f6;
-  color: white;
-  padding: 10px;
-  border-radius: 10px;
+.close-btn {
+  background: rgba(10, 12, 16, 0.2);
+  border: none;
+  color: #0A0C10;
+  font-size: 28px;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  position: absolute;
+  left: 10px;
+  top: 10px;
+}
+
+.close-btn:hover {
+  background: rgba(10, 12, 16, 0.4);
+  transform: rotate(90deg);
 }
 
 .ad-content {
-  max-height: 250px;
+  max-height: 400px;
   overflow-y: auto;
-  margin: 10px 0;
+  padding: 25px;
+  color: rgba(255, 255, 255, 0.9);
   font-size: 14px;
-  color: black; /* لون النص باللون الأسود */
+  line-height: 1.8;
+  scrollbar-width: thin;
+  scrollbar-color: #D4AF37 #1A1F2A;
 }
 
-.ad-box button {
-  background: #3b82f6;
-  color: white;
+.ad-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.ad-content::-webkit-scrollbar-track {
+  background: #1A1F2A;
+}
+
+.ad-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #D4AF37, #C5A028);
+  border-radius: 10px;
+}
+
+.vip-table {
+  background: #1A1F2A;
+  border-radius: 16px;
+  padding: 15px;
+  margin: 20px 0;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.vip-table h3 {
+  color: #D4AF37;
+  text-align: center;
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.vip-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+  color: #ffffff;
+}
+
+.vip-row:last-child {
+  border-bottom: none;
+}
+
+.vip-level {
+  color: #D4AF37;
+  font-weight: 700;
+}
+
+.vip-recharge {
+  color: #F6E27A;
+}
+
+.vip-daily {
+  color: #ffffff;
+}
+
+.commission-info {
+  text-align: center;
+  margin: 20px 0;
+}
+
+.commission-info h3 {
+  color: #D4AF37;
+  margin-bottom: 10px;
+}
+
+.commission-info p {
+  background: linear-gradient(135deg, #D4AF37, #F6E27A);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.ad-btn {
+  background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
+  color: #0A0C10;
   border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
+  padding: 16px 30px;
+  margin: 0 25px 25px 25px;
+  border-radius: 50px;
   cursor: pointer;
+  font-size: 18px;
+  font-weight: 700;
+  transition: all 0.3s ease;
+  width: calc(100% - 50px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 5px 20px rgba(212, 175, 55, 0.3);
+}
+
+.ad-btn:hover {
+  transform: scale(1.02);
+  box-shadow: 0 10px 30px rgba(212, 175, 55, 0.5);
+  background: linear-gradient(135deg, #C5A028, #F6E27A, #D4AF37);
+}
+
+/* تحسين للهواتف */
+@media (max-width: 480px) {
+  .home-container {
+    padding: 12px;
+  }
+  
+  .grid-menu {
+    gap: 12px;
+  }
+  
+  .item {
+    padding: 20px 10px;
+  }
+  
+  .icon-box {
+    font-size: 28px;
+  }
+  
+  .ad-box {
+    width: 95%;
+  }
+  
+  .ad-content {
+    max-height: 350px;
+    padding: 15px;
+  }
+  
+  .vip-row {
+    font-size: 13px;
+  }
+}
+
+/* تأثيرات إضافية */
+@keyframes goldPulse {
+  0% { box-shadow: 0 0 5px rgba(212, 175, 55, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(212, 175, 55, 0.6); }
+  100% { box-shadow: 0 0 5px rgba(212, 175, 55, 0.3); }
+}
+
+.company-item {
+  animation: goldPulse 2s infinite;
 }
 </style>
