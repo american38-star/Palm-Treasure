@@ -47,44 +47,46 @@
           </div>
         </div>
 
-        <!-- إحصائيات الفريق - تم تعديل العريض -->
+        <!-- إحصائيات الفريق - تم تصغير الحقول -->
         <div class="team-stats-box">
           <h2>📊 إحصائيات الفريق</h2>
           <div class="stats-grid">
+            <!-- الصف الأول -->
             <div class="stat-item">
-              <div class="stat-icon">💰</div>
-              <div class="stat-title">إجمالي السحب</div>
-              <div class="stat-value light">{{ teamStats.withdraw }} USDT</div>
+              <div class="stat-icon">💸</div>
+              <div class="stat-value">{{ teamStats.recharge }} USDT</div>
+              <div class="stat-title">إجمالي الشحن</div>
             </div>
 
             <div class="stat-item">
-              <div class="stat-icon">💸</div>
-              <div class="stat-title">إجمالي الشحن</div>
-              <div class="stat-value light">{{ teamStats.recharge }} USDT</div>
+              <div class="stat-icon">💰</div>
+              <div class="stat-value">{{ teamStats.withdraw }} USDT</div>
+              <div class="stat-title">إجمالي السحب</div>
             </div>
 
             <div class="stat-item">
               <div class="stat-icon">👥</div>
+              <div class="stat-value">{{ teamStats.totalMembers }}</div>
               <div class="stat-title">حجم الفريق</div>
-              <div class="stat-value light">{{ teamStats.totalMembers }}</div>
             </div>
 
+            <!-- الصف الثاني -->
             <div class="stat-item">
               <div class="stat-icon">🆕</div>
+              <div class="stat-value">{{ teamStats.newMembers }}</div>
               <div class="stat-title">أعضاء جدد</div>
-              <div class="stat-value light">{{ teamStats.newMembers }}</div>
             </div>
 
             <div class="stat-item">
               <div class="stat-icon">💳</div>
+              <div class="stat-value">{{ teamStats.firstRecharge }}</div>
               <div class="stat-title">أول شحن</div>
-              <div class="stat-value light">{{ teamStats.firstRecharge }}</div>
             </div>
 
             <div class="stat-item">
               <div class="stat-icon">🏧</div>
+              <div class="stat-value">{{ teamStats.firstWithdraw }}</div>
               <div class="stat-title">أول سحب</div>
-              <div class="stat-value light">{{ teamStats.firstWithdraw }}</div>
             </div>
           </div>
         </div>
@@ -463,7 +465,7 @@ h2 {
   text-align: center;
   position: relative;
   padding-bottom: 10px;
-  font-weight: 600; /* أخف من قبل */
+  font-weight: 600;
 }
 
 h2::after {
@@ -525,7 +527,7 @@ h2::after {
   color: #0A0C10;
   padding: 10px 20px;
   border-radius: 12px;
-  font-weight: 600; /* أخف من قبل */
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
@@ -553,7 +555,7 @@ h2::after {
   padding: 12px;
   border: none;
   border-radius: 12px;
-  font-weight: 600; /* أخف من قبل */
+  font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -577,7 +579,7 @@ h2::after {
   filter: brightness(1.1);
 }
 
-/* ===== إحصائيات الفريق - تم تعديل العريض ===== */
+/* ===== إحصائيات الفريق - تم تصغير الحقول ===== */
 .team-stats-box {
   background: #11151C;
   border-radius: 24px;
@@ -591,13 +593,13 @@ h2::after {
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 15px;
+  gap: 12px;
   width: 100%;
 }
 
 .stat-item {
   background: #1A1F2A;
-  padding: 15px 10px;
+  padding: 12px 5px;
   border-radius: 16px;
   text-align: center;
   border: 1px solid rgba(212, 175, 55, 0.1);
@@ -606,34 +608,33 @@ h2::after {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-height: 90px; /* تصغير الارتفاع */
 }
 
 .stat-item:hover {
   border-color: #D4AF37;
-  transform: translateY(-3px);
+  transform: translateY(-2px);
 }
 
 .stat-icon {
-  font-size: 28px;
-  margin-bottom: 8px;
-}
-
-.stat-title {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 12px;
+  font-size: 22px; /* تصغير الأيقونة */
   margin-bottom: 5px;
-  white-space: nowrap;
-  font-weight: 400; /* وزن عادي */
+  color: #D4AF37;
 }
 
 .stat-value {
-  font-size: 18px;
-  word-break: break-word;
+  font-size: 15px; /* تصغير الخط */
+  font-weight: 600;
+  color: #D4AF37;
+  margin-bottom: 3px;
+  line-height: 1.3;
 }
 
-.stat-value.light {
-  font-weight: 500; /* وزن متوسط - ليس ثقيلاً */
-  color: #D4AF37;
+.stat-title {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px; /* تصغير الخط */
+  font-weight: 400;
+  white-space: nowrap;
 }
 
 /* ===== المستويات ===== */
@@ -650,13 +651,13 @@ h2::after {
 .level-cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 15px;
+  gap: 12px;
   width: 100%;
 }
 
 .level-card {
   background: #1A1F2A;
-  border-radius: 20px;
+  border-radius: 16px;
   overflow: hidden;
   border: 1px solid rgba(212, 175, 55, 0.2);
   transition: all 0.3s ease;
@@ -665,13 +666,13 @@ h2::after {
 }
 
 .level-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 25px rgba(212, 175, 55, 0.2);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(212, 175, 55, 0.15);
 }
 
 .level-header {
   background: linear-gradient(135deg, #D4AF37, #C5A028);
-  padding: 12px 10px;
+  padding: 8px 8px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -679,42 +680,43 @@ h2::after {
 }
 
 .level-badge {
-  font-weight: 600; /* أخف من قبل */
-  font-size: 12px;
+  font-weight: 600;
+  font-size: 11px;
 }
 
 .commission-rate {
   background: rgba(10, 12, 16, 0.2);
-  padding: 4px 6px;
+  padding: 3px 5px;
   border-radius: 20px;
-  font-weight: 600; /* أخف من قبل */
-  font-size: 11px;
+  font-weight: 600;
+  font-size: 10px;
 }
 
 .level-body {
-  padding: 15px 10px;
+  padding: 10px 8px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .level-count, .level-earnings {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   color: #ffffff;
-  font-size: 13px;
-  font-weight: 400; /* وزن عادي */
+  font-size: 12px;
+  font-weight: 400;
 }
 
 .level-count i, .level-earnings i {
   color: #D4AF37;
-  width: 18px;
-  font-size: 14px;
+  width: 16px;
+  font-size: 12px;
 }
 
 .level-count span, .level-earnings span {
-  font-weight: 500; /* وزن متوسط */
+  font-weight: 500;
+  font-size: 12px;
 }
 
 .level1 .level-header { background: linear-gradient(135deg, #D4AF37, #F6E27A); }
@@ -725,46 +727,46 @@ h2::after {
 .info-box {
   background: rgba(212, 175, 55, 0.1);
   border-right: 4px solid #D4AF37;
-  padding: 15px;
+  padding: 12px 15px;
   border-radius: 12px;
   margin-bottom: 20px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
   box-sizing: border-box;
 }
 
 .info-box i {
   color: #D4AF37;
-  font-size: 20px;
+  font-size: 18px;
   flex-shrink: 0;
 }
 
 .info-box p {
   color: rgba(255, 255, 255, 0.9);
-  font-size: 13px;
+  font-size: 12px;
   margin: 0;
-  line-height: 1.5;
-  font-weight: 400; /* وزن عادي */
+  line-height: 1.4;
+  font-weight: 400;
 }
 
 /* ===== زر العودة ===== */
 .btn-back {
   width: 100%;
-  padding: 16px;
+  padding: 14px;
   background: transparent;
   border: 2px solid #D4AF37;
   color: #D4AF37;
   border-radius: 16px;
-  font-size: 18px;
-  font-weight: 600; /* أخف من قبل */
+  font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   margin-top: 10px;
   box-sizing: border-box;
 }
@@ -773,7 +775,7 @@ h2::after {
   background: #D4AF37;
   color: #0A0C10;
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 8px 20px rgba(212, 175, 55, 0.3);
 }
 
 /* ===== حالات التحميل والخطأ ===== */
@@ -792,15 +794,16 @@ h2::after {
 
 .loading-box p {
   font-weight: 400;
+  font-size: 14px;
 }
 
 .gold-spinner {
-  width: 50px;
-  height: 50px;
-  border: 4px solid rgba(212, 175, 55, 0.1);
-  border-top: 4px solid #D4AF37;
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(212, 175, 55, 0.1);
+  border-top: 3px solid #D4AF37;
   border-radius: 50%;
-  margin: 0 auto 20px;
+  margin: 0 auto 15px;
   animation: spin 1s linear infinite;
 }
 
@@ -809,26 +812,28 @@ h2::after {
 }
 
 .error-box i {
-  font-size: 48px;
+  font-size: 40px;
   color: #ff6b6b;
-  margin-bottom: 15px;
+  margin-bottom: 12px;
 }
 
 .error-box strong {
   color: #ff6b6b;
   display: block;
-  margin: 10px 0;
+  margin: 8px 0;
   font-weight: 600;
+  font-size: 14px;
 }
 
 .retry-btn {
   background: #D4AF37;
   border: none;
   color: #0A0C10;
-  padding: 12px 30px;
+  padding: 10px 25px;
   border-radius: 12px;
   font-weight: 600;
-  margin-top: 20px;
+  font-size: 14px;
+  margin-top: 15px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
@@ -873,29 +878,29 @@ h2::after {
   }
 
   .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    gap: 8px;
   }
 
   .stat-item {
-    padding: 12px 8px;
+    padding: 8px 3px;
+    min-height: 80px;
   }
 
   .stat-icon {
-    font-size: 24px;
-  }
-
-  .stat-title {
-    font-size: 11px;
+    font-size: 20px;
   }
 
   .stat-value {
-    font-size: 16px;
+    font-size: 14px;
+  }
+
+  .stat-title {
+    font-size: 10px;
   }
 
   .level-cards {
     grid-template-columns: 1fr;
-    gap: 12px;
+    gap: 10px;
   }
 
   .level-card {
@@ -903,31 +908,31 @@ h2::after {
   }
 
   .level-header {
-    padding: 10px;
+    padding: 8px;
   }
 
   .level-badge {
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .commission-rate {
-    font-size: 12px;
-    padding: 4px 8px;
+    font-size: 11px;
+    padding: 3px 6px;
   }
 
   .level-body {
-    padding: 12px;
+    padding: 10px;
     flex-direction: row;
     justify-content: space-around;
   }
 
   .level-count, .level-earnings {
-    font-size: 14px;
+    font-size: 13px;
   }
 
   .share-buttons {
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
   }
 
   .share-btn {
@@ -935,42 +940,52 @@ h2::after {
   }
 
   .info-box {
-    padding: 12px;
+    padding: 10px 12px;
   }
 
   .info-box i {
-    font-size: 18px;
+    font-size: 16px;
   }
 
   .info-box p {
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .btn-back {
-    padding: 14px;
-    font-size: 16px;
+    padding: 12px;
+    font-size: 15px;
   }
 }
 
 @media (max-width: 350px) {
   .stats-grid {
     grid-template-columns: 1fr;
+    gap: 6px;
   }
 
   .stat-item {
     flex-direction: row;
     justify-content: space-between;
     text-align: right;
-    padding: 10px 15px;
+    padding: 8px 12px;
+    min-height: auto;
   }
 
   .stat-icon {
     margin-bottom: 0;
-    margin-left: 10px;
+    margin-left: 8px;
+    font-size: 18px;
   }
 
-  .stat-title, .stat-value {
-    display: inline-block;
+  .stat-value {
+    margin-bottom: 0;
+    font-size: 13px;
+  }
+
+  .stat-title {
+    font-size: 11px;
+    margin-right: auto;
+    margin-left: 10px;
   }
   
   .content-wrapper {
