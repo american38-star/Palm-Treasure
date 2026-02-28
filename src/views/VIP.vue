@@ -1,92 +1,141 @@
 <template>
   <div class="vip-page">
     <div class="container">
-      <h1 class="page-title">💎 مستويات VIP — Premium</h1>
+      <h1 class="page-title">
+        <span class="title-glow">💎</span>
+        مستويات VIP الفاخرة
+        <span class="title-glow">💎</span>
+      </h1>
 
       <div v-if="loading" class="center">
-        <div class="spinner-lg"></div>
-        <div class="loading-text">جارٍ تحميل حالة VIP...</div>
+        <div class="gold-spinner"></div>
+        <div class="loading-text">جاري تحميل حالة VIP...</div>
       </div>
 
       <div v-else>
         <!-- حالة المستخدم الحالية -->
-        <div v-if="userVip" class="current-vip">
+        <div v-if="userVip && userVip.level" class="current-vip">
           <div class="current-left">
-            <div class="badge">مفعل الآن</div>
-            <div class="vip-name">VIP {{ userVip.level }}</div>
-            <div class="vip-daily">ربح يومي: <strong>{{ userVip.daily }} USDT</strong></div>
-            <div class="vip-remaining">⏰ المتبقي: {{ remainingText }}</div>
+            <div class="badge-gold">✨ مفعل الآن ✨</div>
+            <div class="vip-name">
+              <span class="vip-level-badge">VIP {{ userVip.level }}</span>
+            </div>
+            <div class="vip-daily">
+              <i class="fas fa-coins"></i>
+              ربح يومي: <strong>{{ userVip.daily }} USDT</strong>
+            </div>
+            <div class="vip-remaining">
+              <i class="fas fa-hourglass-half"></i>
+              الوقت المتبقي: {{ remainingText }}
+            </div>
           </div>
 
           <div class="current-right">
-            <button class="btn-ghost" @click="goToDetails">تفاصيل المستوى</button>
-            <button class="btn-secondary" @click="cancelVip" :disabled="processing">
-              إلغاء الاشتراك
+            <button class="btn-gold-outline" @click="goToDetails">
+              <i class="fas fa-info-circle"></i>
+              تفاصيل
+            </button>
+            <button class="btn-gold" @click="cancelVip" :disabled="processing">
+              <i class="fas fa-times-circle"></i>
+              إلغاء
             </button>
           </div>
         </div>
 
-        <!-- قائمة المستويات -->
-        <div class="list">
+        <!-- قائمة المستويات VIP -->
+        <div class="vip-grid">
           <div
-            class="card"
+            class="vip-card"
             v-for="plan in plans"
             :key="plan.level"
-            :class="{ active: userVip && userVip.level === plan.level }"
+            :class="{ 
+              'active': userVip && userVip.level === plan.level,
+              'premium': plan.level >= 8
+            }"
           >
-            <div class="card-left">
-              <div class="icon-wrap">
-                <div class="icon-placeholder">💎</div>
-                <div class="level-badge">VIP {{ plan.level }}</div>
+            <div class="card-header" :class="`level-${plan.level}`">
+              <div class="level-icon">
+                <span v-if="plan.level === 1">🥉</span>
+                <span v-else-if="plan.level === 2">🥈</span>
+                <span v-else-if="plan.level === 3">🥇</span>
+                <span v-else>💎</span>
               </div>
+              <div class="level-number">VIP {{ plan.level }}</div>
+              <div class="level-badge" v-if="plan.level >= 10">🏆 النخبة</div>
             </div>
 
             <div class="card-body">
-              <div class="card-title">{{ plan.name }}</div>
+              <div class="price-tag">
+                <span class="price-label">سعر الاشتراك</span>
+                <span class="price-value">{{ plan.price }} USDT</span>
+              </div>
 
-              <div class="meta-row">
-                <div class="meta">
-                  <div class="meta-label">💵 السعر</div>
-                  <div class="meta-value">{{ plan.price }} USDT</div>
+              <div class="benefits-list">
+                <div class="benefit-item">
+                  <i class="fas fa-check-circle"></i>
+                  <span>ربح يومي: <strong>{{ plan.daily }} USDT</strong></span>
                 </div>
-
-                <div class="meta">
-                  <div class="meta-label">💰 ربح يومي</div>
-                  <div class="meta-value">{{ plan.daily }} USDT</div>
+                <div class="benefit-item">
+                  <i class="fas fa-tasks"></i>
+                  <span>مهام يومية: {{ plan.tasks }}</span>
                 </div>
-
-                <div class="meta">
-                  <div class="meta-label">⭐ مهام يومية</div>
-                  <div class="meta-value">{{ plan.tasks }}</div>
+                <div class="benefit-item">
+                  <i class="fas fa-calendar-alt"></i>
+                  <span>المدة: 24 ساعة</span>
+                </div>
+                <div class="benefit-item total-earnings">
+                  <i class="fas fa-chart-line"></i>
+                  <span>الإجمالي السنوي: <strong>{{ (plan.daily * 365).toLocaleString() }} USDT</strong></span>
                 </div>
               </div>
 
               <div class="card-footer">
-                <div class="total">إجمالي: {{ plan.total }} USDT</div>
-
-                <div class="actions">
-                  <button
-                    class="btn-primary"
-                    v-if="!isActivePlan(plan)"
-                    @click="buyPlan(plan)"
-                    :disabled="processing"
-                  >
-                    اشترِ الآن — {{ plan.price }} USDT
-                  </button>
-
-                  <button class="btn-disabled" v-else disabled>مفعل الآن</button>
+                <div class="roi-badge" v-if="plan.level >= 5">
+                  <i class="fas fa-fire"></i>
+                  عائد استثنائي
                 </div>
+                
+                <button
+                  class="btn-buy"
+                  v-if="!isActivePlan(plan)"
+                  @click="buyPlan(plan)"
+                  :disabled="processing"
+                >
+                  <i class="fas fa-crown"></i>
+                  اشترِ الآن
+                </button>
+
+                <button class="btn-active" v-else disabled>
+                  <i class="fas fa-check-circle"></i>
+                  مفعل
+                </button>
               </div>
+            </div>
+
+            <!-- علامة مميزة للخطط النشطة -->
+            <div class="active-ribbon" v-if="userVip && userVip.level === plan.level">
+              نشط الآن
             </div>
           </div>
         </div>
 
-        <div class="notes">
-          <p>
-            ملاحظة: عند الشراء يُخصم السعر ثم يُضاف ربح يومي أولي (purchase bonus).
-            العدّ التنازلي **موحّد عالميًا** ويبدأ عند التوقيت النظامي اليومي المحدد (03:30 UTC).
-            حينما تنتهي دورة VIP ستُمنح المكافأة لجميع المستخدمين في نفس الثانية.
-          </p>
+        <!-- معلومات إضافية -->
+        <div class="info-panel">
+          <div class="info-item">
+            <i class="fas fa-clock"></i>
+            <div class="info-content">
+              <h4>توقيت المكافآت</h4>
+              <p>يتم توزيع الأرباح يومياً في الساعة 03:30 UTC (السادسة صباحاً بتوقيت مكة المكرمة)</p>
+            </div>
+          </div>
+          
+          <div class="info-item">
+            <i class="fas fa-shield-alt"></i>
+            <div class="info-content">
+              <h4>سياسة الاسترداد</h4>
+              <p>الاشتراك غير قابل للاسترداد. يتم احتساب الأرباح تلقائياً عند اكتمال الدورة.</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -116,19 +165,18 @@ export default {
       remainingMs: 0,
       intervalId: null,
 
-      // خطط VIP (يمكن تعديل القيم حسب متطلباتك)
       plans: [
-        { level: 1, name: "VIP 1", price: 12, tasks: 1, daily: 3, total: 1095, durationSeconds: 86400 },
-        { level: 2, name: "VIP 2", price: 52, tasks: 1, daily: 13, total: 4745, durationSeconds: 86400 },
-        { level: 3, name: "VIP 3", price: 100, tasks: 1, daily: 26, total: 9490, durationSeconds: 86400 },
-        { level: 4, name: "VIP 4", price: 300, tasks: 1, daily: 82, total: 29930, durationSeconds: 86400 },
-        { level: 5, name: "VIP 5", price: 500, tasks: 1, daily: 145, total: 52925, durationSeconds: 86400 },
-        { level: 6, name: "VIP 6", price: 1500, tasks: 1, daily: 479, total: 174835, durationSeconds: 86400 },
-        { level: 7, name: "VIP 7", price: 3000, tasks: 1, daily: 1078, total: 393470, durationSeconds: 86400 },
-        { level: 8, name: "VIP 8", price: 5000, tasks: 1, daily: 2000, total: 730000, durationSeconds: 86400 },
-        { level: 9, name: "VIP 9", price: 10000, tasks: 1, daily: 4546, total: 1659290, durationSeconds: 86400 },
-        { level: 10, name: "VIP 10", price: 30000, tasks: 1, daily: 17699, total: 6460135, durationSeconds: 86400 },
-        { level: 11, name: "VIP 11", price: 90000, tasks: 1, daily: 81818, total: 29863570, durationSeconds: 86400 },
+        { level: 1, name: "VIP 1", price: 12, tasks: 1, daily: 3, durationSeconds: 86400 },
+        { level: 2, name: "VIP 2", price: 52, tasks: 1, daily: 13, durationSeconds: 86400 },
+        { level: 3, name: "VIP 3", price: 100, tasks: 1, daily: 26, durationSeconds: 86400 },
+        { level: 4, name: "VIP 4", price: 300, tasks: 1, daily: 82, durationSeconds: 86400 },
+        { level: 5, name: "VIP 5", price: 500, tasks: 1, daily: 145, durationSeconds: 86400 },
+        { level: 6, name: "VIP 6", price: 1500, tasks: 1, daily: 479, durationSeconds: 86400 },
+        { level: 7, name: "VIP 7", price: 3000, tasks: 1, daily: 1078, durationSeconds: 86400 },
+        { level: 8, name: "VIP 8", price: 5000, tasks: 1, daily: 2000, durationSeconds: 86400 },
+        { level: 9, name: "VIP 9", price: 10000, tasks: 1, daily: 4546, durationSeconds: 86400 },
+        { level: 10, name: "VIP 10", price: 30000, tasks: 1, daily: 17699, durationSeconds: 86400 },
+        { level: 11, name: "VIP 11", price: 90000, tasks: 1, daily: 81818, durationSeconds: 86400 },
       ],
 
       globalCycleHourUTC: 3,
@@ -153,6 +201,7 @@ export default {
       if (!user) {
         this.loading = false;
         this.userVip = null;
+        this.$router.push("/login");
         return;
       }
       await this.init();
@@ -166,15 +215,6 @@ export default {
   methods: {
     isActivePlan(plan) {
       return this.userVip && this.userVip.level === plan.level;
-    },
-
-    copyText(text) {
-      try {
-        navigator.clipboard.writeText(text);
-        alert("تم النسخ");
-      } catch {
-        alert("فشل النسخ — انسخ يدويًا");
-      }
     },
 
     getNextGlobalCycleFromMs(msRef) {
@@ -199,37 +239,34 @@ export default {
 
         const vipDocRef = doc(db, "users", user.uid, "vip", "current");
         const vipSnap = await getDoc(vipDocRef);
-        if (!vipSnap.exists()) {
-          this.userVip = null;
-          this.loading = false;
-          return;
-        }
-
-        const data = vipSnap.data();
-        this.userVip = {
-          level: data.level || null,
-          price: data.price || 0,
-          daily: data.daily || 0,
-          vipStart: data.vipStart || null,
-          vipEnd: data.vipEnd || null,
-          durationSeconds: data.durationSeconds || 86400,
-          lastRewardAt: data.lastRewardAt || null,
-        };
-
-        await this.settleMissedCyclesIfAny(user.uid, vipDocRef);
-
-        const vipSnap2 = await getDoc(vipDocRef);
-        if (vipSnap2.exists()) {
-          const d2 = vipSnap2.data();
+        
+        if (vipSnap.exists()) {
+          const data = vipSnap.data();
           this.userVip = {
-            level: d2.level || null,
-            price: d2.price || 0,
-            daily: d2.daily || 0,
-            vipStart: d2.vipStart || null,
-            vipEnd: d2.vipEnd || null,
-            durationSeconds: d2.durationSeconds || 86400,
-            lastRewardAt: d2.lastRewardAt || null,
+            level: data.level || null,
+            price: data.price || 0,
+            daily: data.daily || 0,
+            vipStart: data.vipStart || null,
+            vipEnd: data.vipEnd || null,
+            durationSeconds: data.durationSeconds || 86400,
+            lastRewardAt: data.lastRewardAt || null,
           };
+
+          await this.settleMissedCyclesIfAny(user.uid, vipDocRef);
+
+          const vipSnap2 = await getDoc(vipDocRef);
+          if (vipSnap2.exists()) {
+            const d2 = vipSnap2.data();
+            this.userVip = {
+              level: d2.level || null,
+              price: d2.price || 0,
+              daily: d2.daily || 0,
+              vipStart: d2.vipStart || null,
+              vipEnd: d2.vipEnd || null,
+              durationSeconds: d2.durationSeconds || 86400,
+              lastRewardAt: d2.lastRewardAt || null,
+            };
+          }
         }
 
         this.startTimer();
@@ -350,7 +387,7 @@ export default {
 
     async buyPlan(plan) {
       const user = auth.currentUser;
-      if (!user) return alert("يرجى تسجيل الدخول أولًا.");
+      if (!user) return alert("يرجى تسجيل الدخول أولاً.");
       if (this.processing) return;
 
       this.processing = true;
@@ -407,10 +444,10 @@ export default {
         });
 
         await this.init();
-        alert("✔ تم شراء VIP بنجاح. أُضيف الربح الأولي إلى رصيدك.");
+        this.showSuccessMessage("✔ تم شراء VIP بنجاح! أُضيف الربح الأولي إلى رصيدك.");
       } catch (err) {
         console.error("buyPlan error:", err);
-        alert(err.message || "فشل شراء المستوى. تأكد من الرصيد وحاول لاحقًا.");
+        this.showErrorMessage(err.message || "فشل شراء المستوى. تأكد من الرصيد وحاول لاحقًا.");
       } finally {
         this.processing = false;
       }
@@ -425,10 +462,10 @@ export default {
         const vipDocRef = doc(db, "users", user.uid, "vip", "current");
         await setDoc(vipDocRef, { cancelledAt: serverTimestamp(), level: null }, { merge: true });
         await this.init();
-        alert("تم إلغاء حالة VIP محليًا. ملاحظة: لا توجد استرجاعات تلقائية.");
+        this.showSuccessMessage("تم إلغاء حالة VIP بنجاح.");
       } catch (e) {
         console.error("cancelVip", e);
-        alert("خطأ أثناء الإلغاء.");
+        this.showErrorMessage("خطأ أثناء الإلغاء.");
       } finally {
         this.processing = false;
       }
@@ -437,255 +474,510 @@ export default {
     goToDetails() {
       this.$router.push("/vip");
     },
+
+    showSuccessMessage(msg) {
+      // يمكنك استخدام مكتبة إشعارات أو alert بسيط
+      alert(msg);
+    },
+
+    showErrorMessage(msg) {
+      alert(msg);
+    },
   },
 };
 </script>
 
 <style scoped>
-/* Page layout */
+/* الخلفية الرئيسية - أسود فاخر */
 .vip-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #f3f8ff 0%, #ffffff 100%);
-  padding: 18px;
+  background: #0A0C10;
+  padding: 20px;
   direction: rtl;
-  color: #123;
-  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  color: #ffffff;
+  font-family: 'Cairo', sans-serif;
 }
+
 .container {
-  max-width: 920px;
+  max-width: 1200px;
   margin: 0 auto;
 }
-/* Title */
+
+/* العنوان الرئيسي */
 .page-title {
   text-align: center;
-  font-size: 26px;
+  font-size: 32px;
   font-weight: 800;
-  color: #0b5cff;
-  margin-bottom: 18px;
-  text-shadow: 0 6px 20px rgba(11,92,255,0.08);
-}
-/* Loading */
-.center {
+  margin-bottom: 30px;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 32px 0;
+  justify-content: center;
+  gap: 15px;
 }
-.spinner-lg {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  border: 6px solid rgba(0,0,0,0.06);
-  border-top-color: #0b5cff;
-  animation: spin 0.8s linear infinite;
+
+.title-glow {
+  font-size: 40px;
+  filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.5));
 }
-.loading-text {
-  color: #666;
-  font-weight: 600;
-}
-/* Current VIP card */
+
+/* ===== بطاقة VIP الحالية ===== */
 .current-vip {
+  background: linear-gradient(135deg, #11151C, #1A1F2A);
+  border-radius: 24px;
+  padding: 25px;
+  margin-bottom: 30px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(135deg, #fffaf6, #f6fbff);
-  border: 1px solid rgba(11,92,255,0.06);
-  padding: 14px;
-  border-radius: 12px;
-  margin-bottom: 18px;
-  box-shadow: 0 6px 18px rgba(11,92,255,0.06);
+  border: 2px solid #D4AF37;
+  box-shadow: 0 10px 30px rgba(212, 175, 55, 0.2);
+  position: relative;
+  overflow: hidden;
 }
+
+.current-vip::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
+  animation: rotate 20s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .current-left {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  position: relative;
+  z-index: 1;
 }
-.badge {
+
+.badge-gold {
   display: inline-block;
-  background: linear-gradient(90deg, #ffd27a, #ffb347);
-  color: #3a2a00;
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-weight: 800;
-  font-size: 13px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  background: linear-gradient(135deg, #D4AF37, #F6E27A);
+  color: #0A0C10;
+  padding: 8px 16px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 10px;
+  box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
 }
+
 .vip-name {
+  margin-bottom: 15px;
+}
+
+.vip-level-badge {
+  font-size: 28px;
   font-weight: 900;
-  font-size: 20px;
-  color: #222;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
-.vip-daily {
-  color: #0b5cff;
-  font-weight: 700;
+
+.vip-daily, .vip-remaining {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 16px;
 }
+
+.vip-daily i, .vip-remaining i {
+  color: #D4AF37;
+  width: 24px;
+}
+
+.vip-daily strong {
+  color: #D4AF37;
+  font-size: 18px;
+}
+
 .vip-remaining {
-  color: #d30b0b;
-  font-weight: 700;
+  color: #ff6b6b;
 }
+
 .current-right {
   display: flex;
-  gap: 10px;
-  align-items: center;
-}
-/* list */
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  margin-top: 14px;
-}
-/* card */
-.card {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  background: linear-gradient(180deg, #ffffff, #fbfdff);
-  border-radius: 12px;
-  padding: 12px;
-  border: 1px solid rgba(11,92,255,0.04);
-  transition: transform .16s ease, box-shadow .16s ease;
-  box-shadow: 0 6px 18px rgba(9,30,66,0.03);
-}
-.card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 18px 40px rgba(9,30,66,0.06);
-}
-.card.active {
-  outline: 3px solid rgba(11,92,255,0.08);
-}
-.card-left {
-  width: 110px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.icon-wrap {
+  gap: 12px;
   position: relative;
-  width: 86px;
-  height: 86px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  z-index: 1;
 }
-.icon-placeholder {
-  width: 86px;
-  height: 86px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 40px;
-  object-fit: contain;
-  border-radius: 12px;
-  background: linear-gradient(180deg, #fff, #f5fbff);
-  box-shadow: 0 8px 22px rgba(11,92,255,0.06);
+
+/* ===== شبكة بطاقات VIP ===== */
+.vip-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 25px;
+  margin-bottom: 30px;
 }
+
+.vip-card {
+  background: #11151C;
+  border-radius: 24px;
+  overflow: hidden;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.vip-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(212, 175, 55, 0.2);
+  border-color: #D4AF37;
+}
+
+.vip-card.active {
+  border: 2px solid #D4AF37;
+  box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+}
+
+.vip-card.premium {
+  background: linear-gradient(135deg, #11151C, #1A1F2A);
+}
+
+/* رأس البطاقة */
+.card-header {
+  padding: 25px 20px;
+  text-align: center;
+  position: relative;
+  background: linear-gradient(135deg, #1A1F2A, #11151C);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.level-icon {
+  font-size: 48px;
+  margin-bottom: 10px;
+}
+
+.level-number {
+  font-size: 24px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
 .level-badge {
   position: absolute;
-  bottom: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: linear-gradient(90deg, #ffd27a, #ffb347);
-  color: #3a2a00;
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-weight: 800;
+  top: 15px;
+  left: 15px;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A);
+  color: #0A0C10;
+  padding: 5px 12px;
+  border-radius: 50px;
   font-size: 12px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  font-weight: 700;
 }
+
+/* جسم البطاقة */
 .card-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  padding: 25px;
 }
-.card-title {
-  font-weight: 800;
-  font-size: 18px;
-  color: #123;
-}
-.meta-row {
-  display: flex;
-  gap: 12px;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-}
-.meta {
-  min-width: 120px;
-  background: rgba(13,86,255,0.03);
-  padding: 8px 10px;
-  border-radius: 8px;
+
+.price-tag {
   text-align: center;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #1A1F2A;
+  border-radius: 16px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
 }
-.meta-label {
-  font-size: 13px;
-  color: #666;
+
+.price-label {
+  display: block;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  margin-bottom: 5px;
 }
-.meta-value {
-  font-weight: 800;
-  color: #0b5cff;
-  margin-top: 4px;
+
+.price-value {
+  font-size: 32px;
+  font-weight: 900;
+  color: #D4AF37;
 }
+
+.benefits-list {
+  margin-bottom: 20px;
+}
+
+.benefit-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.benefit-item:last-child {
+  border-bottom: none;
+}
+
+.benefit-item i {
+  color: #D4AF37;
+  width: 20px;
+}
+
+.benefit-item.total-earnings {
+  background: rgba(212, 175, 55, 0.1);
+  padding: 12px;
+  border-radius: 12px;
+  margin-top: 10px;
+}
+
+.benefit-item.total-earnings strong {
+  color: #D4AF37;
+  font-size: 16px;
+}
+
+/* تذييل البطاقة */
 .card-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  margin-top: 4px;
+  margin-top: 20px;
 }
-.total {
-  color: #444;
-  font-weight: 700;
-}
-.actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-.btn-primary {
-  background: linear-gradient(90deg, #0066ff, #00c6ff);
-  color: white;
-  padding: 10px 14px;
-  border-radius: 10px;
-  border: none;
-  font-weight: 800;
-  cursor: pointer;
-}
-.btn-disabled {
-  background: #888;
-  color: white;
+
+.roi-badge {
+  background: linear-gradient(135deg, #D4AF37, #F6E27A);
+  color: #0A0C10;
   padding: 8px 12px;
-  border-radius: 10px;
-  font-weight: 700;
-}
-.btn-secondary {
-  background: white;
-  color: #0b5cff;
-  padding: 8px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(11,92,255,0.12);
-  cursor: pointer;
-}
-.btn-ghost {
-  background: rgba(11,92,255,0.06);
-  color: #0b5cff;
-  padding: 8px 12px;
-  border-radius: 10px;
-  border: none;
-  cursor: pointer;
-}
-.notes {
-  margin-top: 16px;
-  color: #666;
+  border-radius: 50px;
   font-size: 13px;
-  text-align: center;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
-@media (max-width: 680px) {
-  .card { flex-direction: row; gap: 10px; }
-  .meta-row { gap: 8px; }
-  .card-left { width: 86px; }
+
+.btn-buy {
+  background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
+  color: #0A0C10;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+
+.btn-buy:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(212, 175, 55, 0.4);
+}
+
+.btn-active {
+  background: rgba(212, 175, 55, 0.2);
+  color: #D4AF37;
+  border: 1px solid #D4AF37;
+  padding: 12px 25px;
+  border-radius: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: default;
+}
+
+/* شريط نشط */
+.active-ribbon {
+  position: absolute;
+  top: 20px;
+  right: -35px;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A);
+  color: #0A0C10;
+  padding: 8px 40px;
+  transform: rotate(45deg);
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
+}
+
+/* ===== أزرار ===== */
+.btn-gold {
+  background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
+  color: #0A0C10;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-gold:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(212, 175, 55, 0.4);
+}
+
+.btn-gold-outline {
+  background: transparent;
+  border: 2px solid #D4AF37;
+  color: #D4AF37;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-gold-outline:hover {
+  background: #D4AF37;
+  color: #0A0C10;
+}
+
+/* ===== لوحة المعلومات ===== */
+.info-panel {
+  background: #11151C;
+  border-radius: 24px;
+  padding: 25px;
+  margin-top: 30px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+.info-item i {
+  font-size: 24px;
+  color: #D4AF37;
+  background: rgba(212, 175, 55, 0.1);
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.info-content h4 {
+  color: #D4AF37;
+  margin-bottom: 5px;
+  font-size: 16px;
+}
+
+.info-content p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ===== حالات التحميل ===== */
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 60px 0;
+}
+
+.gold-spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(212, 175, 55, 0.1);
+  border-top: 4px solid #D4AF37;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  color: #D4AF37;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* ===== تحسينات للجوال ===== */
+@media (max-width: 768px) {
+  .vip-page {
+    padding: 15px;
+  }
+
+  .page-title {
+    font-size: 24px;
+    flex-wrap: wrap;
+  }
+
+  .current-vip {
+    flex-direction: column;
+    text-align: center;
+    gap: 20px;
+  }
+
+  .current-right {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .vip-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .info-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .btn-gold, .btn-gold-outline {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+}
+
+/* ===== تأثيرات إضافية ===== */
+.vip-card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.05) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.vip-card:hover::after {
+  opacity: 1;
+}
+
+/* تخصيص ألوان المستويات */
+.level-1 .level-icon { color: #CD7F32; } /* برونزي */
+.level-2 .level-icon { color: #C0C0C0; } /* فضي */
+.level-3 .level-icon { color: #FFD700; } /* ذهبي */
+.level-4 .level-icon,
+.level-5 .level-icon,
+.level-6 .level-icon,
+.level-7 .level-icon,
+.level-8 .level-icon,
+.level-9 .level-icon,
+.level-10 .level-icon,
+.level-11 .level-icon { color: #D4AF37; } /* ذهبي فاخر */
 </style>
