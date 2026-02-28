@@ -104,8 +104,53 @@
       <router-view />
     </div>
 
-    <!-- ⭐ شريط التنقل بدون وميض ⭐ -->
-    <BottomNav v-if="authLoaded && showBottomNav" />
+    <!-- ⭐ شريط التنقل - تم تعديله ليظهر فوق كل شيء مع مؤشرات النقر ⭐ -->
+    <div class="bottom-nav" v-if="authLoaded && showBottomNav">
+      <div 
+        class="nav-item" 
+        @click="navigateTo('/home')"
+        :class="{ active: isActive('/home') }"
+      >
+        <i class="fas fa-home"></i>
+        <span>الرئيسية</span>
+      </div>
+
+      <div 
+        class="nav-item" 
+        @click="navigateTo('/vip')"
+        :class="{ active: isActive('/vip') }"
+      >
+        <i class="fas fa-crown"></i>
+        <span>VIP</span>
+      </div>
+
+      <div 
+        class="nav-item" 
+        @click="navigateTo('/tasks')"
+        :class="{ active: isActive('/tasks') }"
+      >
+        <i class="fas fa-tasks"></i>
+        <span>المهام</span>
+      </div>
+
+      <div 
+        class="nav-item" 
+        @click="navigateTo('/team')"
+        :class="{ active: isActive('/team') }"
+      >
+        <i class="fas fa-users"></i>
+        <span>الفريق</span>
+      </div>
+
+      <div 
+        class="nav-item" 
+        @click="navigateTo('/profile')"
+        :class="{ active: isActive('/profile') }"
+      >
+        <i class="fas fa-user"></i>
+        <span>حسابي</span>
+      </div>
+    </div>
 
     <!-- إعلان Popup فاخر -->
     <transition name="fade">
@@ -178,11 +223,10 @@
 </template>
 
 <script>
-import BottomNav from "./components/BottomNav.vue";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 export default {
-  components: { BottomNav },
+  name: "App",
 
   data() {
     return {
@@ -280,6 +324,19 @@ export default {
 
     closeNewYearMessage() {
       this.showNewYearMessage = false;
+    },
+
+    // دالة التنقل بين الصفحات
+    navigateTo(path) {
+      console.log("Navigating to:", path);
+      if (this.$route.path !== path) {
+        this.$router.push(path);
+      }
+    },
+
+    // التحقق من الصفحة النشطة
+    isActive(path) {
+      return this.$route.path === path;
     }
   }
 };
@@ -316,7 +373,7 @@ body {
   position: relative;
   z-index: 1;
   min-height: 100vh;
-  padding-bottom: 70px; /* مساحة للشريط السفلي */
+  padding-bottom: 80px; /* مساحة للشريط السفلي */
 }
 
 /* اتجاه الصفحة */
@@ -324,10 +381,10 @@ body {
   direction: rtl;
 }
 
-/* ===== الأزرار العائمة - رفعها للأعلى ===== */
+/* ===== الأزرار العائمة ===== */
 .circle-btn {
   position: fixed;
-  bottom: 90px; /* زيادة المسافة من الأسفل */
+  bottom: 100px; /* زيادة المسافة من الأسفل */
   width: 45px;
   height: 45px;
   background: #11151C;
@@ -395,7 +452,7 @@ body {
 .bubble-chat-btn {
   position: fixed;
   right: 180px;
-  bottom: 90px; /* زيادة المسافة من الأسفل */
+  bottom: 100px; /* زيادة المسافة من الأسفل */
   width: 45px;
   height: 45px;
   background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
@@ -613,7 +670,7 @@ body {
 /* ===== قائمة اللغات ===== */
 .lang-menu {
   position: fixed;
-  bottom: 150px; /* زيادة المسافة من الأسفل */
+  bottom: 160px; /* زيادة المسافة من الأسفل */
   right: 15px;
   width: 220px;
   background: #11151C;
@@ -674,6 +731,65 @@ body {
   background: rgba(212, 175, 55, 0.2);
   border-radius: 20px;
   color: #D4AF37;
+}
+
+/* ===== شريط التنقل السفلي ===== */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 75px;
+  background: #11151C;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  border-top: 2px solid #D4AF37;
+  box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.5);
+  z-index: 9998; /* أقل من الأزرار العائمة */
+  direction: rtl;
+  pointer-events: auto; /* التأكد من أن الأزرار قابلة للنقر */
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 8px 12px;
+  border-radius: 12px;
+  flex: 1;
+  height: 100%;
+  pointer-events: auto; /* التأكد من أن الأزرار قابلة للنقر */
+}
+
+.nav-item i {
+  font-size: 22px;
+  margin-bottom: 4px;
+  transition: all 0.3s ease;
+}
+
+.nav-item span {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.nav-item:hover {
+  color: #D4AF37;
+  background: rgba(212, 175, 55, 0.1);
+}
+
+.nav-item.active {
+  color: #D4AF37;
+}
+
+.nav-item.active i {
+  transform: translateY(-2px);
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
 }
 
 /* ===== إعلان Popup فاخر ===== */
@@ -903,7 +1019,7 @@ body {
 @media (max-width: 768px) {
   .circle-btn,
   .bubble-chat-btn {
-    bottom: 80px; /* تعديل للهواتف */
+    bottom: 90px;
     width: 40px;
     height: 40px;
     font-size: 18px;
@@ -915,7 +1031,7 @@ body {
   .bubble-chat-btn { right: 160px; }
   
   .lang-menu {
-    bottom: 140px;
+    bottom: 150px;
     right: 10px;
     width: 200px;
   }
@@ -927,6 +1043,18 @@ body {
   .ad-box {
     width: 95%;
   }
+  
+  .bottom-nav {
+    height: 70px;
+  }
+  
+  .nav-item i {
+    font-size: 20px;
+  }
+  
+  .nav-item span {
+    font-size: 10px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -937,7 +1065,7 @@ body {
   
   .circle-btn,
   .bubble-chat-btn {
-    bottom: 75px; /* تعديل للهواتف الصغيرة */
+    bottom: 85px;
     width: 38px;
     height: 38px;
     font-size: 16px;
@@ -945,6 +1073,18 @@ body {
   
   .bubble-chat-icon {
     font-size: 20px;
+  }
+  
+  .bottom-nav {
+    height: 65px;
+  }
+  
+  .nav-item i {
+    font-size: 18px;
+  }
+  
+  .nav-item span {
+    font-size: 9px;
   }
 }
 </style>
