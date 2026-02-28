@@ -95,8 +95,8 @@
             <p><strong>البريد:</strong> {{ r.email || r.userEmail || '—' }}</p>
             <p><strong>المبلغ:</strong> {{ r.amount }} USDT</p>
             <p><strong>الشبكة:</strong> {{ r.network || '—' }}</p>
+            <p><strong>TxID:</strong> {{ r.txid || '—' }}</p>
             <p><strong>حالة:</strong> {{ r.status || 'pending' }}</p>
-            <p v-if="r.txid"><strong>TxID:</strong> {{ r.txid }}</p>
             <p class="muted">تم الإنشاء: {{ formatDate(r.createdAt) }}</p>
             <div class="card-actions">
               <button class="btn green" type="button" @click.stop="openApproveModal(r, 'recharge')" :disabled="processingId === r.id || r.status === 'approved'">موافقة</button>
@@ -109,6 +109,7 @@
       </div>
     </div>
 
+    <!-- باقي الكود كما هو بدون تغيير -->
     <!-- المستخدمين -->
     <div v-if="activeTab === 'users'" class="panel">
       <div class="panel-header">
@@ -488,6 +489,7 @@ export default {
         list = list.filter(
           (r) =>
             (r.email || "").toLowerCase().includes(f) ||
+            (r.userEmail || "").toLowerCase().includes(f) ||
             (r.network || "").toLowerCase().includes(f) ||
             (String(r.amount || "") || "").includes(f) ||
             (r.status || "").toLowerCase().includes(f)
