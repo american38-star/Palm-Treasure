@@ -22,6 +22,34 @@
         </div>
       </div>
 
+      <!-- حالة VIP والمتطلبات -->
+      <div v-if="userVip" class="vip-status-box">
+        <div class="vip-badge">
+          <i class="fas fa-crown"></i>
+          مستوى VIP {{ userVip.level }}
+        </div>
+        <div class="withdraw-limit">
+          <i class="fas fa-arrow-up"></i>
+          حد السحب: {{ getWithdrawLimit }} USDT
+        </div>
+        <div class="withdraw-day">
+          <i class="fas fa-calendar-alt"></i>
+          يوم السحب: {{ getWithdrawDay }}
+        </div>
+        <div class="current-balance">
+          <i class="fas fa-coins"></i>
+          رصيدك الحالي: {{ balance }} USDT
+        </div>
+        <div class="progress-container">
+          <div class="progress-bar">
+            <div class="progress-fill" :style="{ width: progressPercentage + '%' }"></div>
+          </div>
+          <div class="progress-text">
+            {{ balance }} / {{ getWithdrawLimit }} USDT
+          </div>
+        </div>
+      </div>
+
       <!-- مبلغ السحب -->
       <div class="input-group">
         <label>
@@ -38,10 +66,6 @@
             step="0.01"
           />
           <span class="input-currency">USDT</span>
-        </div>
-        <div class="input-hint" v-if="amount > balance">
-          <i class="fas fa-exclamation-triangle"></i>
-          المبلغ أكبر من الرصيد المتاح
         </div>
       </div>
 
@@ -74,10 +98,6 @@
           placeholder="أدخل عنوان محفظتك USDT" 
           class="gold-input"
         />
-        <div class="input-hint" v-if="wallet && wallet.length < 20">
-          <i class="fas fa-info-circle"></i>
-          تأكد من صحة العنوان (يفضل النسخ واللصق)
-        </div>
       </div>
 
       <!-- ملخص السحب -->
@@ -110,17 +130,23 @@
         </div>
       </div>
 
+      <!-- رسائل الخطأ/التحذير -->
+      <div v-if="withdrawError" class="message error">
+        <i class="fas fa-exclamation-circle"></i>
+        {{ withdrawError }}
+      </div>
+
       <!-- زر السحب -->
       <button 
         class="gold-button" 
         @click="submitWithdraw"
-        :disabled="!canWithdraw"
+        :disabled="!canWithdraw || isProcessing"
       >
         <i class="fas fa-paper-plane"></i>
         {{ isProcessing ? 'جاري المعالجة...' : 'سحب الآن' }}
       </button>
 
-      <!-- رسائل الخطأ/النجاح -->
+      <!-- رسائل النجاح -->
       <transition name="fade">
         <div v-if="message" class="message" :class="messageType">
           <i :class="messageType === 'error' ? 'fas fa-exclamation-circle' : 'fas fa-check-circle'"></i>
@@ -155,6 +181,8 @@ export default {
       isProcessing: false,
       message: "",
       messageType: "info",
+      userVip: null,
+      withdrawError: "",
     };
   },
 
@@ -166,13 +194,62 @@ export default {
         this.selectedNetwork &&
         this.wallet &&
         this.wallet.length >= 20 &&
-        !this.isProcessing
+        !this.isProcessing &&
+        this.checkWithdrawConditions()
       );
     },
+
+    getWithdrawLimit() {
+      if (!this.userVip) return 0;
+      const limits = {
+        1: 5,
+        2: 25,
+        3: 50,
+        4: 160,
+        5: 530,
+        6: 820,
+        7: 1120,
+        8: 2400,
+        9: 5300,
+        10: 11300,
+        11: 26000,
+        12: 56000,
+        13: 120000,
+        14: 260000
+      };
+      return limits[this.userVip.level] || 0;
+    },
+
+    getWithdrawDay() {
+      if (!this.userVip) return "";
+      const days = {
+        1: "السبت",
+        2: "السبت",
+        3: "الأحد",
+        4: "الأحد",
+        5: "الاثنين",
+        6: "الاثنين",
+        7: "الثلاثاء",
+        8: "الثلاثاء",
+        9: "الأربعاء",
+        10: "الأربعاء",
+        11: "الخميس",
+        12: "الخميس",
+        13: "الجمعة",
+        14: "الجمعة"
+      };
+      return days[this.userVip.level] || "";
+    },
+
+    progressPercentage() {
+      if (!this.userVip || this.getWithdrawLimit === 0) return 0;
+      return Math.min((this.balance / this.getWithdrawLimit) * 100, 100);
+    }
   },
 
   async created() {
     await this.loadBalance();
+    await this.loadUserVip();
   },
 
   methods: {
@@ -191,6 +268,61 @@ export default {
       }
     },
 
+    async loadUserVip() {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const vipDocRef = doc(db, "users", user.uid, "vip", "current");
+      const vipSnap = await getDoc(vipDocRef);
+      
+      if (vipSnap.exists()) {
+        const data = vipSnap.data();
+        this.userVip = {
+          level: data.level || null,
+          daily: data.daily || 0,
+        };
+      }
+    },
+
+    checkWithdrawConditions() {
+      this.withdrawError = "";
+
+      if (!this.userVip) {
+        this.withdrawError = "يجب أن يكون لديك اشتراك VIP للسحب";
+        return false;
+      }
+
+      // التحقق من المبلغ
+      if (this.balance < this.getWithdrawLimit) {
+        this.withdrawError = `يجب أن يصل رصيدك إلى ${this.getWithdrawLimit} USDT على الأقل للسحب`;
+        return false;
+      }
+
+      // التحقق من اليوم
+      const today = new Date().toLocaleDateString("ar-SA", { weekday: "long" });
+      const allowedDay = this.getWithdrawDay;
+      
+      const dayMapping = {
+        "السبت": "Saturday",
+        "الأحد": "Sunday",
+        "الاثنين": "Monday",
+        "الثلاثاء": "Tuesday",
+        "الأربعاء": "Wednesday",
+        "الخميس": "Thursday",
+        "الجمعة": "Friday"
+      };
+
+      const todayEnglish = new Date().toLocaleDateString("en-US", { weekday: "long" });
+      const allowedDayEnglish = dayMapping[allowedDay];
+
+      if (todayEnglish !== allowedDayEnglish) {
+        this.withdrawError = `السحب متاح فقط يوم ${allowedDay}`;
+        return false;
+      }
+
+      return true;
+    },
+
     async submitWithdraw() {
       this.message = "";
 
@@ -201,6 +333,10 @@ export default {
 
       if (this.amount > this.balance) {
         this.showMessage("المبلغ أكبر من الرصيد المتاح", "error");
+        return;
+      }
+
+      if (!this.checkWithdrawConditions()) {
         return;
       }
 
@@ -243,12 +379,12 @@ export default {
             throw new Error("المبلغ أكبر من رصيدك!");
           }
 
-          // 1️⃣ خصم الرصيد
+          // خصم الرصيد
           tx.update(userRef, {
             balance: currentBalance - amountNum
           });
 
-          // 2️⃣ إضافة طلب السحب
+          // إضافة طلب السحب
           const newReq = doc(withdrawRef);
           tx.set(newReq, {
             userId: user.uid,
@@ -258,11 +394,13 @@ export default {
             network: this.selectedNetwork,
             status: "pending",
             createdAt: serverTimestamp(),
-            oldBalance: currentBalance
+            oldBalance: currentBalance,
+            vipLevel: this.userVip?.level || null,
+            withdrawDay: this.getWithdrawDay
           });
         });
 
-        // 3️⃣ حفظ المعاملة في transactions
+        // حفظ المعاملة في transactions
         await addDoc(collection(db, "transactions"), {
           userId: user.uid,
           email: user.email,
@@ -274,6 +412,7 @@ export default {
           reason: "",
           adminMessage: "",
           createdAt: serverTimestamp(),
+          vipLevel: this.userVip?.level || null
         });
 
         this.showMessage("✅ تم إرسال طلب السحب بنجاح", "success");
@@ -453,6 +592,73 @@ export default {
   margin-right: 5px;
 }
 
+/* صندوق حالة VIP */
+.vip-status-box {
+  background: linear-gradient(135deg, #1A1F2A, #11151C);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 25px;
+  border: 1px solid #D4AF37;
+  box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
+}
+
+.vip-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A);
+  color: #0A0C10;
+  padding: 8px 16px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 15px;
+  box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
+}
+
+.vip-badge i {
+  margin-left: 5px;
+}
+
+.withdraw-limit, .withdraw-day, .current-balance {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+}
+
+.withdraw-limit i, .withdraw-day i, .current-balance i {
+  color: #D4AF37;
+  width: 20px;
+}
+
+.progress-container {
+  margin-top: 15px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 5px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #D4AF37, #F6E27A);
+  border-radius: 10px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  text-align: center;
+  color: #D4AF37;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 /* مجموعات الإدخال */
 .input-group {
   margin-bottom: 20px;
@@ -547,20 +753,6 @@ export default {
   font-size: 14px;
 }
 
-/* تلميحات الحقول */
-.input-hint {
-  margin-top: 8px;
-  color: #ef4444;
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.input-hint i {
-  font-size: 13px;
-}
-
 /* صندوق الملخص */
 .summary-box {
   background: #1A1F2A;
@@ -638,6 +830,35 @@ export default {
   color: rgba(255, 255, 255, 0.5);
 }
 
+/* الرسائل */
+.message {
+  margin-top: 15px;
+  padding: 15px 20px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid;
+}
+
+.message.success {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+  border-color: #22c55e;
+}
+
+.message.error {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-color: #ef4444;
+}
+
+.message i {
+  font-size: 18px;
+}
+
 /* الزر الرئيسي */
 .gold-button {
   width: 100%;
@@ -668,35 +889,6 @@ export default {
   opacity: 0.5;
   cursor: not-allowed;
   filter: grayscale(20%);
-}
-
-/* الرسائل */
-.message {
-  margin-top: 15px;
-  padding: 15px 20px;
-  border-radius: 16px;
-  font-size: 14px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border: 1px solid;
-}
-
-.message.success {
-  background: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
-  border-color: #22c55e;
-}
-
-.message.error {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border-color: #ef4444;
-}
-
-.message i {
-  font-size: 18px;
 }
 
 /* حركة الرسائل */
