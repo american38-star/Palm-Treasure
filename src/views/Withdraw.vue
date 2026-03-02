@@ -28,18 +28,19 @@
           <i class="fas fa-crown"></i>
           مستوى VIP {{ userVip.level }}
         </div>
-        <div class="withdraw-limit">
-          <i class="fas fa-arrow-up"></i>
-          حد السحب: {{ getWithdrawLimit }} USDT
+        <div class="withdraw-condition">
+          <i class="fas fa-check-circle" :class="{ 'condition-met': balance >= getWithdrawLimit }"></i>
+          <span>الحد الأدنى للسحب: <strong>{{ getWithdrawLimit }} USDT</strong></span>
         </div>
-        <div class="withdraw-day">
-          <i class="fas fa-calendar-alt"></i>
-          يوم السحب: {{ getWithdrawDay }}
+        <div class="withdraw-condition">
+          <i class="fas fa-check-circle" :class="{ 'condition-met': isAllowedDay }"></i>
+          <span>يوم السحب: <strong>{{ getWithdrawDay }}</strong></span>
         </div>
-        <div class="current-balance">
-          <i class="fas fa-coins"></i>
-          رصيدك الحالي: {{ balance }} USDT
+        <div class="withdraw-condition">
+          <i class="fas fa-check-circle" :class="{ 'condition-met': balance >= getWithdrawLimit && isAllowedDay }"></i>
+          <span>الحد الأقصى للسحب: <strong>{{ getWithdrawLimit }} USDT</strong> (مرة واحدة فقط)</span>
         </div>
+        
         <div class="progress-container">
           <div class="progress-bar">
             <div class="progress-fill" :style="{ width: progressPercentage + '%' }"></div>
@@ -48,6 +49,11 @@
             {{ balance }} / {{ getWithdrawLimit }} USDT
           </div>
         </div>
+      </div>
+
+      <div v-else class="vip-status-box error">
+        <i class="fas fa-exclamation-triangle"></i>
+        يجب أن يكون لديك اشتراك VIP للسحب
       </div>
 
       <!-- مبلغ السحب -->
@@ -165,7 +171,10 @@ import {
   runTransaction,
   collection,
   serverTimestamp,
-  addDoc
+  addDoc,
+  query,
+  where,
+  getDocs
 } from "firebase/firestore";
 
 export default {
@@ -190,7 +199,6 @@ export default {
     canWithdraw() {
       return (
         this.amount > 0 &&
-        this.amount <= this.balance &&
         this.selectedNetwork &&
         this.wallet &&
         this.wallet.length >= 20 &&
@@ -241,6 +249,29 @@ export default {
       return days[this.userVip.level] || "";
     },
 
+    isAllowedDay() {
+      if (!this.userVip) return false;
+      
+      const dayMapping = {
+        "السبت": "Saturday",
+        "الأحد": "Sunday",
+        "الاثنين": "Monday",
+        "الثلاثاء": "Tuesday",
+        "الأربعاء": "Wednesday",
+        "الخميس": "Thursday",
+        "الجمعة": "Friday"
+      };
+
+      const todayEnglish = new Date().toLocaleDateString("en-US", { weekday: "long" });
+      const allowedDayEnglish = dayMapping[this.getWithdrawDay];
+      
+      return todayEnglish === allowedDayEnglish;
+    },
+
+    hasReachedLimit() {
+      return this.balance >= this.getWithdrawLimit;
+    },
+
     progressPercentage() {
       if (!this.userVip || this.getWithdrawLimit === 0) return 0;
       return Math.min((this.balance / this.getWithdrawLimit) * 100, 100);
@@ -284,6 +315,27 @@ export default {
       }
     },
 
+    async checkExistingWithdrawToday() {
+      const user = auth.currentUser;
+      if (!user) return false;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const withdrawQuery = query(
+        collection(db, "withdraw_requests"),
+        where("userId", "==", user.uid),
+        where("createdAt", ">=", today),
+        where("createdAt", "<", tomorrow)
+      );
+
+      const snapshot = await getDocs(withdrawQuery);
+      return !snapshot.empty;
+    },
+
     checkWithdrawConditions() {
       this.withdrawError = "";
 
@@ -292,31 +344,21 @@ export default {
         return false;
       }
 
-      // التحقق من المبلغ
+      // التحقق من الحد الأدنى للرصيد
       if (this.balance < this.getWithdrawLimit) {
-        this.withdrawError = `يجب أن يصل رصيدك إلى ${this.getWithdrawLimit} USDT على الأقل للسحب`;
+        this.withdrawError = `⚠️ يجب أن يصل رصيدك إلى ${this.getWithdrawLimit} USDT على الأقل للسحب`;
         return false;
       }
 
-      // التحقق من اليوم
-      const today = new Date().toLocaleDateString("ar-SA", { weekday: "long" });
-      const allowedDay = this.getWithdrawDay;
-      
-      const dayMapping = {
-        "السبت": "Saturday",
-        "الأحد": "Sunday",
-        "الاثنين": "Monday",
-        "الثلاثاء": "Tuesday",
-        "الأربعاء": "Wednesday",
-        "الخميس": "Thursday",
-        "الجمعة": "Friday"
-      };
+      // التحقق من أن المبلغ المسحوب يساوي الحد الأدنى بالضبط
+      if (Number(this.amount) !== this.getWithdrawLimit) {
+        this.withdrawError = `⚠️ مبلغ السحب يجب أن يكون بالضبط ${this.getWithdrawLimit} USDT (لا يمكن سحب أقل أو أكثر)`;
+        return false;
+      }
 
-      const todayEnglish = new Date().toLocaleDateString("en-US", { weekday: "long" });
-      const allowedDayEnglish = dayMapping[allowedDay];
-
-      if (todayEnglish !== allowedDayEnglish) {
-        this.withdrawError = `السحب متاح فقط يوم ${allowedDay}`;
+      // التحقق من اليوم المسموح به
+      if (!this.isAllowedDay) {
+        this.withdrawError = `⚠️ السحب متاح فقط يوم ${this.getWithdrawDay}`;
         return false;
       }
 
@@ -326,16 +368,7 @@ export default {
     async submitWithdraw() {
       this.message = "";
 
-      if (!this.amount || this.amount <= 0) {
-        this.showMessage("الرجاء إدخال مبلغ صالح", "error");
-        return;
-      }
-
-      if (this.amount > this.balance) {
-        this.showMessage("المبلغ أكبر من الرصيد المتاح", "error");
-        return;
-      }
-
+      // التحقق من الشروط الأساسية
       if (!this.checkWithdrawConditions()) {
         return;
       }
@@ -353,6 +386,13 @@ export default {
       const user = auth.currentUser;
       if (!user) {
         this.showMessage("الرجاء تسجيل الدخول من جديد", "error");
+        return;
+      }
+
+      // التحقق من عدم وجود سحب مسبق اليوم
+      const hasWithdrawToday = await this.checkExistingWithdrawToday();
+      if (hasWithdrawToday) {
+        this.showMessage("⚠️ لقد قمت بالسحب مسبقاً اليوم. يمكنك السحب مرة واحدة فقط في اليوم المحدد", "error");
         return;
       }
 
@@ -375,8 +415,14 @@ export default {
           const currentBalance = Number(userData.balance || 0);
           const amountNum = Number(this.amount);
 
+          // التحقق من الرصيد مرة أخرى
           if (amountNum > currentBalance) {
             throw new Error("المبلغ أكبر من رصيدك!");
+          }
+
+          // التحقق من أن المبلغ يساوي الحد الأدنى بالضبط
+          if (amountNum !== this.getWithdrawLimit) {
+            throw new Error(`مبلغ السحب يجب أن يكون بالضبط ${this.getWithdrawLimit} USDT`);
           }
 
           // خصم الرصيد
@@ -396,7 +442,8 @@ export default {
             createdAt: serverTimestamp(),
             oldBalance: currentBalance,
             vipLevel: this.userVip?.level || null,
-            withdrawDay: this.getWithdrawDay
+            withdrawDay: this.getWithdrawDay,
+            withdrawLimit: this.getWithdrawLimit
           });
         });
 
@@ -602,6 +649,17 @@ export default {
   box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
 }
 
+.vip-status-box.error {
+  border-color: #ef4444;
+  text-align: center;
+  color: #ef4444;
+}
+
+.vip-status-box.error i {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
 .vip-badge {
   display: inline-block;
   background: linear-gradient(135deg, #D4AF37, #F6E27A);
@@ -618,7 +676,7 @@ export default {
   margin-left: 5px;
 }
 
-.withdraw-limit, .withdraw-day, .current-balance {
+.withdraw-condition {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -627,9 +685,17 @@ export default {
   font-size: 14px;
 }
 
-.withdraw-limit i, .withdraw-day i, .current-balance i {
+.withdraw-condition i {
+  color: #666;
+  font-size: 16px;
+}
+
+.withdraw-condition i.condition-met {
+  color: #22c55e;
+}
+
+.withdraw-condition strong {
   color: #D4AF37;
-  width: 20px;
 }
 
 .progress-container {
