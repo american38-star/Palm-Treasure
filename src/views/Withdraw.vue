@@ -121,6 +121,10 @@
           <span>العنوان:</span>
           <span class="summary-value address">{{ wallet.substring(0, 15) }}...</span>
         </div>
+        <div class="summary-item">
+          <span>مستوى VIP:</span>
+          <span class="summary-value">{{ userVip ? userVip.level : 'لا يوجد' }}</span>
+        </div>
         <div class="summary-item total">
           <span>سيتم خصم:</span>
           <span class="summary-value">{{ Number(amount).toFixed(2) }} USDT</span>
@@ -146,7 +150,7 @@
       <button 
         class="gold-button" 
         @click="submitWithdraw"
-        :disabled="!canWithdraw || isProcessing"
+        :disabled="!canWithdraw"
       >
         <i class="fas fa-paper-plane"></i>
         {{ isProcessing ? 'جاري المعالجة...' : 'سحب الآن' }}
@@ -197,14 +201,14 @@ export default {
 
   computed: {
     canWithdraw() {
-      return (
-        this.amount > 0 &&
-        this.selectedNetwork &&
-        this.wallet &&
-        this.wallet.length >= 20 &&
-        !this.isProcessing &&
-        this.checkWithdrawConditions()
-      );
+      if (!this.userVip) return false;
+      if (!this.selectedNetwork) return false;
+      if (!this.wallet || this.wallet.length < 20) return false;
+      if (!this.amount || this.amount <= 0) return false;
+      if (this.isProcessing) return false;
+      if (!this.checkWithdrawConditions()) return false;
+      
+      return true;
     },
 
     getWithdrawLimit() {
@@ -266,10 +270,6 @@ export default {
       const allowedDayEnglish = dayMapping[this.getWithdrawDay];
       
       return todayEnglish === allowedDayEnglish;
-    },
-
-    hasReachedLimit() {
-      return this.balance >= this.getWithdrawLimit;
     },
 
     progressPercentage() {
@@ -344,19 +344,16 @@ export default {
         return false;
       }
 
-      // التحقق من الحد الأدنى للرصيد
       if (this.balance < this.getWithdrawLimit) {
         this.withdrawError = `⚠️ يجب أن يصل رصيدك إلى ${this.getWithdrawLimit} USDT على الأقل للسحب`;
         return false;
       }
 
-      // التحقق من أن المبلغ المسحوب يساوي الحد الأدنى بالضبط
       if (Number(this.amount) !== this.getWithdrawLimit) {
-        this.withdrawError = `⚠️ مبلغ السحب يجب أن يكون بالضبط ${this.getWithdrawLimit} USDT (لا يمكن سحب أقل أو أكثر)`;
+        this.withdrawError = `⚠️ مبلغ السحب يجب أن يكون بالضبط ${this.getWithdrawLimit} USDT`;
         return false;
       }
 
-      // التحقق من اليوم المسموح به
       if (!this.isAllowedDay) {
         this.withdrawError = `⚠️ السحب متاح فقط يوم ${this.getWithdrawDay}`;
         return false;
@@ -367,8 +364,8 @@ export default {
 
     async submitWithdraw() {
       this.message = "";
+      this.withdrawError = "";
 
-      // التحقق من الشروط الأساسية
       if (!this.checkWithdrawConditions()) {
         return;
       }
@@ -389,7 +386,6 @@ export default {
         return;
       }
 
-      // التحقق من عدم وجود سحب مسبق اليوم
       const hasWithdrawToday = await this.checkExistingWithdrawToday();
       if (hasWithdrawToday) {
         this.showMessage("⚠️ لقد قمت بالسحب مسبقاً اليوم. يمكنك السحب مرة واحدة فقط في اليوم المحدد", "error");
@@ -415,22 +411,18 @@ export default {
           const currentBalance = Number(userData.balance || 0);
           const amountNum = Number(this.amount);
 
-          // التحقق من الرصيد مرة أخرى
           if (amountNum > currentBalance) {
             throw new Error("المبلغ أكبر من رصيدك!");
           }
 
-          // التحقق من أن المبلغ يساوي الحد الأدنى بالضبط
           if (amountNum !== this.getWithdrawLimit) {
             throw new Error(`مبلغ السحب يجب أن يكون بالضبط ${this.getWithdrawLimit} USDT`);
           }
 
-          // خصم الرصيد
           tx.update(userRef, {
             balance: currentBalance - amountNum
           });
 
-          // إضافة طلب السحب
           const newReq = doc(withdrawRef);
           tx.set(newReq, {
             userId: user.uid,
@@ -447,7 +439,6 @@ export default {
           });
         });
 
-        // حفظ المعاملة في transactions
         await addDoc(collection(db, "transactions"), {
           userId: user.uid,
           email: user.email,
@@ -464,10 +455,8 @@ export default {
 
         this.showMessage("✅ تم إرسال طلب السحب بنجاح", "success");
         
-        // تحديث الرصيد
         this.balance -= Number(this.amount);
         
-        // تفريغ الحقول بعد 2 ثانية
         setTimeout(() => {
           this.amount = "";
           this.wallet = "";
