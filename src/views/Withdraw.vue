@@ -17,7 +17,7 @@
         </div>
         <div class="balance-info">
           <span class="balance-label">رصيدك الحالي</span>
-          <span class="balance-value">{{ balance }} USDT</span>
+          <span class="balance-value">{{ balance }} <span class="balance-currency">USDT</span></span>
         </div>
       </div>
 
@@ -26,6 +26,10 @@
         <div class="vip-badge">
           <i class="fas fa-crown"></i>
           مستوى VIP {{ userVipLevel }}
+        </div>
+        <div class="user-email">
+          <i class="fas fa-envelope"></i>
+          {{ userEmail }}
         </div>
         <div class="withdraw-condition">
           <i class="fas fa-check-circle" :class="{ 'condition-met': balance >= minWithdrawAmount }"></i>
@@ -43,10 +47,12 @@
       </div>
 
       <!-- رسائل الخطأ والنجاح -->
-      <div v-if="message" class="message" :class="messageType">
-        <i :class="messageType === 'error' ? 'fas fa-exclamation-circle' : 'fas fa-check-circle'"></i>
-        {{ message }}
-      </div>
+      <transition name="fade">
+        <div v-if="message" class="message" :class="messageType">
+          <i :class="messageType === 'error' ? 'fas fa-exclamation-circle' : 'fas fa-check-circle'"></i>
+          {{ message }}
+        </div>
+      </transition>
 
       <!-- مبلغ السحب -->
       <div class="input-group">
@@ -57,12 +63,14 @@
         <div class="amount-input-wrapper">
           <input 
             type="number" 
-            v-model="amount" 
+            v-model.number="amount" 
             placeholder="0.00" 
             class="gold-input"
+            @input="validateAmount"
           />
           <span class="input-currency">USDT</span>
         </div>
+        <span v-if="amountError" class="input-error">{{ amountError }}</span>
       </div>
 
       <!-- الشبكة -->
@@ -72,14 +80,16 @@
           الشبكة
         </label>
         <div class="select-wrapper">
-          <select v-model="network" class="gold-select">
+          <select v-model="network" class="gold-select" @change="validateNetwork">
             <option value="">اختر الشبكة</option>
             <option value="TRC20">TRC20</option>
             <option value="ERC20">ERC20</option>
             <option value="BEP20">BEP20</option>
+            <option value="SOL">SOL</option>
           </select>
           <i class="fas fa-chevron-down select-arrow"></i>
         </div>
+        <span v-if="networkError" class="input-error">{{ networkError }}</span>
       </div>
 
       <!-- عنوان المحفظة -->
@@ -93,27 +103,80 @@
           v-model="wallet" 
           placeholder="أدخل عنوان محفظتك USDT" 
           class="gold-input"
+          @input="validateWallet"
         />
+        <span v-if="walletError" class="input-error">{{ walletError }}</span>
+      </div>
+
+      <!-- ملخص الطلب -->
+      <div v-if="showSummary" class="summary-box">
+        <h3>📋 ملخص طلب السحب</h3>
+        
+        <div class="summary-item">
+          <span>البريد الإلكتروني:</span>
+          <span class="summary-value">{{ userEmail }}</span>
+        </div>
+        
+        <div class="summary-item">
+          <span>مستوى VIP:</span>
+          <span class="summary-value">{{ userVipLevel || 'لا يوجد' }}</span>
+        </div>
+        
+        <div class="summary-item">
+          <span>المبلغ:</span>
+          <span class="summary-value">{{ Number(amount).toFixed(2) }} USDT</span>
+        </div>
+        
+        <div class="summary-item">
+          <span>الشبكة:</span>
+          <span class="summary-value">{{ network }}</span>
+        </div>
+        
+        <div class="summary-item">
+          <span>عنوان المحفظة:</span>
+          <span class="summary-value address">{{ wallet.substring(0, 10) }}...{{ wallet.substring(wallet.length - 10) }}</span>
+        </div>
+        
+        <div class="summary-item">
+          <span>يوم السحب:</span>
+          <span class="summary-value">{{ withdrawDay }}</span>
+        </div>
+        
+        <div class="summary-item">
+          <span>الحد الأدنى:</span>
+          <span class="summary-value">{{ minWithdrawAmount }} USDT</span>
+        </div>
+        
+        <div class="summary-item total">
+          <span>سيتم خصم:</span>
+          <span class="summary-value">{{ Number(amount).toFixed(2) }} USDT</span>
+        </div>
+        
+        <div class="summary-item">
+          <span>الرصيد بعد السحب:</span>
+          <span class="summary-value">{{ (balance - Number(amount)).toFixed(2) }} USDT</span>
+        </div>
+      </div>
+
+      <!-- تحذيرات -->
+      <div class="warning-box">
+        <i class="fas fa-shield-alt"></i>
+        <div class="warning-text">
+          <p>يرجى التأكد من صحة المعلومات قبل الإرسال</p>
+          <p class="small">سيتم خصم المبلغ من رصيدك فوراً عند تقديم الطلب</p>
+        </div>
       </div>
 
       <!-- زر السحب -->
       <button 
         class="gold-button" 
         @click="submitWithdraw"
-        :disabled="isLoading"
+        :disabled="isLoading || !isFormValid"
       >
         <i class="fas fa-paper-plane" v-if="!isLoading"></i>
         <i class="fas fa-spinner fa-spin" v-else></i>
-        {{ isLoading ? 'جاري المعالجة...' : 'سحب الآن' }}
+        {{ isLoading ? 'جاري المعالجة...' : 'تأكيد السحب' }}
       </button>
-
-      <!-- معلومات إضافية -->
-      <div class="warning-box">
-        <i class="fas fa-shield-alt"></i>
-        <div class="warning-text">
-          <p>سيتم خصم المبلغ من رصيدك فوراً</p>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -135,12 +198,20 @@ export default {
       message: "",
       messageType: "info",
       userVipLevel: null,
+      userEmail: "",
       minWithdrawAmount: 5,
+      
+      // أخطاء الحقول
+      amountError: "",
+      networkError: "",
+      walletError: "",
+      
       vipLimits: {
         1: 5, 2: 25, 3: 50, 4: 160, 5: 530,
         6: 820, 7: 1120, 8: 2400, 9: 5300, 10: 11300,
         11: 26000, 12: 56000, 13: 120000, 14: 260000
       },
+      
       withdrawDays: {
         1: "السبت", 2: "السبت", 3: "الأحد", 4: "الأحد",
         5: "الاثنين", 6: "الاثنين", 7: "الثلاثاء", 8: "الثلاثاء",
@@ -172,6 +243,42 @@ export default {
       const allowedDay = this.withdrawDays[this.userVipLevel];
       
       return today === dayMap[allowedDay];
+    },
+
+    isFormValid() {
+      return (
+        this.amount && 
+        !this.amountError &&
+        this.network && 
+        !this.networkError &&
+        this.wallet && 
+        !this.walletError &&
+        this.userVipLevel &&
+        this.isAllowedDay &&
+        Number(this.amount) === this.minWithdrawAmount &&
+        this.balance >= this.minWithdrawAmount
+      );
+    },
+
+    showSummary() {
+      return this.amount && this.network && this.wallet && this.userVipLevel;
+    }
+  },
+
+  watch: {
+    amount() {
+      this.validateAmount();
+    },
+    network() {
+      this.validateNetwork();
+    },
+    wallet() {
+      this.validateWallet();
+    },
+    userVipLevel() {
+      if (this.userVipLevel) {
+        this.minWithdrawAmount = this.vipLimits[this.userVipLevel] || 5;
+      }
     }
   },
 
@@ -188,6 +295,10 @@ export default {
       }
 
       try {
+        // حفظ البريد الإلكتروني
+        this.userEmail = user.email || "لا يوجد بريد";
+        
+        // تحميل رصيد المستخدم
         const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);
         
@@ -195,12 +306,12 @@ export default {
           this.balance = userSnap.data().balance || 0;
         }
 
+        // تحميل مستوى VIP
         const vipRef = doc(db, "users", user.uid, "vip", "current");
         const vipSnap = await getDoc(vipRef);
         
         if (vipSnap.exists()) {
           this.userVipLevel = vipSnap.data().level;
-          this.minWithdrawAmount = this.vipLimits[this.userVipLevel] || 5;
         } else {
           this.showMessage("لا يوجد اشتراك VIP نشط", "error");
         }
@@ -208,6 +319,55 @@ export default {
         console.error("خطأ:", error);
         this.showMessage("حدث خطأ في تحميل البيانات", "error");
       }
+    },
+
+    validateAmount() {
+      if (!this.amount) {
+        this.amountError = "الرجاء إدخال المبلغ";
+        return false;
+      }
+      
+      if (this.amount <= 0) {
+        this.amountError = "المبلغ يجب أن يكون أكبر من صفر";
+        return false;
+      }
+      
+      if (Number(this.amount) !== this.minWithdrawAmount) {
+        this.amountError = `مبلغ السحب يجب أن يكون بالضبط ${this.minWithdrawAmount} USDT`;
+        return false;
+      }
+      
+      if (this.amount > this.balance) {
+        this.amountError = "المبلغ أكبر من رصيدك";
+        return false;
+      }
+      
+      this.amountError = "";
+      return true;
+    },
+
+    validateNetwork() {
+      if (!this.network) {
+        this.networkError = "الرجاء اختيار الشبكة";
+        return false;
+      }
+      this.networkError = "";
+      return true;
+    },
+
+    validateWallet() {
+      if (!this.wallet) {
+        this.walletError = "الرجاء إدخال عنوان المحفظة";
+        return false;
+      }
+      
+      if (this.wallet.length < 20) {
+        this.walletError = "عنوان المحفظة غير صحيح (يجب أن يكون 20 حرف على الأقل)";
+        return false;
+      }
+      
+      this.walletError = "";
+      return true;
     },
 
     showMessage(msg, type) {
@@ -219,69 +379,22 @@ export default {
     },
 
     async submitWithdraw() {
-      // منع النقر المتكرر
-      if (this.isLoading) return;
+      if (this.isLoading || !this.isFormValid) return;
       
-      // إخفاء الرسائل السابقة
       this.message = "";
 
-      // التحقق من وجود مستخدم
       const user = auth.currentUser;
       if (!user) {
         this.showMessage("الرجاء تسجيل الدخول مرة أخرى", "error");
         return;
       }
 
-      // التحقق من VIP
-      if (!this.userVipLevel) {
-        this.showMessage("يجب أن يكون لديك اشتراك VIP للسحب", "error");
-        return;
-      }
-
-      // التحقق من اليوم
-      if (!this.isAllowedDay) {
-        this.showMessage(`السحب متاح فقط يوم ${this.withdrawDay}`, "error");
-        return;
-      }
-
-      // التحقق من المبلغ
-      if (!this.amount || this.amount <= 0) {
-        this.showMessage("الرجاء إدخال مبلغ صحيح", "error");
-        return;
-      }
-
-      // التحقق من تطابق المبلغ مع الحد الأدنى
-      if (Number(this.amount) !== this.minWithdrawAmount) {
-        this.showMessage(`مبلغ السحب يجب أن يكون بالضبط ${this.minWithdrawAmount} USDT`, "error");
-        return;
-      }
-
-      // التحقق من الرصيد
-      if (this.balance < this.minWithdrawAmount) {
-        this.showMessage(`رصيدك غير كاف. تحتاج إلى ${this.minWithdrawAmount} USDT`, "error");
-        return;
-      }
-
-      // التحقق من الشبكة
-      if (!this.network) {
-        this.showMessage("الرجاء اختيار الشبكة", "error");
-        return;
-      }
-
-      // التحقق من عنوان المحفظة
-      if (!this.wallet || this.wallet.length < 20) {
-        this.showMessage("الرجاء إدخال عنوان محفظة صحيح", "error");
-        return;
-      }
-
-      // بدء عملية السحب
       this.isLoading = true;
 
       try {
         const userRef = doc(db, "users", user.uid);
         const withdrawAmount = Number(this.amount);
 
-        // تنفيذ المعاملة
         await runTransaction(db, async (transaction) => {
           const userDoc = await transaction.get(userRef);
           
@@ -291,7 +404,6 @@ export default {
 
           const userData = userDoc.data();
           
-          // التحقق النهائي
           if (userData.balance < withdrawAmount) {
             throw new Error("الرصيد غير كاف");
           }
@@ -300,41 +412,38 @@ export default {
             throw new Error("حسابك محظور من السحب");
           }
 
-          // تحديث الرصيد
           transaction.update(userRef, {
             balance: userData.balance - withdrawAmount
           });
 
-          // إنشاء طلب سحب
           const withdrawRef = doc(collection(db, "withdraw_requests"));
           transaction.set(withdrawRef, {
             userId: user.uid,
-            userEmail: user.email,
+            userEmail: this.userEmail,
             amount: withdrawAmount,
             network: this.network,
             wallet: this.wallet,
             status: "pending",
             createdAt: serverTimestamp(),
-            vipLevel: this.userVipLevel
+            vipLevel: this.userVipLevel,
+            withdrawDay: this.withdrawDay
           });
         });
 
-        // تسجيل المعاملة
         await addDoc(collection(db, "transactions"), {
           userId: user.uid,
-          userEmail: user.email,
+          userEmail: this.userEmail,
           type: "withdraw",
           amount: withdrawAmount,
           network: this.network,
           wallet: this.wallet,
           status: "pending",
-          createdAt: serverTimestamp()
+          createdAt: serverTimestamp(),
+          vipLevel: this.userVipLevel
         });
 
-        // تحديث الرصيد
         this.balance -= withdrawAmount;
         
-        // عرض رسالة النجاح
         this.showMessage("✅ تم إرسال طلب السحب بنجاح", "success");
         
         // تفريغ الحقول
@@ -373,6 +482,25 @@ export default {
   padding: 30px;
   border: 1px solid rgba(212, 175, 55, 0.2);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.03) 0%, transparent 70%);
+  animation: rotate 30s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .card-header {
@@ -418,6 +546,7 @@ export default {
   align-items: center;
   gap: 15px;
   border: 1px solid rgba(212, 175, 55, 0.2);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 .balance-icon {
@@ -453,12 +582,19 @@ export default {
   color: #D4AF37;
 }
 
+.balance-currency {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-right: 5px;
+}
+
 .vip-status-box {
   background: linear-gradient(135deg, #1A1F2A, #11151C);
   border-radius: 20px;
   padding: 20px;
   margin-bottom: 25px;
   border: 1px solid #D4AF37;
+  box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
 }
 
 .vip-status-box.error {
@@ -480,11 +616,30 @@ export default {
   border-radius: 50px;
   font-weight: 700;
   font-size: 14px;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
+  box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
 }
 
 .vip-badge i {
   margin-left: 5px;
+}
+
+.user-email {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #D4AF37;
+  font-size: 14px;
+  margin-bottom: 15px;
+  padding: 8px;
+  background: rgba(212, 175, 55, 0.05);
+  border-radius: 10px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.user-email i {
+  color: #D4AF37;
+  font-size: 14px;
 }
 
 .withdraw-condition {
@@ -523,6 +678,10 @@ export default {
   margin-bottom: 8px;
 }
 
+.input-group label i {
+  font-size: 16px;
+}
+
 .gold-input {
   width: 100%;
   padding: 14px 20px;
@@ -538,6 +697,18 @@ export default {
   outline: none;
   border-color: #D4AF37;
   box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+}
+
+.gold-input.error-input {
+  border-color: #ef4444;
+}
+
+.input-error {
+  display: block;
+  color: #ef4444;
+  font-size: 12px;
+  margin-top: 5px;
+  margin-right: 5px;
 }
 
 .amount-input-wrapper {
@@ -579,6 +750,10 @@ export default {
   border-color: #D4AF37;
 }
 
+.gold-select.error-input {
+  border-color: #ef4444;
+}
+
 .select-arrow {
   position: absolute;
   left: 20px;
@@ -587,6 +762,100 @@ export default {
   color: #D4AF37;
   pointer-events: none;
   font-size: 14px;
+}
+
+/* ملخص الطلب */
+.summary-box {
+  background: linear-gradient(135deg, #1A1F2A, #11151C);
+  border-radius: 20px;
+  padding: 20px;
+  margin: 20px 0;
+  border: 2px solid #D4AF37;
+  box-shadow: 0 5px 20px rgba(212, 175, 55, 0.2);
+}
+
+.summary-box h3 {
+  color: #D4AF37;
+  font-size: 18px;
+  margin-bottom: 15px;
+  text-align: center;
+  position: relative;
+  padding-bottom: 10px;
+}
+
+.summary-box h3::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 2px;
+  background: #D4AF37;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.summary-item:last-child {
+  border-bottom: none;
+}
+
+.summary-item.total {
+  margin-top: 10px;
+  padding-top: 15px;
+  border-top: 2px solid #D4AF37;
+  font-weight: 700;
+  color: #D4AF37;
+  font-size: 16px;
+}
+
+.summary-value {
+  font-weight: 600;
+  color: #D4AF37;
+}
+
+.summary-value.address {
+  font-family: monospace;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(212, 175, 55, 0.1);
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+.warning-box {
+  background: rgba(212, 175, 55, 0.05);
+  border-right: 4px solid #D4AF37;
+  padding: 15px;
+  border-radius: 12px;
+  margin: 20px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.warning-box i {
+  color: #D4AF37;
+  font-size: 20px;
+  margin-top: 2px;
+}
+
+.warning-text p {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  margin: 0 0 5px 0;
+}
+
+.warning-text .small {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .gold-button {
@@ -616,6 +885,7 @@ export default {
 .gold-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  filter: grayscale(20%);
 }
 
 .message {
@@ -642,26 +912,13 @@ export default {
   border-color: #ef4444;
 }
 
-.warning-box {
-  background: rgba(212, 175, 55, 0.05);
-  border-right: 4px solid #D4AF37;
-  padding: 15px;
-  border-radius: 12px;
-  margin: 20px 0;
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.fade-enter-active, .fade-leave-active {
+  transition: all 0.3s ease;
 }
 
-.warning-box i {
-  color: #D4AF37;
-  font-size: 20px;
-}
-
-.warning-text p {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 14px;
-  margin: 0;
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
 .fa-spinner {
@@ -682,8 +939,20 @@ export default {
     font-size: 24px;
   }
   
+  .title i {
+    font-size: 28px;
+  }
+  
   .balance-value {
     font-size: 24px;
+  }
+  
+  .summary-box {
+    padding: 15px;
+  }
+  
+  .summary-item {
+    font-size: 13px;
   }
 }
 </style>
