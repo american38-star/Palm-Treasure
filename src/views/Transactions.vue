@@ -1,110 +1,201 @@
 <template>
-  <div class="transactions-wrapper">
-    <h2 class="title">المعاملات</h2>
+  <div class="transactions-page">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="title">
+          <i class="fas fa-history"></i>
+          سجل المعاملات
+          <span class="title-glow">USDT</span>
+        </h2>
+        <div class="header-glow"></div>
+        <p class="sub">جميع عمليات السحب والإيداع الخاصة بك</p>
+      </div>
 
-    <div v-if="loading" class="loading">جاري التحميل...</div>
+      <div v-if="loading" class="loading-box">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>جاري تحميل المعاملات...</p>
+      </div>
 
-    <div v-else-if="indexError" class="error-box">
-      <h3>⚠️ تحتاج إلى إنشاء فهرس في Firebase</h3>
-      <p>لإصلاح المشكلة الدائمة:</p>
-      <ol>
-        <li>اذهب لـ <a href="https://console.firebase.google.com/" target="_blank">Firebase Console</a></li>
-        <li>اختر مشروعك: <strong>american-54cbd</strong></li>
-        <li>اذهب لـ Firestore Database → Indexes</li>
-        <li>أنشئ فهرس لـ collection "transactions" مع الحقول: userId (Ascending), createdAt (Descending)</li>
-        <li>انتظر دقيقتين ثم أعد تحميل هذه الصفحة</li>
-      </ol>
-      <button @click="loadTransactionsWithoutIndex" class="retry-btn">
-        🔄 محاولة التحميل بدون فهرس (مؤقت)
-      </button>
-    </div>
-
-    <div v-else>
-      <div v-if="transactions.length === 0" class="empty">
-        <p>لا توجد معاملات</p>
-        <p class="uid-info">UID الحالي: {{ currentUserId }}</p>
-        <!-- إخفاء الزر بناءً على قيمة showTestButton -->
-        <button v-if="showTestButton" @click="createTestTransaction" class="test-btn">
-          ➕ إنشاء معاملة تجريبية
+      <div v-else-if="indexError" class="error-box">
+        <i class="fas fa-exclamation-triangle"></i>
+        <h3>تحتاج إلى إنشاء فهرس في Firebase</h3>
+        <p>لإصلاح المشكلة:</p>
+        <ol>
+          <li>اذهب لـ <a href="https://console.firebase.google.com/" target="_blank">Firebase Console</a></li>
+          <li>اختر مشروعك: <strong>american-54cbd</strong></li>
+          <li>اذهب لـ Firestore Database → Indexes</li>
+          <li>أنشئ فهرس لـ collection "transactions" مع الحقول: userId (Ascending), createdAt (Descending)</li>
+        </ol>
+        <button @click="loadTransactionsWithoutIndex" class="retry-btn">
+          <i class="fas fa-sync-alt"></i>
+          محاولة بدون فهرس
         </button>
       </div>
 
-      <div v-else>
-        <p class="count-info">عدد المعاملات: {{ transactions.length }}</p>
-        
+      <div v-else-if="transactions.length === 0" class="empty-box">
+        <i class="fas fa-inbox"></i>
+        <p>لا توجد معاملات حتى الآن</p>
+        <p class="uid-info">معرف المستخدم: {{ currentUserId }}</p>
+      </div>
+
+      <div v-else class="transactions-list">
+        <div class="stats-box">
+          <div class="stat-item">
+            <span class="stat-label">إجمالي المعاملات</span>
+            <span class="stat-value">{{ transactions.length }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">المبلغ الإجمالي</span>
+            <span class="stat-value">{{ totalAmount }} USDT</span>
+          </div>
+        </div>
+
         <div
           v-for="tx in transactions"
           :key="tx.id"
-          class="tx-card"
+          class="transaction-card"
+          :class="tx.type"
         >
-          <!-- 🔥 رسالة موافقة الأدمن - الجديدة 🔥 -->
-          <div v-if="tx.adminAction === 'approved' && tx.userMessage" class="approval-box">
-            <div class="approval-icon">✅</div>
-            <div class="approval-text">{{ tx.userMessage }}</div>
-            <div v-if="tx.approvedAt" class="approval-date">
-              تمت الموافقة في: {{ formatDate(tx.approvedAt) }}
+          <!-- حالة الموافقة -->
+          <div v-if="tx.adminAction === 'approved'" class="approval-badge">
+            <i class="fas fa-check-circle"></i>
+            <span>تمت الموافقة</span>
+          </div>
+          
+          <div v-if="tx.adminAction === 'rejected'" class="rejection-badge">
+            <i class="fas fa-times-circle"></i>
+            <span>تم الرفض</span>
+          </div>
+
+          <!-- رأس البطاقة -->
+          <div class="card-header-mini">
+            <div class="type-badge" :class="tx.type">
+              <i :class="getTypeIcon(tx.type)"></i>
+              {{ getTypeLabel(tx.type) }}
+            </div>
+            <div class="status-badge" :class="tx.status">
+              {{ getStatusLabel(tx.status) }}
             </div>
           </div>
 
-          <!-- رسالة رفض الأدمن -->
-          <div v-if="tx.adminAction === 'rejected' && tx.reason" class="reject-box">
-            <div class="reject-icon">❌</div>
-            <div class="reject-text">
-              <strong>تم الرفض:</strong> {{ tx.reason }}
+          <!-- تفاصيل المعاملة -->
+          <div class="details-grid">
+            <div class="detail-item">
+              <span class="detail-label">
+                <i class="fas fa-hashtag"></i>
+                رقم المعاملة
+              </span>
+              <span class="detail-value code">{{ tx.transactionId || tx.id.substring(0, 12) }}</span>
+            </div>
+
+            <div class="detail-item">
+              <span class="detail-label">
+                <i class="fas fa-coins"></i>
+                المبلغ
+              </span>
+              <span class="detail-value amount">{{ tx.amount }} {{ tx.currency || 'USDT' }}</span>
+            </div>
+
+            <div class="detail-item">
+              <span class="detail-label">
+                <i class="fas fa-calendar"></i>
+                التاريخ والوقت
+              </span>
+              <span class="detail-value">{{ formatDate(tx.createdAt) }}</span>
+            </div>
+
+            <!-- حقول السحب -->
+            <template v-if="tx.type === 'withdraw' || tx.type === 'withdrawal'">
+              <div class="detail-item">
+                <span class="detail-label">
+                  <i class="fas fa-network-wired"></i>
+                  الشبكة
+                </span>
+                <span class="detail-value network">{{ tx.network || 'غير محدد' }}</span>
+              </div>
+
+              <div class="detail-item full-width">
+                <span class="detail-label">
+                  <i class="fas fa-wallet"></i>
+                  عنوان المحفظة
+                </span>
+                <span class="detail-value address">{{ tx.wallet || tx.walletAddress || 'غير متوفر' }}</span>
+              </div>
+            </template>
+
+            <!-- حقول الإيداع -->
+            <template v-if="tx.type === 'deposit' || tx.type === 'recharge'">
+              <div class="detail-item">
+                <span class="detail-label">
+                  <i class="fas fa-credit-card"></i>
+                  طريقة الدفع
+                </span>
+                <span class="detail-value">{{ tx.paymentMethod || 'غير محدد' }}</span>
+              </div>
+
+              <div v-if="tx.transactionHash" class="detail-item full-width">
+                <span class="detail-label">
+                  <i class="fas fa-link"></i>
+                  رابط المعاملة
+                </span>
+                <span class="detail-value hash">{{ tx.transactionHash }}</span>
+              </div>
+            </template>
+
+            <!-- معلومات VIP -->
+            <div v-if="tx.vipLevel" class="detail-item">
+              <span class="detail-label">
+                <i class="fas fa-crown"></i>
+                مستوى VIP
+              </span>
+              <span class="detail-value vip">{{ tx.vipLevel }}</span>
+            </div>
+
+            <!-- البريد الإلكتروني -->
+            <div class="detail-item full-width">
+              <span class="detail-label">
+                <i class="fas fa-envelope"></i>
+                البريد الإلكتروني
+              </span>
+              <span class="detail-value email">{{ tx.email || tx.userEmail || 'غير متوفر' }}</span>
+            </div>
+
+            <!-- معرف المستخدم -->
+            <div class="detail-item full-width">
+              <span class="detail-label">
+                <i class="fas fa-id-card"></i>
+                معرف المستخدم
+              </span>
+              <span class="detail-value user-id">{{ tx.userId }}</span>
             </div>
           </div>
 
-          <div class="row">
-            <span class="label">المعرف</span>
-            <span class="value">{{ tx.id.substring(0, 8) }}...</span>
+          <!-- رسالة الإدارة -->
+          <div v-if="tx.adminMessage" class="admin-message" :class="{ 'approved': tx.adminAction === 'approved', 'rejected': tx.adminAction === 'rejected' }">
+            <i :class="tx.adminAction === 'approved' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'"></i>
+            <div>
+              <strong>{{ tx.adminAction === 'approved' ? 'رسالة الموافقة' : 'سبب الرفض' }}:</strong>
+              <p>{{ tx.adminMessage }}</p>
+              <span v-if="tx.approvedAt" class="message-date">{{ formatDate(tx.approvedAt) }}</span>
+            </div>
           </div>
 
-          <div class="row">
-            <span class="label">النوع</span>
-            <span class="value">{{ typeLabel(tx.type) }}</span>
+          <!-- رسالة للمستخدم -->
+          <div v-if="tx.userMessage" class="user-message">
+            <i class="fas fa-bell"></i>
+            <div>
+              <strong>رسالة:</strong>
+              <p>{{ tx.userMessage }}</p>
+            </div>
           </div>
 
-          <div class="row">
-            <span class="label">المبلغ</span>
-            <span class="value">{{ tx.amount }} {{ tx.currency || 'USDT' }}</span>
-          </div>
-
-          <div class="row">
-            <span class="label">الحالة</span>
-            <span :class="['status', tx.status]">
-              {{ statusLabel(tx.status) }}
-            </span>
-          </div>
-
-          <div class="row">
-            <span class="label">التاريخ</span>
-            <span class="value">{{ formatDate(tx.createdAt) }}</span>
-          </div>
-
-          <div v-if="tx.userId" class="row">
-            <span class="label">User ID</span>
-            <span class="value uid">{{ tx.userId.substring(0, 10) }}...</span>
-          </div>
-
-          <!-- 🔥 معلومات إضافية 🔥 -->
-          <div v-if="tx.email" class="row">
-            <span class="label">البريد</span>
-            <span class="value email">{{ tx.email }}</span>
-          </div>
-
-          <div v-if="tx.transactionId" class="row">
-            <span class="label">كود المعاملة</span>
-            <span class="value code">{{ tx.transactionId }}</span>
-          </div>
-
-          <div v-if="tx.adminId" class="row">
-            <span class="label">الأدمن</span>
-            <span class="value admin">ID: {{ tx.adminId }}</span>
-          </div>
-
-          <div v-if="tx.adminMessage && tx.adminMessage !== ''" class="admin-box">
-            <strong>رسالة الإدارة:</strong>
-            <div>{{ tx.adminMessage }}</div>
+          <!-- ملاحظات -->
+          <div v-if="tx.reason && tx.reason !== tx.adminMessage" class="reason-box">
+            <i class="fas fa-comment"></i>
+            <div>
+              <strong>ملاحظات:</strong>
+              <p>{{ tx.reason }}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -119,9 +210,7 @@ import {
   query,
   where,
   orderBy,
-  getDocs,
-  addDoc,
-  serverTimestamp
+  getDocs
 } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 
@@ -134,15 +223,18 @@ export default {
       transactions: [],
       indexError: false,
       currentUserId: "",
-      useIndex: true,
-      showTestButton: false // إخفاء زر الاختبار
+      useIndex: true
     };
+  },
+
+  computed: {
+    totalAmount() {
+      return this.transactions.reduce((sum, tx) => sum + (tx.amount || 0), 0).toFixed(2);
+    }
   },
 
   created() {
     this.loadTransactions();
-    // 🔥 الاستماع للتغييرات في الوقت الحقيقي 🔥
-    this.setupRealtimeListener();
   },
 
   methods: {
@@ -150,15 +242,12 @@ export default {
       onAuthStateChanged(auth, async (user) => {
         if (!user) {
           this.loading = false;
-          console.log("❌ لا يوجد مستخدم مسجل دخول");
           return;
         }
 
         this.currentUserId = user.uid;
-        console.log("🔍 جاري تحميل معاملات المستخدم:", user.uid);
 
         try {
-          // المحاولة الأولى: مع الفهرس (إذا كان موجوداً)
           if (this.useIndex) {
             try {
               const q = query(
@@ -173,87 +262,44 @@ export default {
                 ...doc.data()
               }));
               
-              console.log(`✅ تم تحميل ${this.transactions.length} معاملة باستخدام الفهرس`);
-              this.checkForApprovals(); // 🔥 تفقد الموافقات
               this.loading = false;
               return;
               
             } catch (indexError) {
-              console.log("⚠️ خطأ في الفهرس، جرب الطريقة البديلة:", indexError.message);
               this.indexError = true;
               this.useIndex = false;
-              // استمر للطريقة البديلة
             }
           }
 
-          // الطريقة البديلة: بدون orderBy
-          try {
-            const q = query(
-              collection(db, "transactions"),
-              where("userId", "==", user.uid)
-            );
-            
-            const snapshot = await getDocs(q);
-            let transactions = snapshot.docs.map(doc => ({
-              id: doc.id,
-              ...doc.data()
-            }));
-            
-            // ترتيب يدوي
-            transactions.sort((a, b) => {
-              const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
-              const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
-              return dateB - dateA;
-            });
-            
-            this.transactions = transactions;
-            console.log(`✅ تم تحميل ${transactions.length} معاملة بدون فهرس`);
-            this.checkForApprovals(); // 🔥 تفقد الموافقات
-            
-          } catch (error) {
-            console.error("❌ خطأ في الطريقة البديلة:", error);
-            this.transactions = [];
-          }
+          // طريقة بدون فهرس
+          const q = query(
+            collection(db, "transactions"),
+            where("userId", "==", user.uid)
+          );
           
-        } catch (err) {
-          console.error("❌ خطأ عام في تحميل المعاملات:", err);
-          this.transactions = [];
+          const snapshot = await getDocs(q);
+          let transactions = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          
+          // ترتيب يدوي
+          transactions.sort((a, b) => {
+            const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+            const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+            return dateB - dateA;
+          });
+          
+          this.transactions = transactions;
+          
+        } catch (error) {
+          console.error("خطأ في تحميل المعاملات:", error);
         }
 
         this.loading = false;
       });
     },
 
-    // 🔥 دالة للاستماع للتغييرات في الوقت الحقيقي 🔥
-    setupRealtimeListener() {
-      onAuthStateChanged(auth, async (user) => {
-        if (!user) return;
-        
-        // هذا يتطلب إضافة onSnapshot
-        // يمكنك تفعيله لاحقاً إذا أردت تحديث تلقائي
-        console.log("👂 الاستماع للتحديثات في الوقت الحقيقي...");
-      });
-    },
-
-    // 🔥 دالة للتحقق من المعاملات التي تمت الموافقة عليها 🔥
-    checkForApprovals() {
-      const approvedTransactions = this.transactions.filter(tx => 
-        tx.adminAction === 'approved' || tx.userMessage?.includes('موافقة')
-      );
-      
-      if (approvedTransactions.length > 0) {
-        console.log(`✅ تم العثور على ${approvedTransactions.length} معاملة موافق عليها`);
-        
-        // يمكن إضافة إشعار للمستخدم هنا
-        approvedTransactions.forEach(tx => {
-          if (tx.userMessage) {
-            console.log(`📩 رسالة للمستخدم: ${tx.userMessage}`);
-          }
-        });
-      }
-    },
-
-    // دالة للتحميل بدون فهرس
     async loadTransactionsWithoutIndex() {
       this.loading = true;
       this.indexError = false;
@@ -261,70 +307,36 @@ export default {
       await this.loadTransactions();
     },
 
-    // دالة لإنشاء معاملة تجريبية (معدلة مع الحقول الجديدة)
-    async createTestTransaction() {
-      try {
-        const user = auth.currentUser;
-        if (!user) {
-          alert("يجب تسجيل الدخول أولاً");
-          return;
-        }
-
-        // 🔥 بيانات المعاملة الجديدة مع الحقول الكاملة 🔥
-        const transactionData = {
-          transactionId: "TEST" + Date.now(), // 🔥 جديد
-          userId: user.uid,
-          email: user.email, // 🔥 جديد
-          type: "withdrawal",
-          amount: Math.floor(Math.random() * 500) + 100,
-          currency: "USDT", // 🔥 جديد
-          status: "pending",
-          adminId: "", // 🔥 جديد
-          adminMessage: "",
-          adminAction: "", // 🔥 جديد - سيتم تعبئته عند الموافقة
-          userMessage: "", // 🔥 جديد - سيتم تعبئته عند الموافقة
-          reason: "",
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(), // 🔥 جديد
-          approvedAt: null // 🔥 جديد
-        };
-
-        console.log("📝 جاري إنشاء معاملة تجريبية:", transactionData);
-
-        const docRef = await addDoc(collection(db, "transactions"), transactionData);
-        
-        console.log("✅ تم إنشاء معاملة جديدة:", docRef.id);
-        alert(`تم إنشاء معاملة تجريبية بنجاح!\nالمبلغ: ${transactionData.amount} ${transactionData.currency}`);
-        
-        // إعادة تحميل القائمة
-        this.loading = true;
-        await this.loadTransactions();
-        
-      } catch (error) {
-        console.error("❌ خطأ في إنشاء المعاملة:", error);
-        alert("خطأ: " + error.message);
-      }
+    getTypeIcon(type) {
+      const icons = {
+        withdraw: 'fas fa-arrow-up',
+        withdrawal: 'fas fa-arrow-up',
+        deposit: 'fas fa-arrow-down',
+        recharge: 'fas fa-arrow-down',
+        vip: 'fas fa-crown'
+      };
+      return icons[type] || 'fas fa-exchange-alt';
     },
 
-    typeLabel(type) {
-      const types = {
-        recharge: "تعبئة رصيد",
-        withdraw: "سحب رصيد",
-        withdrawal: "سحب رصيد", // 🔥 إضافة withdrawal
-        deposit: "إيداع",
-        vip: "VIP"
+    getTypeLabel(type) {
+      const labels = {
+        withdraw: 'سحب',
+        withdrawal: 'سحب',
+        deposit: 'إيداع',
+        recharge: 'تعبئة رصيد',
+        vip: 'اشتراك VIP'
       };
-      return types[type] || type;
+      return labels[type] || type;
     },
 
-    statusLabel(status) {
-      const statuses = {
-        pending: "قيد الانتظار",
-        approved: "موافق",
-        rejected: "مرفوض",
-        completed: "مكتمل"
+    getStatusLabel(status) {
+      const labels = {
+        pending: 'قيد الانتظار',
+        approved: 'تمت الموافقة',
+        rejected: 'مرفوض',
+        completed: 'مكتمل'
       };
-      return statuses[status] || status;
+      return labels[status] || status;
     },
 
     formatDate(ts) {
@@ -342,248 +354,510 @@ export default {
         
         return date.toLocaleString("ar-EG", {
           year: 'numeric',
-          month: 'long',
+          month: 'numeric',
           day: 'numeric',
           hour: '2-digit',
-          minute: '2-digit'
+          minute: '2-digit',
+          second: '2-digit'
         });
       } catch (error) {
-        console.error("خطأ في تنسيق التاريخ:", error, ts);
         return "تاريخ غير صالح";
       }
-    },
-  },
+    }
+  }
 };
 </script>
 
 <style scoped>
-.transactions-wrapper {
-  padding: 16px;
+.transactions-page {
   min-height: 100vh;
+  background: #0A0C10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
   direction: rtl;
-  background: linear-gradient(#0d6efd, #6bb4ff);
+  font-family: 'Cairo', sans-serif;
+}
+
+.card {
+  background: #11151C;
+  width: 100%;
+  max-width: 800px;
+  border-radius: 30px;
+  padding: 30px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.03) 0%, transparent 70%);
+  animation: rotate 30s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.card-header {
+  position: relative;
+  margin-bottom: 30px;
+  text-align: center;
 }
 
 .title {
-  text-align: center;
-  color: white;
-  margin-bottom: 16px;
-  font-size: 24px;
+  font-size: 28px;
+  font-weight: 800;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
+  margin-bottom: 8px;
 }
 
-.loading {
+.title i {
+  color: #D4AF37;
+  font-size: 32px;
+}
+
+.title-glow {
+  background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 900;
+}
+
+.header-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
+  filter: blur(30px);
+  z-index: 0;
+}
+
+.sub {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  position: relative;
+  z-index: 1;
+}
+
+/* صناديق الحالات */
+.loading-box, .error-box, .empty-box {
+  background: linear-gradient(135deg, #1A1F2A, #11151C);
+  border-radius: 20px;
+  padding: 40px;
   text-align: center;
-  color: white;
-  margin-top: 40px;
-  font-size: 18px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  color: #ffffff;
+}
+
+.loading-box i {
+  font-size: 40px;
+  color: #D4AF37;
+  margin-bottom: 15px;
 }
 
 .error-box {
-  background: #fff3cd;
-  border: 1px solid #ffeaa7;
-  padding: 20px;
-  border-radius: 10px;
-  margin: 20px 0;
-  color: #856404;
-  text-align: right;
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.error-box i {
+  font-size: 40px;
+  margin-bottom: 15px;
 }
 
 .error-box ol {
-  margin-right: 20px;
+  text-align: right;
+  margin: 20px 0;
+  padding-right: 20px;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .error-box a {
-  color: #007bff;
-  font-weight: bold;
+  color: #D4AF37;
+  text-decoration: none;
 }
 
-.retry-btn {
-  background: #28a745;
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 8px;
-  margin-top: 15px;
-  cursor: pointer;
-  font-size: 14px;
-  width: 100%;
-}
-
-.retry-btn:hover {
-  background: #218838;
-}
-
-.empty {
-  text-align: center;
-  color: white;
-  margin-top: 40px;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 30px;
-  border-radius: 16px;
+.empty-box i {
+  font-size: 50px;
+  color: #D4AF37;
+  margin-bottom: 15px;
+  opacity: 0.5;
 }
 
 .uid-info {
   font-size: 12px;
-  opacity: 0.8;
-  margin: 10px 0;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 10px;
   direction: ltr;
-  word-break: break-all;
-  background: rgba(0, 0, 0, 0.2);
-  padding: 8px;
-  border-radius: 8px;
 }
 
-.test-btn {
-  background: #4CAF50;
-  color: white;
+.retry-btn {
+  background: linear-gradient(135deg, #D4AF37, #F6E27A);
+  color: #0A0C10;
   border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
+  padding: 12px 30px;
+  border-radius: 50px;
+  font-weight: 700;
   cursor: pointer;
-  margin-top: 15px;
+  margin-top: 20px;
+  transition: all 0.3s ease;
+}
+
+.retry-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(212, 175, 55, 0.3);
+}
+
+/* إحصائيات */
+.stats-box {
+  display: flex;
+  justify-content: space-around;
+  background: linear-gradient(135deg, #1A1F2A, #11151C);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 25px;
+  border: 1px solid #D4AF37;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-label {
+  display: block;
+  color: rgba(255, 255, 255, 0.6);
   font-size: 14px;
-}
-
-.test-btn:hover {
-  background: #45a049;
-}
-
-.count-info {
-  color: white;
-  text-align: center;
-  margin-bottom: 15px;
-  font-weight: bold;
-}
-
-.tx-card {
-  background: #ffffffee;
-  padding: 14px;
-  border-radius: 16px;
-  margin-bottom: 14px;
-  color: #000;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* 🔥 صندوق الموافقة 🔥 */
-.approval-box {
-  background: linear-gradient(to right, #e8f5e9, #c8e6c9);
-  border: 2px solid #4caf50;
-  padding: 12px;
-  border-radius: 12px;
-  margin-bottom: 15px;
-  text-align: center;
-  animation: pulse 2s infinite;
-}
-
-.approval-icon {
-  font-size: 24px;
-  margin-bottom: 8px;
-}
-
-.approval-text {
-  color: #2e7d32;
-  font-weight: bold;
-  font-size: 16px;
   margin-bottom: 5px;
 }
 
-.approval-date {
-  color: #388e3c;
+.stat-value {
+  display: block;
+  color: #D4AF37;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+/* بطاقة المعاملة */
+.transaction-card {
+  background: linear-gradient(135deg, #1A1F2A, #11151C);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.transaction-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(212, 175, 55, 0.2);
+  border-color: #D4AF37;
+}
+
+/* شارات الموافقة والرفض */
+.approval-badge, .rejection-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 5px 15px;
+  border-radius: 50px;
   font-size: 12px;
-  opacity: 0.8;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  z-index: 2;
 }
 
-/* صندوق الرفض */
-.reject-box {
-  background: #ffebee;
-  border: 1px solid #f44336;
-  padding: 12px;
-  border-radius: 12px;
-  margin-bottom: 15px;
-  color: #d32f2f;
+.approval-badge {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+  border: 1px solid #22c55e;
 }
 
-.reject-icon {
-  font-size: 20px;
-  margin-bottom: 8px;
-  text-align: center;
+.rejection-badge {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid #ef4444;
 }
 
-.reject-text {
-  text-align: center;
-}
-
-.row {
+/* رأس البطاقة المصغر */
+.card-header-mini {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 6px;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
 }
 
-.label {
-  font-size: 13px;
-  color: #555;
+.type-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 14px;
 }
 
-.value {
-  font-weight: bold;
-  color: #333;
+.type-badge.withdraw, .type-badge.withdrawal {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid #ef4444;
 }
 
-.value.uid {
-  font-size: 11px;
-  color: #888;
-  direction: ltr;
+.type-badge.deposit, .type-badge.recharge {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+  border: 1px solid #22c55e;
 }
 
-.value.email {
+.type-badge.vip {
+  background: rgba(212, 175, 55, 0.1);
+  color: #D4AF37;
+  border: 1px solid #D4AF37;
+}
+
+.status-badge {
+  padding: 5px 12px;
+  border-radius: 50px;
   font-size: 12px;
-  color: #2196f3;
+  font-weight: 600;
 }
 
-.value.code {
-  font-size: 11px;
-  color: #9c27b0;
+.status-badge.pending {
+  background: rgba(212, 175, 55, 0.1);
+  color: #D4AF37;
+  border: 1px solid #D4AF37;
+}
+
+.status-badge.approved {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+  border: 1px solid #22c55e;
+}
+
+.status-badge.rejected {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid #ef4444;
+}
+
+/* شبكة التفاصيل */
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.detail-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+}
+
+.detail-label i {
+  color: #D4AF37;
+  font-size: 12px;
+}
+
+.detail-value {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.detail-value.amount {
+  color: #D4AF37;
+  font-size: 16px;
+}
+
+.detail-value.code,
+.detail-value.hash,
+.detail-value.user-id {
+  font-family: monospace;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
   direction: ltr;
 }
 
-.value.admin {
+.detail-value.network {
+  color: #D4AF37;
+}
+
+.detail-value.address {
+  font-family: monospace;
+  font-size: 12px;
+  color: #22c55e;
+  direction: ltr;
+  word-break: break-all;
+}
+
+.detail-value.email {
+  color: #D4AF37;
+}
+
+.detail-value.vip {
+  color: #D4AF37;
+}
+
+/* رسائل الإدارة */
+.admin-message {
+  margin-top: 15px;
+  padding: 15px;
+  border-radius: 12px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.admin-message.approved {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid #22c55e;
+}
+
+.admin-message.rejected {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid #ef4444;
+}
+
+.admin-message i {
+  font-size: 20px;
+}
+
+.admin-message.approved i {
+  color: #22c55e;
+}
+
+.admin-message.rejected i {
+  color: #ef4444;
+}
+
+.admin-message p {
+  margin: 5px 0 0 0;
+  color: #ffffff;
+}
+
+.message-date {
+  display: block;
   font-size: 11px;
-  color: #ff9800;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 5px;
 }
 
-.status {
-  font-weight: bold;
-  padding: 2px 8px;
-  border-radius: 4px;
-}
-
-.status.pending {
-  color: #ff9800;
-  background-color: #fff3e0;
-}
-
-.status.approved {
-  color: #2e7d32;
-  background-color: #e8f5e9;
-}
-
-.status.rejected {
-  color: #d32f2f;
-  background-color: #ffebee;
-}
-
-.admin-box {
-  background: #e3f2fd;
-  padding: 8px;
+.user-message {
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(212, 175, 55, 0.1);
   border-radius: 10px;
-  margin-top: 8px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.user-message i {
+  color: #D4AF37;
+  font-size: 16px;
+}
+
+.user-message p {
+  margin: 5px 0 0 0;
+  color: #ffffff;
   font-size: 13px;
 }
 
-/* 🔥 تأثير نبضي للموافقة 🔥 */
-@keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4); }
-  70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+.reason-box {
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.reason-box i {
+  color: #D4AF37;
+  font-size: 14px;
+}
+
+.reason-box p {
+  margin: 5px 0 0 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+}
+
+/* تحسينات للجوال */
+@media (max-width: 600px) {
+  .card {
+    padding: 20px;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-box {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .approval-badge, .rejection-badge {
+    position: static;
+    margin-bottom: 10px;
+    width: fit-content;
+  }
+}
+
+/* أنيميشن */
+.fa-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 </style>
