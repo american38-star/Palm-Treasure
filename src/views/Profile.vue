@@ -24,8 +24,22 @@
 
       <h3 class="username">{{ userData.username || "المستخدم" }}</h3>
 
-      <!-- البريد الإلكتروني -->
-      <div class="info-card">
+      <!-- رقم الهاتف (إذا كان مسجلاً برقم هاتف) -->
+      <div class="info-card" v-if="userData.phoneNumber">
+        <div class="info-header">
+          <i class="fas fa-phone"></i>
+          <span class="info-label">رقم الهاتف</span>
+        </div>
+        <div class="info-content">
+          <span class="info-value">{{ userData.phoneNumber }}</span>
+          <button class="copy-btn" @click="copy(userData.phoneNumber)" title="نسخ">
+            <i class="fas fa-copy"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- البريد الإلكتروني (إذا كان مسجلاً ببريد) -->
+      <div class="info-card" v-if="userData.email">
         <div class="info-header">
           <i class="fas fa-envelope"></i>
           <span class="info-label">البريد الإلكتروني</span>
@@ -136,6 +150,7 @@ export default {
       loading: true,
       userData: {
         email: "",
+        phoneNumber: "",
         uid: "",
         createdAt: "",
         balance: 0,
@@ -193,11 +208,12 @@ export default {
             const data = snap.data();
 
             this.userData = {
-              email: data.email || user.email,
+              email: data.email || "",
+              phoneNumber: data.phoneNumber || "",
               uid: user.uid,
               createdAt: data.createdAt || user.metadata.creationTime,
               balance: data.balance ?? 0,
-              username: data.username || user.email.split("@")[0],
+              username: data.username || (data.email ? data.email.split("@")[0] : "مستخدم"),
               referralCode: data.referralCode || user.uid.substring(0, 6),
               vipLevel: data.vipLevel || 0,
               totalReferrals: data.totalReferrals || 0,
@@ -205,11 +221,12 @@ export default {
           } else {
             // بيانات افتراضية إذا لم يوجد المستند
             this.userData = {
-              email: user.email,
+              email: user.email || "",
+              phoneNumber: "",
               uid: user.uid,
               createdAt: user.metadata.creationTime,
               balance: 0,
-              username: user.email.split("@")[0],
+              username: user.email ? user.email.split("@")[0] : "مستخدم",
               referralCode: user.uid.substring(0, 6),
               vipLevel: 0,
               totalReferrals: 0,
