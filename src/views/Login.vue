@@ -39,7 +39,7 @@
       <template v-if="loginType === 'phone'">
         <label class="label">رقم الهاتف مع رمز الدولة</label>
         <div class="phone-input-container">
-          <select v-model="countryCode" class="country-select">
+          <select v-model="countryCode" class="country-select" @change="validatePhoneNumber">
             <option value="">اختر الرمز</option>
             <option value="+964">🇮🇶 العراق (+964)</option>
             <option value="+966">🇸🇦 السعودية (+966)</option>
@@ -113,6 +113,7 @@
             placeholder="رقم الهاتف"
             class="phone-input"
             :disabled="!countryCode"
+            @input="validatePhoneNumber"
             @keyup.enter="loginUser"
           />
         </div>
@@ -480,7 +481,7 @@ export default {
 .phone-input-container {
   display: flex;
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 
 /* اختيار رمز الدولة */
@@ -576,7 +577,7 @@ export default {
 .toggle {
   position: absolute;
   left: 15px;
-  top: 12px;
+  top: 14px;
   color: #D4AF37;
   cursor: pointer;
   font-size: 14px;
@@ -596,8 +597,8 @@ export default {
 .error-message {
   color: #ff6b6b;
   font-size: 12px;
-  margin-top: -15px;
-  margin-bottom: 10px;
+  margin-top: -10px;
+  margin-bottom: 15px;
   text-align: right;
   display: block;
 }
@@ -773,6 +774,10 @@ export default {
 
 /* تحسين للهواتف */
 @media (max-width: 480px) {
+  .container {
+    padding: 20px;
+  }
+  
   .card {
     width: 95%;
     padding: 25px 15px;
@@ -794,6 +799,21 @@ export default {
   .country-select,
   .phone-input {
     width: 100%;
+  }
+  
+  .input {
+    padding: 12px 10px;
+    font-size: 14px;
+  }
+  
+  .toggle {
+    top: 12px;
+    font-size: 13px;
+  }
+  
+  .btn {
+    padding: 12px;
+    font-size: 16px;
   }
   
   .ad-box {
