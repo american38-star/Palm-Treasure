@@ -123,9 +123,10 @@
       <div class="panel-header">
         <h2>جميع المستخدمين</h2>
         <div class="controls">
-          <input v-model="userFilter" placeholder="بحث بالبريد..." />
+          <input v-model="userFilter" placeholder="بحث بالبريد أو رقم الهاتف..." />
           <select v-model="userSort">
             <option value="email">ترتيب بالبريد</option>
+            <option value="phone">ترتيب برقم الهاتف</option>
             <option value="balance_desc">الرصيد (تنازلي)</option>
             <option value="balance_asc">الرصيد (تصاعدي)</option>
           </select>
@@ -138,14 +139,23 @@
         <div v-if="filteredUsers.length === 0" class="empty">لا يوجد مستخدمين.</div>
         <div class="cards">
           <div class="card user-card" v-for="u in filteredUsers" :key="u.id">
+            <p><strong>رقم الهاتف:</strong> <span class="gold-text">{{ u.phoneNumber || '—' }}</span></p>
             <p><strong>البريد:</strong> <span class="gold-text">{{ u.email || '—' }}</span></p>
             <p><strong>رصيد:</strong> <span class="gold-text">{{ u.balance ?? 0 }} USDT</span></p>
             <p><strong>الحالة:</strong> {{ u.blocked ? 'محظور' : 'فعال' }}</p>
+            <p><strong>طريقة التسجيل:</strong> 
+              <span :class="{
+                'register-phone': u.registrationMethod === 'phone',
+                'register-email': u.registrationMethod === 'email'
+              }">
+                {{ u.registrationMethod === 'phone' ? '📱 رقم هاتف' : '📧 بريد إلكتروني' }}
+              </span>
+            </p>
             <div class="card-actions">
               <button class="btn gold" type="button" @click="promptRecharge(u)">تعبئة رصيد</button>
               <button class="btn red" type="button" @click="promptDeduct(u)">سحب رصيد</button>
               <button class="btn details-btn" type="button" @click="viewUserDetails(u)">تفاصيل</button>
-              <button class="btn blue" type="button" @click="sendResetPassword(u.email)">إعادة تعيين كلمة السر</button>
+              <button class="btn blue" type="button" @click="sendResetPassword(u.email)" :disabled="!u.email">إعادة تعيين كلمة السر</button>
               <button class="btn black" type="button" @click="toggleBlockUser(u)">
                 {{ u.blocked ? 'إلغاء الحظر' : 'حظر' }}
               </button>
@@ -346,6 +356,7 @@
     <div v-if="showUserDetailsModal" class="modal-backdrop" @click.self="closeUserDetailsModal">
       <div class="modal">
         <h3>تفاصيل المستخدم</h3>
+        <p><strong>رقم الهاتف:</strong> <span class="gold-text">{{ userDetails.phoneNumber || '—' }}</span></p>
         <p><strong>البريد:</strong> <span class="gold-text">{{ userDetails.email || '—' }}</span></p>
         <p><strong>عدد الإحالات (المستوى 1):</strong> <span class="gold-text">{{ userDetails.referralCount || 0 }}</span></p>
         <p><strong>مبلغ الشحن الكلي (المستوى 1):</strong> <span class="gold-text">{{ userDetails.level1RechargeTotal || 0 }} USDT</span></p>
@@ -355,6 +366,7 @@
           <div class="users-list">
             <div class="user-item" v-for="refUser in userDetails.referredUsers" :key="refUser.id">
               <p><strong>البريد:</strong> <span class="gold-text">{{ refUser.email || '—' }}</span></p>
+              <p><strong>رقم الهاتف:</strong> <span class="gold-text">{{ refUser.phoneNumber || '—' }}</span></p>
               <p><strong>تاريخ التسجيل:</strong> {{ formatDate(refUser.createdAt) }}</p>
               <p><strong>إجمالي الشحن:</strong> <span class="gold-text">{{ refUser.totalRecharge || 0 }} USDT</span></p>
             </div>
@@ -451,6 +463,7 @@ export default {
 
       showUserDetailsModal: false,
       userDetails: {
+        phoneNumber: "",
         email: "",
         referralCount: 0,
         level1RechargeTotal: 0,
@@ -464,13 +477,16 @@ export default {
       if (this.userFilter) {
         const f = this.userFilter.toLowerCase();
         list = list.filter((u) =>
-          String(u.email || "").toLowerCase().includes(f)
+          String(u.email || "").toLowerCase().includes(f) ||
+          String(u.phoneNumber || "").toLowerCase().includes(f)
         );
       }
       if (this.userSort === "balance_desc")
         list.sort((a, b) => (b.balance || 0) - (a.balance || 0));
       else if (this.userSort === "balance_asc")
         list.sort((a, b) => (a.balance || 0) - (b.balance || 0));
+      else if (this.userSort === "phone")
+        list.sort((a, b) => String(a.phoneNumber || "").localeCompare(String(b.phoneNumber || "")));
       else
         list.sort((a, b) =>
           String(a.email || "").localeCompare(String(b.email || ""))
@@ -611,6 +627,7 @@ export default {
       try {
         this.showUserDetailsModal = true;
         this.userDetails = {
+          phoneNumber: user.phoneNumber,
           email: user.email,
           referralCount: 0,
           level1RechargeTotal: 0,
@@ -648,6 +665,7 @@ export default {
           directReferralUsers.push({
             id: referralId,
             email: referralData.email || "",
+            phoneNumber: referralData.phoneNumber || "",
             createdAt: referralData.createdAt || referralData.registeredAt || null,
             totalRecharge: totalRecharge
           });
@@ -669,6 +687,7 @@ export default {
     closeUserDetailsModal() {
       this.showUserDetailsModal = false;
       this.userDetails = {
+        phoneNumber: "",
         email: "",
         referralCount: 0,
         level1RechargeTotal: 0,
@@ -782,10 +801,12 @@ export default {
           const data = d.data() || {};
           return {
             id: d.id,
+            phoneNumber: data.phoneNumber || "",
             email: data.email || "",
             balance: data.balance ?? 0,
             blocked: data.blocked ?? false,
             notificationsCount: data.notificationsCount ?? 0,
+            registrationMethod: data.registrationMethod || (data.phoneNumber ? 'phone' : 'email'),
           };
         });
       } catch (e) {
@@ -2005,6 +2026,22 @@ export default {
 .status-pending {
   color: #ffc107;
   font-weight: bold;
+}
+
+.register-phone {
+  color: #D4AF37;
+  font-weight: bold;
+  background: rgba(212, 175, 55, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.register-email {
+  color: #22c55e;
+  font-weight: bold;
+  background: rgba(34, 197, 94, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 
 .referred-users {
