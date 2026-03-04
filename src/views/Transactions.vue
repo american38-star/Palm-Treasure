@@ -151,13 +151,22 @@
               <span class="detail-value vip">{{ tx.vipLevel }}</span>
             </div>
 
-            <!-- البريد الإلكتروني -->
-            <div class="detail-item full-width">
+            <!-- رقم الهاتف (إذا وجد) -->
+            <div v-if="tx.userPhone" class="detail-item full-width">
+              <span class="detail-label">
+                <i class="fas fa-phone"></i>
+                رقم الهاتف
+              </span>
+              <span class="detail-value phone">{{ tx.userPhone }}</span>
+            </div>
+
+            <!-- البريد الإلكتروني (إذا وجد) -->
+            <div v-if="tx.userEmail" class="detail-item full-width">
               <span class="detail-label">
                 <i class="fas fa-envelope"></i>
                 البريد الإلكتروني
               </span>
-              <span class="detail-value email">{{ tx.email || tx.userEmail || 'غير متوفر' }}</span>
+              <span class="detail-value email">{{ tx.userEmail }}</span>
             </div>
 
             <!-- معرف المستخدم -->
@@ -728,6 +737,12 @@ export default {
   color: #22c55e;
   direction: ltr;
   word-break: break-all;
+}
+
+.detail-value.phone {
+  color: #D4AF37;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .detail-value.email {
