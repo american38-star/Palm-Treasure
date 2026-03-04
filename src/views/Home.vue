@@ -147,25 +147,34 @@ export default {
           return;
         }
 
-        await this.loadUserData(user.uid, user.email);
+        await this.loadUserData(user.uid);
       });
     },
 
-    async loadUserData(uid, email) {
+    async loadUserData(uid) {
       try {
         const snap = await getDoc(doc(db, "users", uid));
 
         if (snap.exists()) {
           const data = snap.data();
-          this.username = data.username || data.email || email;
+          
+          // عرض رقم الهاتف إذا كان موجوداً، وإلا عرض البريد الإلكتروني
+          if (data.phoneNumber) {
+            this.username = data.phoneNumber;
+          } else if (data.email) {
+            this.username = data.email;
+          } else {
+            this.username = "مستخدم";
+          }
+          
           this.balance = data.balance ?? 0;
         } else {
-          this.username = email;
+          this.username = "مستخدم";
           this.balance = 0;
         }
       } catch (err) {
         console.error("Error loading user data:", err);
-        this.username = email;
+        this.username = "مستخدم";
         this.balance = 0;
       }
     },
