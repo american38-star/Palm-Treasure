@@ -836,6 +836,108 @@
           </div>
         </div>
       </div>
+
+      <!-- High/Low (Bull/Bear) - لعبة البورصة -->
+      <div v-if="selectedGame==='highlow'" class="casino-card">
+        <div class="casino-card-header">
+          <h2>📈 HIGH / LOW</h2>
+          <div class="casino-glow"></div>
+        </div>
+        
+        <div class="game-scene">
+          <div class="market-container">
+            <div class="market-header">
+              <div class="market-price">
+                <span class="price-label">السعر الحالي</span>
+                <span class="price-value" :class="{ 'price-up': marketTrend === 'up', 'price-down': marketTrend === 'down' }">
+                  ${{ marketPrice.toFixed(2) }}
+                </span>
+              </div>
+              <div class="market-change" :class="{ 'change-positive': marketChange >= 0, 'change-negative': marketChange < 0 }">
+                {{ marketChange >= 0 ? '+' : '' }}{{ marketChange.toFixed(2) }}%
+              </div>
+            </div>
+            
+            <div class="chart-container">
+              <div class="candlestick-chart">
+                <div v-for="(candle, index) in marketCandles" :key="index" 
+                     class="candle" 
+                     :class="{ 'bullish': candle.close > candle.open, 'bearish': candle.close < candle.open }"
+                     :style="{ height: Math.abs(candle.close - candle.open) * 2 + 'px', bottom: Math.min(candle.open, candle.close) * 2 + 'px' }">
+                  <div class="wick" :style="{ height: candle.high * 2 + 'px' }"></div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="market-indicators">
+              <div class="indicator">
+                <span class="indicator-label">المؤشر</span>
+                <span class="indicator-value" :class="{ 'bull': marketSentiment === 'bull', 'bear': marketSentiment === 'bear' }">
+                  {{ marketSentiment === 'bull' ? '🐂 صاعد' : '🐻 هابط' }}
+                </span>
+              </div>
+              <div class="indicator">
+                <span class="indicator-label">الزخم</span>
+                <span class="indicator-value">{{ marketMomentum }}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="casino-controls">
+          <div v-if="!highLowStarted" class="bet-panel">
+            <div class="chip-input">
+              <span class="chip-icon">💰</span>
+              <input
+                type="number"
+                v-model.number="highLowBet"
+                placeholder="0.00"
+                class="casino-input"
+                @input="clearGameError"
+              />
+              <span class="chip-currency">USDT</span>
+            </div>
+            
+            <div class="highlow-options">
+              <button 
+                @click="highLowChoice = 'high'" 
+                class="highlow-btn high-btn" 
+                :class="{ active: highLowChoice === 'high' }">
+                <span class="btn-icon">📈</span>
+                <span class="btn-text">HIGH (صاعد)</span>
+                <span class="btn-multiplier">x{{ highLowMultiplier.high }}</span>
+              </button>
+              <button 
+                @click="highLowChoice = 'low'" 
+                class="highlow-btn low-btn" 
+                :class="{ active: highLowChoice === 'low' }">
+                <span class="btn-icon">📉</span>
+                <span class="btn-text">LOW (هابط)</span>
+                <span class="btn-multiplier">x{{ highLowMultiplier.low }}</span>
+              </button>
+            </div>
+            
+            <div class="timer-display" v-if="countdown > 0">
+              <span class="timer-label">الوقت المتبقي</span>
+              <span class="timer-value">{{ countdown }}s</span>
+            </div>
+            
+            <div v-if="gameError" class="casino-error">{{ gameError }}</div>
+            
+            <button @click="startHighLow" class="casino-button" :disabled="!highLowBet || highLowBet <= 0 || !highLowChoice">
+              <span>توقع حركة السوق</span>
+              <i class="fas fa-chart-line"></i>
+            </button>
+          </div>
+          
+          <div v-if="highLowStarted" class="market-result">
+            <div class="result-price">${{ finalMarketPrice.toFixed(2) }}</div>
+            <div class="result-change" :class="{ 'win-text': highLowWon, 'lose-text': !highLowWon }">
+              {{ highLowResultMessage }}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>    
 </template>    
@@ -872,7 +974,8 @@ export default {
         { id: 'puzzle', name: 'Puzzle', icon: '🧩' },
         { id: 'target', name: 'Target', icon: '🎯' },
         { id: 'lucky', name: 'Lucky Number', icon: '🎮' },
-        { id: 'mystery', name: 'Mystery Box', icon: '🎁' }
+        { id: 'mystery', name: 'Mystery Box', icon: '🎁' },
+        { id: 'highlow', name: 'High/Low', icon: '📊' }
       ],
       balance: 0,    
       gameError: "",    
@@ -1002,7 +1105,28 @@ export default {
       mysteryStarted: false,
       mysteryOpened: false,
       mysteryPrize: "",
-      mysteryResult: ""
+      mysteryResult: "",
+      
+      /* High/Low (Bull/Bear) */
+      highLowBet: null,
+      highLowStarted: false,
+      highLowChoice: "",
+      highLowWon: false,
+      highLowResultMessage: "",
+      marketPrice: 100.00,
+      initialMarketPrice: 100.00,
+      finalMarketPrice: 100.00,
+      marketChange: 0,
+      marketTrend: 'neutral',
+      marketSentiment: 'bull',
+      marketMomentum: 50,
+      marketCandles: [],
+      highLowMultiplier: {
+        high: 1.8,
+        low: 1.8
+      },
+      countdown: 0,
+      countdownInterval: null
     };    
   },    
     
@@ -1030,6 +1154,7 @@ export default {
     if (snap.exists()) {    
       this.balance = Number(snap.data().balance || 0);    
     }    
+    this.generateMarketCandles();
   },    
     
   methods: {    
@@ -1037,6 +1162,9 @@ export default {
       this.selectedGame = gameId;
       this.gameOpened = true;
       this.gameError = "";
+      if (gameId === 'highlow') {
+        this.generateMarketCandles();
+      }
     },
     
     closeGame() {
@@ -1059,6 +1187,8 @@ export default {
       this.targetStarted = false;
       this.luckyStarted = false;
       this.mysteryStarted = false;
+      this.highLowStarted = false;
+      if (this.countdownInterval) clearInterval(this.countdownInterval);
     },
     
     clearGameError() {
@@ -1917,6 +2047,110 @@ export default {
           this.showResult(`😢 خسرت جزء من الرهان`, false);
         }
       }, 1000);
+    },
+    
+    /* ===== High/Low (Bull/Bear) ===== */
+    generateMarketCandles() {
+      this.marketCandles = [];
+      let price = 100;
+      for (let i = 0; i < 20; i++) {
+        const open = price;
+        const change = (Math.random() - 0.5) * 4;
+        const close = open + change;
+        const high = Math.max(open, close) + Math.random() * 2;
+        const low = Math.min(open, close) - Math.random() * 2;
+        
+        this.marketCandles.push({
+          open,
+          close,
+          high,
+          low
+        });
+        
+        price = close;
+      }
+      this.marketPrice = price;
+    },
+    
+    async startHighLow() {
+      if (!this.highLowBet || this.highLowBet <= 0) {
+        this.gameError = "الرجاء إدخال مبلغ الرهان";
+        return;
+      }
+      if (!this.highLowChoice) {
+        this.gameError = "اختر HIGH أو LOW";
+        return;
+      }
+      if (this.highLowBet > this.balance) {
+        this.gameError = "الرصيد غير كافي";
+        return;
+      }
+      
+      this.gameError = "";
+      this.balance -= this.highLowBet;
+      await this.updateBalance(this.balance);
+      
+      this.initialMarketPrice = this.marketPrice;
+      this.highLowStarted = true;
+      this.countdown = 5;
+      
+      // تحديث السعر خلال العد التنازلي
+      this.countdownInterval = setInterval(() => {
+        if (this.countdown > 0) {
+          this.countdown--;
+          // تحديث الشموع بشكل عشوائي
+          this.marketPrice = this.initialMarketPrice + (Math.random() - 0.5) * 10;
+          this.marketChange = ((this.marketPrice - this.initialMarketPrice) / this.initialMarketPrice) * 100;
+          this.marketTrend = this.marketChange >= 0 ? 'up' : 'down';
+          this.marketMomentum = Math.min(100, Math.abs(this.marketChange) * 10);
+          this.marketSentiment = this.marketChange >= 0 ? 'bull' : 'bear';
+        } else {
+          clearInterval(this.countdownInterval);
+          this.calculateHighLowResult();
+        }
+      }, 1000);
+    },
+    
+    async calculateHighLowResult() {
+      // السعر النهائي بعد 5 ثواني
+      this.finalMarketPrice = this.initialMarketPrice + (Math.random() - 0.5) * 15;
+      this.marketChange = ((this.finalMarketPrice - this.initialMarketPrice) / this.initialMarketPrice) * 100;
+      
+      const isPriceUp = this.finalMarketPrice > this.initialMarketPrice;
+      const isPriceDown = this.finalMarketPrice < this.initialMarketPrice;
+      
+      // نسبة الربح/الخسارة
+      let multiplier = 0;
+      if (this.highLowChoice === 'high' && isPriceUp) {
+        multiplier = this.highLowMultiplier.high;
+        this.highLowWon = true;
+        this.highLowResultMessage = `🎉 فوز! السعر ارتفع بنسبة ${this.marketChange.toFixed(2)}%`;
+      } else if (this.highLowChoice === 'low' && isPriceDown) {
+        multiplier = this.highLowMultiplier.low;
+        this.highLowWon = true;
+        this.highLowResultMessage = `🎉 فوز! السعر انخفض بنسبة ${Math.abs(this.marketChange).toFixed(2)}%`;
+      } else {
+        multiplier = 0;
+        this.highLowWon = false;
+        if (this.highLowChoice === 'high') {
+          this.highLowResultMessage = `😢 خسارة! السعر انخفض بنسبة ${Math.abs(this.marketChange).toFixed(2)}%`;
+        } else {
+          this.highLowResultMessage = `😢 خسارة! السعر ارتفع بنسبة ${this.marketChange.toFixed(2)}%`;
+        }
+      }
+      
+      const profit = this.highLowBet * multiplier;
+      if (this.highLowWon) {
+        this.balance += profit;
+        await this.updateBalance(this.balance);
+        this.showResult(`🎉 ربحت ${profit.toFixed(2)} USDT`, true);
+      } else {
+        this.showResult(`😢 خسرت الرهان`, false);
+      }
+      
+      setTimeout(() => {
+        this.highLowStarted = false;
+      }, 3000);
     }
   }
 };    
@@ -3307,6 +3541,217 @@ export default {
   font-weight: 700;
 }
 
+/* ===== High/Low (Bull/Bear) ===== */
+.market-container {
+  width: 100%;
+  text-align: center;
+}
+
+.market-header {
+  margin-bottom: 20px;
+}
+
+.market-price {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.price-label {
+  color: #8a8f9c;
+  font-size: 14px;
+}
+
+.price-value {
+  font-size: 48px;
+  font-weight: 800;
+  transition: color 0.3s;
+}
+
+.price-up {
+  color: #4caf50;
+  text-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
+}
+
+.price-down {
+  color: #f44336;
+  text-shadow: 0 0 20px rgba(244, 67, 54, 0.5);
+}
+
+.market-change {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 5px;
+}
+
+.change-positive {
+  color: #4caf50;
+}
+
+.change-negative {
+  color: #f44336;
+}
+
+.chart-container {
+  height: 150px;
+  margin: 20px 0;
+  position: relative;
+}
+
+.candlestick-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  height: 150px;
+  position: relative;
+}
+
+.candle {
+  width: 15px;
+  position: relative;
+  background: #4caf50;
+  border-radius: 2px;
+}
+
+.candle.bearish {
+  background: #f44336;
+}
+
+.wick {
+  position: absolute;
+  width: 2px;
+  background: #8a8f9c;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 100%;
+}
+
+.market-indicators {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 20px;
+}
+
+.indicator {
+  text-align: center;
+}
+
+.indicator-label {
+  display: block;
+  color: #8a8f9c;
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+.indicator-value {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.indicator-value.bull {
+  color: #4caf50;
+}
+
+.indicator-value.bear {
+  color: #f44336;
+}
+
+.highlow-options {
+  display: flex;
+  gap: 15px;
+  width: 100%;
+  max-width: 280px;
+}
+
+.highlow-btn {
+  flex: 1;
+  padding: 15px;
+  border: none;
+  border-radius: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(145deg, #1e2333, #131826);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  color: white;
+}
+
+.highlow-btn.active {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+.high-btn.active {
+  background: linear-gradient(135deg, #4caf50, #45a049);
+  border-color: #4caf50;
+}
+
+.low-btn.active {
+  background: linear-gradient(135deg, #f44336, #d32f2f);
+  border-color: #f44336;
+}
+
+.btn-icon {
+  font-size: 24px;
+}
+
+.btn-text {
+  font-size: 14px;
+}
+
+.btn-multiplier {
+  font-size: 12px;
+  color: #ffd700;
+}
+
+.timer-display {
+  text-align: center;
+  margin: 10px 0;
+}
+
+.timer-label {
+  color: #8a8f9c;
+  font-size: 14px;
+  margin-left: 10px;
+}
+
+.timer-value {
+  color: #ffd700;
+  font-size: 24px;
+  font-weight: 700;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.market-result {
+  text-align: center;
+  padding: 20px;
+  background: linear-gradient(145deg, #1a1f30, #0f1422);
+  border-radius: 20px;
+}
+
+.result-price {
+  font-size: 48px;
+  font-weight: 800;
+  color: #ffd700;
+  text-shadow: 0 0 20px #ffd700;
+  margin-bottom: 10px;
+}
+
+.result-change {
+  font-size: 18px;
+}
+
 /* ===== تحسينات الجوال ===== */
 @media (max-width: 480px) {
   .game-page {
@@ -3371,6 +3816,15 @@ export default {
 
   .action-btn {
     width: 100%;
+  }
+
+  .price-value {
+    font-size: 36px;
+  }
+
+  .highlow-options {
+    flex-direction: column;
+    gap: 10px;
   }
 }
 </style>
