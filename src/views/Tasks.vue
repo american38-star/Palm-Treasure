@@ -32,7 +32,7 @@
 
         <div class="chicken-container">
           <div class="chicken-glow"></div>
-          <div class="chicken">🐔</div>
+          <div class="chicken" :class="{ walking: chickenStarted }">🐔</div>
         </div>
 
         <div v-if="chickenStarted" class="road">
@@ -42,6 +42,7 @@
             class="step"
             :class="{
               active: i === chickenPosition,
+              passed: i < chickenPosition,
               'gold-step': step.multiplier >= 3,
               'silver-step': step.multiplier >= 2 && step.multiplier < 3
             }"
@@ -70,7 +71,7 @@
             </div>
             <button 
               @click="startChicken"
-              class="gold-button"
+              class="gold-button pulse"
               :disabled="!chickenBet || chickenBet <= 0"
             >
               <i class="fas fa-play"></i>
@@ -84,11 +85,11 @@
               <span class="profit-value">{{ chickenProfit.toFixed(2) }} USDT</span>
             </div>
             <div class="action-buttons">
-              <button @click="chickenNext" class="action-btn gold">
+              <button @click="chickenNext" class="action-btn gold" :disabled="chickenGameOver">
                 <i class="fas fa-arrow-right"></i>
                 تقدم
               </button>
-              <button @click="chickenCashOut" class="action-btn green">
+              <button @click="chickenCashOut" class="action-btn green" :disabled="chickenGameOver">
                 <i class="fas fa-hand-holding-usd"></i>
                 سحب
               </button>
@@ -104,11 +105,11 @@
           <div class="header-glow"></div>
         </div>
         
-        <div class="game-icon">🎲</div>
+        <div class="game-icon" :class="{ rolling: diceRolling }">🎲</div>
         
         <div class="game-controls-full">
           <div class="slider-container">
-            <label>نسبة الفوز: {{ diceChance }}%</label>
+            <label>نسبة الفوز: <span class="highlight">{{ diceChance }}%</span></label>
             <input 
               type="range" 
               v-model.number="diceChance" 
@@ -121,7 +122,7 @@
           </div>
           
           <div class="multiplier-display">
-            <span>المضاعف: x{{ (95 / diceChance).toFixed(2) }}</span>
+            <span class="glow-text">x{{ (95 / diceChance).toFixed(2) }}</span>
           </div>
           
           <div v-if="!diceStarted" class="bet-controls">
@@ -136,14 +137,18 @@
               <span class="input-currency">USDT</span>
             </div>
             <div v-if="gameError" class="error-message">{{ gameError }}</div>
-            <button @click="startDice" class="gold-button" :disabled="!diceBet || diceBet <= 0">
-              <i class="fas fa-play"></i> رمي النرد
+            <button @click="startDice" class="gold-button pulse" :disabled="!diceBet || diceBet <= 0">
+              <i class="fas fa-dice"></i> رمي النرد
             </button>
           </div>
           
           <div v-if="diceStarted" class="result-box">
-            <div class="dice-result">{{ diceRoll }}</div>
-            <div class="result-text">{{ diceResultText }}</div>
+            <div class="dice-result" :class="{ 'win-effect': diceWon, 'lose-effect': !diceWon }">
+              {{ diceRoll }}
+            </div>
+            <div class="result-text" :class="diceWon ? 'win-text' : 'lose-text'">
+              {{ diceResultText }}
+            </div>
           </div>
         </div>
       </div>
@@ -159,7 +164,7 @@
         
         <div class="game-controls-full">
           <div class="slider-container">
-            <label>عدد الألغام: {{ minesCount }}</label>
+            <label>عدد الألغام: <span class="highlight">{{ minesCount }}</span></label>
             <input 
               type="range" 
               v-model.number="minesCount" 
@@ -183,8 +188,8 @@
               <span class="input-currency">USDT</span>
             </div>
             <div v-if="gameError" class="error-message">{{ gameError }}</div>
-            <button @click="startMines" class="gold-button" :disabled="!minesBet || minesBet <= 0">
-              <i class="fas fa-play"></i> ابدأ
+            <button @click="startMines" class="gold-button pulse" :disabled="!minesBet || minesBet <= 0">
+              <i class="fas fa-bomb"></i> ابدأ
             </button>
           </div>
           
@@ -196,17 +201,20 @@
               :class="{
                 'revealed': cell.revealed,
                 'mine': cell.mine && cell.revealed,
-                'safe': !cell.mine && cell.revealed
+                'safe': !cell.mine && cell.revealed,
+                'explode': cell.mine && cell.revealed && minesGameOver
               }"
               @click="revealMine(index)"
               :disabled="cell.revealed || minesGameOver"
             >
-              {{ cell.revealed ? (cell.mine ? '💣' : '💎') : '?' }}
+              <span v-if="!cell.revealed">?</span>
+              <span v-else-if="cell.mine">💣</span>
+              <span v-else>💎</span>
             </button>
           </div>
           
           <div v-if="minesStarted && !minesGameOver" class="action-buttons">
-            <button @click="minesCashOut" class="action-btn green">
+            <button @click="minesCashOut" class="action-btn green pulse">
               <i class="fas fa-hand-holding-usd"></i> سحب ({{ minesProfit.toFixed(2) }} USDT)
             </button>
           </div>
@@ -220,7 +228,7 @@
           <div class="header-glow"></div>
         </div>
         
-        <div class="game-icon">🚀</div>
+        <div class="game-icon" :class="{ flying: crashStarted && !crashCrashed, exploding: crashCrashed }">🚀</div>
         
         <div class="game-controls-full">
           <div v-if="!crashStarted" class="bet-controls">
@@ -246,21 +254,24 @@
               <span class="input-currency">x</span>
             </div>
             <div v-if="gameError" class="error-message">{{ gameError }}</div>
-            <button @click="startCrash" class="gold-button" :disabled="!crashBet || crashBet <= 0">
-              <i class="fas fa-play"></i> إطلاق
+            <button @click="startCrash" class="gold-button pulse" :disabled="!crashBet || crashBet <= 0">
+              <i class="fas fa-rocket"></i> إطلاق
             </button>
           </div>
           
           <div v-if="crashStarted" class="crash-display">
-            <div class="multiplier-box" :class="{ 'crashed': crashCrashed }">
+            <div class="multiplier-box" :class="{ 'crashed': crashCrashed, 'pulse-text': !crashCrashed }">
               x{{ crashMultiplier.toFixed(2) }}
             </div>
-            <div class="rocket" :class="{ 'launched': crashStarted, 'crashed': crashCrashed }">🚀</div>
+            <div class="rocket-container">
+              <div class="rocket" :class="{ 'launched': crashStarted, 'crashed': crashCrashed }">🚀</div>
+              <div class="smoke" v-if="crashStarted && !crashCrashed"></div>
+            </div>
             <progress class="crash-progress" :value="crashProgress" max="100"></progress>
           </div>
           
           <div v-if="crashStarted && !crashCrashed" class="action-buttons">
-            <button @click="crashCashOut" class="action-btn green">
+            <button @click="crashCashOut" class="action-btn green pulse">
               <i class="fas fa-hand-holding-usd"></i> سحب ({{ (crashBet * crashMultiplier).toFixed(2) }} USDT)
             </button>
           </div>
@@ -274,7 +285,7 @@
           <div class="header-glow"></div>
         </div>
         
-        <div class="game-icon">🎯</div>
+        <div class="game-icon" :class="{ jumping: limboStarted }">🎯</div>
         
         <div class="game-controls-full">
           <div v-if="!limboStarted" class="bet-controls">
@@ -300,15 +311,17 @@
               <span class="input-currency">x</span>
             </div>
             <div v-if="gameError" class="error-message">{{ gameError }}</div>
-            <button @click="startLimbo" class="gold-button" :disabled="!limboBet || limboBet <= 0">
-              <i class="fas fa-play"></i> ابدأ
+            <button @click="startLimbo" class="gold-button pulse" :disabled="!limboBet || limboBet <= 0">
+              <i class="fas fa-crosshairs"></i> ابدأ
             </button>
           </div>
           
           <div v-if="limboStarted" class="limbo-display">
-            <div class="result-number">{{ limboResult.toFixed(2) }}x</div>
+            <div class="result-number" :class="{ 'win-effect': limboWon, 'lose-effect': !limboWon }">
+              {{ limboResult.toFixed(2) }}x
+            </div>
             <div class="result-text" :class="limboWon ? 'win-text' : 'lose-text'">
-              {{ limboWon ? '🎉 فوز!' : '💥 خسارة' }}
+              {{ limboWon ? '🎉 فوز! مضاعف عالي' : '💥 خسارة' }}
             </div>
           </div>
         </div>
@@ -336,28 +349,31 @@
               <span class="input-currency">USDT</span>
             </div>
             <div v-if="gameError" class="error-message">{{ gameError }}</div>
-            <button @click="startBlackjack" class="gold-button" :disabled="!blackjackBet || blackjackBet <= 0">
-              <i class="fas fa-play"></i> توزيع
+            <button @click="startBlackjack" class="gold-button pulse" :disabled="!blackjackBet || blackjackBet <= 0">
+              <i class="fas fa-credit-card"></i> توزيع
             </button>
           </div>
           
           <div v-if="blackjackStarted" class="blackjack-table">
             <div class="dealer-hand">
-              <span>الموزع: </span>
-              <span v-for="(card, i) in dealerHand" :key="i" class="card">
-                {{ i === 1 && !dealerRevealed ? '?' : card }}
-              </span>
-              <span v-if="!dealerRevealed"> ?</span>
+              <span class="hand-label">الموزع:</span>
+              <div class="cards">
+                <span v-for="(card, i) in dealerHand" :key="i" class="card" :class="{ 'card-back': i === 1 && !dealerRevealed }">
+                  {{ i === 1 && !dealerRevealed ? '?' : card }}
+                </span>
+              </div>
             </div>
             <div class="player-hand">
-              <span>أنت: </span>
-              <span v-for="card in playerHand" :key="card" class="card">{{ card }}</span>
-              <span> ({{ playerScore }})</span>
+              <span class="hand-label">أنت:</span>
+              <div class="cards">
+                <span v-for="card in playerHand" :key="card" class="card">{{ card }}</span>
+              </div>
+              <span class="score">({{ playerScore }})</span>
             </div>
             
             <div v-if="!blackjackGameOver" class="action-buttons">
-              <button @click="blackjackHit" class="action-btn gold">ضرب</button>
-              <button @click="blackjackStand" class="action-btn green">وقف</button>
+              <button @click="blackjackHit" class="action-btn gold">ضرب 🃏</button>
+              <button @click="blackjackStand" class="action-btn green">وقف ✋</button>
             </div>
             
             <div v-if="blackjackGameOver" class="result-text" :class="blackjackWon ? 'win-text' : 'lose-text'">
@@ -389,13 +405,13 @@
               <span class="input-currency">USDT</span>
             </div>
             <div v-if="gameError" class="error-message">{{ gameError }}</div>
-            <button @click="startSlot" class="gold-button" :disabled="!slotBet || slotBet <= 0">
-              <i class="fas fa-play"></i> لعب
+            <button @click="startSlot" class="gold-button pulse" :disabled="!slotBet || slotBet <= 0">
+              <i class="fas fa-sliders-h"></i> لعب
             </button>
           </div>
           
           <div v-if="slotStarted" class="slot-machine">
-            <div class="slot-row">
+            <div class="slot-row" :class="{ spinning: slotSpinning }">
               <div class="slot-reel">{{ slotReels[0] }}</div>
               <div class="slot-reel">{{ slotReels[1] }}</div>
               <div class="slot-reel">{{ slotReels[2] }}</div>
@@ -414,7 +430,7 @@
           <div class="header-glow"></div>
         </div>
         
-        <div class="game-icon">🪙</div>
+        <div class="game-icon" :class="{ flipping: coinflipFlipping }">🪙</div>
         
         <div class="game-controls-full">
           <div v-if="!coinflipStarted" class="bet-controls">
@@ -445,13 +461,15 @@
               </button>
             </div>
             <div v-if="gameError" class="error-message">{{ gameError }}</div>
-            <button @click="startCoinflip" class="gold-button" :disabled="!coinflipBet || coinflipBet <= 0 || !coinflipChoice">
-              <i class="fas fa-play"></i> اقلب
+            <button @click="startCoinflip" class="gold-button pulse" :disabled="!coinflipBet || coinflipBet <= 0 || !coinflipChoice">
+              <i class="fas fa-coins"></i> اقلب
             </button>
           </div>
           
           <div v-if="coinflipStarted" class="coinflip-result">
-            <div class="coin" :class="{ 'flipping': coinflipFlipping }">{{ coinflipResult }}</div>
+            <div class="coin" :class="{ 'flipping': coinflipFlipping, 'show-result': !coinflipFlipping }">
+              {{ coinflipFlipping ? '🪙' : coinflipResult }}
+            </div>
             <div class="result-text" :class="coinflipWon ? 'win-text' : 'lose-text'">
               {{ coinflipWon ? '🎉 فوز!' : '💥 خسارة' }}
             </div>
@@ -481,15 +499,17 @@
               <span class="input-currency">USDT</span>
             </div>
             <div v-if="gameError" class="error-message">{{ gameError }}</div>
-            <button @click="startWheel" class="gold-button" :disabled="!wheelBet || wheelBet <= 0">
-              <i class="fas fa-play"></i> دوّر
+            <button @click="startWheel" class="gold-button pulse" :disabled="!wheelBet || wheelBet <= 0">
+              <i class="fas fa-circle-notch"></i> دوّر
             </button>
           </div>
           
           <div v-if="wheelStarted" class="wheel-container">
-            <div class="wheel" :style="{ transform: `rotate(${wheelRotation}deg)` }">
-              <div v-for="n in 8" :key="n" class="wheel-segment" :class="`segment-${n}`">
-                {{ wheelMultipliers[n-1] }}x
+            <div class="wheel-spinner" :style="{ transform: `rotate(${wheelRotation}deg)` }">
+              <div v-for="(mult, index) in wheelMultipliers" :key="index" 
+                   class="wheel-segment" 
+                   :style="{ transform: `rotate(${index * 45}deg)` }">
+                <span class="segment-value">{{ mult }}x</span>
               </div>
             </div>
             <div class="wheel-pointer">▼</div>
@@ -520,8 +540,8 @@
               <span class="input-currency">USDT</span>
             </div>
             <div v-if="gameError" class="error-message">{{ gameError }}</div>
-            <button @click="startKeno" class="gold-button" :disabled="!kenoBet || kenoBet <= 0">
-              <i class="fas fa-play"></i> ابدأ
+            <button @click="startKeno" class="gold-button pulse" :disabled="!kenoBet || kenoBet <= 0">
+              <i class="fas fa-dice-d6"></i> ابدأ
             </button>
           </div>
           
@@ -538,13 +558,19 @@
               @click="toggleKenoNumber(n)"
             >
               {{ n }}
+              <div v-if="kenoDrawn.includes(n)" class="draw-effect"></div>
             </div>
           </div>
           
-          <div v-if="kenoStarted && kenoSelected.length > 0" class="action-buttons">
-            <button @click="drawKeno" class="action-btn gold">
+          <div v-if="kenoStarted && kenoSelected.length > 0 && kenoDrawn.length === 0" class="action-buttons">
+            <button @click="drawKeno" class="action-btn gold pulse">
               <i class="fas fa-dice"></i> سحب ({{ kenoSelected.length }} أرقام)
             </button>
+          </div>
+          
+          <div v-if="kenoDrawn.length > 0" class="keno-results">
+            <div class="matches">التطابقات: {{ kenoMatches }}</div>
+            <div class="multiplier">المضاعف: x{{ kenoMultiplier }}</div>
           </div>
         </div>
       </div>
@@ -571,18 +597,22 @@
               <span class="input-currency">USDT</span>
             </div>
             <div v-if="gameError" class="error-message">{{ gameError }}</div>
-            <button @click="startBowling" class="gold-button" :disabled="!bowlingBet || bowlingBet <= 0">
-              <i class="fas fa-play"></i> ارمِ
+            <button @click="startBowling" class="gold-button pulse" :disabled="!bowlingBet || bowlingBet <= 0">
+              <i class="fas fa-bowling-ball"></i> ارمِ
             </button>
           </div>
           
           <div v-if="bowlingStarted" class="bowling-alley">
-            <div class="pins">
-              <div v-for="pin in 10" :key="pin" class="pin" :class="{ knocked: bowlingKnocked.includes(pin) }">
-                🎳
+            <div class="pins-row">
+              <div v-for="pin in 10" :key="pin" 
+                   class="pin" 
+                   :class="{ knocked: bowlingKnocked.includes(pin) }">
+                <span class="pin-emoji">🎳</span>
               </div>
             </div>
-            <div class="bowling-ball" :class="{ rolling: bowlingRolling }">⚫</div>
+            <div class="bowling-ball-container">
+              <div class="bowling-ball" :class="{ rolling: bowlingRolling }">⚫</div>
+            </div>
             <div class="result-text">{{ bowlingResult }}</div>
           </div>
         </div>
@@ -610,8 +640,8 @@
               <span class="input-currency">USDT</span>
             </div>
             <div v-if="gameError" class="error-message">{{ gameError }}</div>
-            <button @click="startPuzzle" class="gold-button" :disabled="!puzzleBet || puzzleBet <= 0">
-              <i class="fas fa-play"></i> ابدأ
+            <button @click="startPuzzle" class="gold-button pulse" :disabled="!puzzleBet || puzzleBet <= 0">
+              <i class="fas fa-puzzle-piece"></i> ابدأ
             </button>
           </div>
           
@@ -620,7 +650,11 @@
               v-for="(piece, index) in puzzlePieces" 
               :key="index"
               class="puzzle-piece"
-              :class="{ empty: piece === null }"
+              :class="{ 
+                empty: piece === null,
+                correct: piece === index + 1,
+                'win-glow': puzzleSolved
+              }"
               @click="movePuzzle(index)"
             >
               {{ piece !== null ? piece : '' }}
@@ -628,7 +662,7 @@
           </div>
           
           <div v-if="puzzleStarted" class="result-text" :class="puzzleSolved ? 'win-text' : ''">
-            {{ puzzleSolved ? '🎉 أحسنت! حل اللغز' : 'حرك القطع لترتيب الأرقام' }}
+            {{ puzzleSolved ? '🎉 أحسنت! حل اللغز وربحت!' : 'حرك القطع لترتيب الأرقام من 1 إلى 8' }}
           </div>
         </div>
       </div>
@@ -655,17 +689,24 @@
               <span class="input-currency">USDT</span>
             </div>
             <div v-if="gameError" class="error-message">{{ gameError }}</div>
-            <button @click="startTarget" class="gold-button" :disabled="!targetBet || targetBet <= 0">
-              <i class="fas fa-play"></i> صوّب
+            <button @click="startTarget" class="gold-button pulse" :disabled="!targetBet || targetBet <= 0">
+              <i class="fas fa-bullseye"></i> صوّب
             </button>
           </div>
           
           <div v-if="targetStarted" class="target-container">
             <div class="target">
-              <div class="target-circle bullseye" @click="shootTarget(10)">🎯</div>
-              <div class="target-circle middle" @click="shootTarget(5)"></div>
-              <div class="target-circle outer" @click="shootTarget(2)"></div>
+              <div class="target-circle bullseye" @click="shootTarget(10)">
+                <span class="target-value">10</span>
+              </div>
+              <div class="target-circle middle" @click="shootTarget(5)">
+                <span class="target-value">5</span>
+              </div>
+              <div class="target-circle outer" @click="shootTarget(2)">
+                <span class="target-value">2</span>
+              </div>
             </div>
+            <div class="score-display">النقاط: {{ targetScore }} / 20</div>
             <div class="result-text">{{ targetResult }}</div>
           </div>
         </div>
@@ -678,7 +719,7 @@
           <div class="header-glow"></div>
         </div>
         
-        <div class="game-icon">🎲</div>
+        <div class="game-icon" :class="{ spinning: luckyStarted }">🎲</div>
         
         <div class="game-controls-full">
           <div v-if="!luckyStarted" class="bet-controls">
@@ -704,15 +745,16 @@
               <span class="input-currency">#</span>
             </div>
             <div v-if="gameError" class="error-message">{{ gameError }}</div>
-            <button @click="startLucky" class="gold-button" :disabled="!luckyBet || luckyBet <= 0 || !luckyNumber">
-              <i class="fas fa-play"></i> جرب حظك
+            <button @click="startLucky" class="gold-button pulse" :disabled="!luckyBet || luckyBet <= 0 || !luckyNumber">
+              <i class="fas fa-star"></i> جرب حظك
             </button>
           </div>
           
           <div v-if="luckyStarted" class="lucky-display">
-            <div class="drawn-number">{{ luckyDrawn }}</div>
+            <div class="drawn-number" :class="{ 'match-effect': luckyWon }">{{ luckyDrawn }}</div>
+            <div class="your-number">رقمك: {{ luckyNumber }}</div>
             <div class="result-text" :class="luckyWon ? 'win-text' : 'lose-text'">
-              {{ luckyWon ? '🎉 رقم محظوظ!' : '😢 حظ أوفر المرة الجاية' }}
+              {{ luckyWon ? '🎉 رقم محظوظ! فوز كبير!' : '😢 حظ أوفر المرة الجاية' }}
             </div>
           </div>
         </div>
@@ -740,14 +782,15 @@
               <span class="input-currency">USDT</span>
             </div>
             <div v-if="gameError" class="error-message">{{ gameError }}</div>
-            <button @click="startMystery" class="gold-button" :disabled="!mysteryBet || mysteryBet <= 0">
-              <i class="fas fa-play"></i> افتح الصندوق
+            <button @click="startMystery" class="gold-button pulse" :disabled="!mysteryBet || mysteryBet <= 0">
+              <i class="fas fa-gift"></i> افتح الصندوق
             </button>
           </div>
           
           <div v-if="mysteryStarted" class="mystery-box-container">
-            <div class="box" @click="openMysteryBox" :class="{ opened: mysteryOpened }">
-              {{ mysteryOpened ? mysteryPrize : '🎁' }}
+            <div class="box" @click="openMysteryBox" :class="{ opened: mysteryOpened, shaking: !mysteryOpened }">
+              <span v-if="!mysteryOpened">🎁</span>
+              <span v-else class="prize">{{ mysteryPrize }}</span>
             </div>
             <div class="result-text">{{ mysteryResult }}</div>
           </div>
@@ -797,6 +840,7 @@ export default {
       /* Chicken Road */
       chickenBet: null,
       chickenStarted: false,
+      chickenGameOver: false,
       chickenPosition: 0,
       chickenSteps: [
         { multiplier: 1.0 },
@@ -811,9 +855,11 @@ export default {
       /* Dice */
       diceBet: null,
       diceStarted: false,
+      diceRolling: false,
       diceChance: 50,
       diceRoll: null,
       diceResultText: "",
+      diceWon: false,
       
       /* Mines */
       minesBet: null,
@@ -853,10 +899,11 @@ export default {
       /* Slot Machine */
       slotBet: null,
       slotStarted: false,
+      slotSpinning: false,
       slotReels: ['🍒', '🍒', '🍒'],
       slotWon: false,
       slotResult: "",
-      slotSymbols: ['🍒', '🍋', '🍊', '7', '💎', '🔔'],
+      slotSymbols: ['🍒', '🍋', '🍊', '7️⃣', '💎', '🔔'],
       
       /* Coinflip */
       coinflipBet: null,
@@ -871,7 +918,7 @@ export default {
       wheelStarted: false,
       wheelRotation: 0,
       wheelResult: "",
-      wheelMultipliers: [2, 5, 1.5, 10, 1.2, 3, 20, 1.1],
+      wheelMultipliers: [20, 5, 2, 10, 1.5, 3, 50, 1.2],
       
       /* Keno */
       kenoBet: null,
@@ -879,6 +926,7 @@ export default {
       kenoSelected: [],
       kenoDrawn: [],
       kenoMatches: 0,
+      kenoMultiplier: 0,
       
       /* Bowling */
       bowlingBet: null,
@@ -925,6 +973,10 @@ export default {
       if (!this.minesBet) return 0;
       let multiplier = 1 + (this.minesRevealed * 0.5);
       return this.minesBet * multiplier;
+    },
+    
+    playerScore() {
+      return this.calculateHand(this.playerHand);
     }
   },    
     
@@ -944,6 +996,7 @@ export default {
       
       // إيقاف جميع الألعاب
       this.chickenStarted = false;
+      this.chickenGameOver = false;
       this.diceStarted = false;
       this.minesStarted = false;
       if (this.crashInterval) clearInterval(this.crashInterval);
@@ -990,14 +1043,21 @@ export default {
       await this.updateBalance(this.balance);
       
       this.chickenStarted = true;
+      this.chickenGameOver = false;
       this.chickenPosition = 0;
+      this.result = "";
     },
     
     chickenNext() {
+      if (this.chickenGameOver) return;
+      
       const loseChance = 0.4 + this.chickenPosition * 0.07;
       if (Math.random() < loseChance) {
+        this.chickenGameOver = true;
         this.result = "💥 للأسف خسرت الرهان";
-        this.chickenStarted = false;
+        setTimeout(() => {
+          this.chickenStarted = false;
+        }, 2000);
         return;
       }
       
@@ -1009,11 +1069,16 @@ export default {
     },
     
     async chickenCashOut() {
+      if (this.chickenGameOver) return;
+      
       const profit = this.chickenProfit;
       this.balance += profit;
       await this.updateBalance(this.balance);
       this.result = `🎉 مبروك! ربحت ${profit.toFixed(2)} USDT`;
-      this.chickenStarted = false;
+      this.chickenGameOver = true;
+      setTimeout(() => {
+        this.chickenStarted = false;
+      }, 2000);
     },
     
     /* ===== Dice ===== */
@@ -1032,13 +1097,27 @@ export default {
       await this.updateBalance(this.balance);
       
       this.diceStarted = true;
-      this.diceRoll = Math.floor(Math.random() * 100) + 1;
+      this.diceRolling = true;
       
-      const win = this.diceRoll <= this.diceChance;
+      // تأثير الدوران
+      let rolls = 0;
+      const interval = setInterval(() => {
+        this.diceRoll = Math.floor(Math.random() * 100) + 1;
+        rolls++;
+        if (rolls >= 15) {
+          clearInterval(interval);
+          this.diceRolling = false;
+          this.checkDiceResult();
+        }
+      }, 100);
+    },
+    
+    async checkDiceResult() {
+      this.diceWon = this.diceRoll <= this.diceChance;
       const multiplier = 95 / this.diceChance;
       const profit = this.diceBet * multiplier;
       
-      if (win) {
+      if (this.diceWon) {
         this.balance += profit;
         await this.updateBalance(this.balance);
         this.diceResultText = `🎉 فوز! ربحت ${profit.toFixed(2)} USDT`;
@@ -1097,17 +1176,25 @@ export default {
       if (this.minesCells[index].mine) {
         this.minesGameOver = true;
         this.result = "💥 انفجر لغم! خسرت الرهان";
+        setTimeout(() => {
+          this.minesStarted = false;
+        }, 2000);
       } else {
         this.minesRevealed++;
       }
     },
     
     async minesCashOut() {
+      if (this.minesGameOver) return;
+      
       const profit = this.minesProfit;
       this.balance += profit;
       await this.updateBalance(this.balance);
       this.result = `🎉 ربحت ${profit.toFixed(2)} USDT`;
-      this.minesStarted = false;
+      this.minesGameOver = true;
+      setTimeout(() => {
+        this.minesStarted = false;
+      }, 2000);
     },
     
     /* ===== Crash ===== */
@@ -1130,25 +1217,27 @@ export default {
       this.crashMultiplier = 1.0;
       this.crashProgress = 0;
       
-      const crashPoint = 1 + Math.random() * 5;
+      const crashPoint = 1 + Math.random() * 8; // نقطة الانفجار بين 1 و 9
       
       this.crashInterval = setInterval(() => {
         if (this.crashCrashed) return;
         
-        this.crashMultiplier += 0.01;
-        this.crashProgress = (this.crashMultiplier - 1) * 20;
+        this.crashMultiplier += 0.05;
+        this.crashProgress = ((this.crashMultiplier - 1) / 8) * 100;
         
         if (this.crashMultiplier >= crashPoint) {
           this.crashCrashed = true;
           clearInterval(this.crashInterval);
-          this.result = "💥 انفجرت الصاروخ!";
-          this.crashStarted = false;
+          this.result = "💥 انفجر الصاروخ!";
+          setTimeout(() => {
+            this.crashStarted = false;
+          }, 2000);
         }
         
         if (this.crashMultiplier >= this.crashAutoCashout && !this.crashCrashed) {
           this.crashCashOut();
         }
-      }, 100);
+      }, 200);
     },
     
     async crashCashOut() {
@@ -1159,7 +1248,10 @@ export default {
       this.balance += profit;
       await this.updateBalance(this.balance);
       this.result = `🎉 سحبت قبل الانفجار! ربحت ${profit.toFixed(2)} USDT`;
-      this.crashStarted = false;
+      this.crashCrashed = true;
+      setTimeout(() => {
+        this.crashStarted = false;
+      }, 2000);
     },
     
     /* ===== Limbo ===== */
@@ -1178,21 +1270,25 @@ export default {
       await this.updateBalance(this.balance);
       
       this.limboStarted = true;
-      this.limboResult = 1 + Math.random() * 10;
-      this.limboWon = this.limboResult >= this.limboTarget;
       
-      if (this.limboWon) {
-        const profit = this.limboBet * this.limboResult;
-        this.balance += profit;
-        await this.updateBalance(this.balance);
-        this.result = `🎉 فوز! المضاعف ${this.limboResult.toFixed(2)}x ربحت ${profit.toFixed(2)} USDT`;
-      } else {
-        this.result = `😢 خسارة! المضاعف ${this.limboResult.toFixed(2)}x`;
-      }
-      
+      // تأثير الانتظار
       setTimeout(() => {
-        this.limboStarted = false;
-      }, 3000);
+        this.limboResult = 1 + Math.random() * 10;
+        this.limboWon = this.limboResult >= this.limboTarget;
+        
+        if (this.limboWon) {
+          const profit = this.limboBet * this.limboResult;
+          this.balance += profit;
+          this.updateBalance(this.balance);
+          this.result = `🎉 فوز! المضاعف ${this.limboResult.toFixed(2)}x ربحت ${profit.toFixed(2)} USDT`;
+        } else {
+          this.result = `😢 خسارة! المضاعف ${this.limboResult.toFixed(2)}x`;
+        }
+        
+        setTimeout(() => {
+          this.limboStarted = false;
+        }, 3000);
+      }, 1500);
     },
     
     /* ===== Blackjack ===== */
@@ -1262,6 +1358,8 @@ export default {
     },
     
     blackjackHit() {
+      if (this.blackjackGameOver) return;
+      
       this.playerHand.push(this.deck.pop());
       if (this.calculateHand(this.playerHand) > 21) {
         this.blackjackStand();
@@ -1271,44 +1369,47 @@ export default {
     async blackjackStand() {
       this.dealerRevealed = true;
       
-      while (this.calculateHand(this.dealerHand) < 17) {
-        this.dealerHand.push(this.deck.pop());
-      }
-      
-      const playerScore = this.calculateHand(this.playerHand);
-      const dealerScore = this.calculateHand(this.dealerHand);
-      
-      this.blackjackGameOver = true;
-      
-      if (playerScore > 21) {
-        this.blackjackWon = false;
-        this.blackjackResult = "😢 خسرت! نقاطك تجاوزت 21";
-        this.result = this.blackjackResult;
-      } else if (dealerScore > 21) {
-        this.blackjackWon = true;
-        const profit = this.blackjackBet * 2;
-        this.balance += profit;
-        await this.updateBalance(this.balance);
-        this.blackjackResult = `🎉 فوز! الموزع خسر ربحت ${profit.toFixed(2)} USDT`;
-        this.result = this.blackjackResult;
-      } else if (playerScore > dealerScore) {
-        this.blackjackWon = true;
-        const profit = this.blackjackBet * 2;
-        this.balance += profit;
-        await this.updateBalance(this.balance);
-        this.blackjackResult = `🎉 فوز! ${playerScore} ضد ${dealerScore} ربحت ${profit.toFixed(2)} USDT`;
-        this.result = this.blackjackResult;
-      } else if (playerScore < dealerScore) {
-        this.blackjackWon = false;
-        this.blackjackResult = `😢 خسارة! ${playerScore} ضد ${dealerScore}`;
-        this.result = this.blackjackResult;
-      } else {
-        this.blackjackWon = true;
-        this.balance += this.blackjackBet;
-        await this.updateBalance(this.balance);
-        this.blackjackResult = `🤝 تعادل! استرداد الرهان`;
-        this.result = this.blackjackResult;
-      }
+      // تأثير انتظار
+      setTimeout(async () => {
+        while (this.calculateHand(this.dealerHand) < 17) {
+          this.dealerHand.push(this.deck.pop());
+        }
+        
+        const playerScore = this.calculateHand(this.playerHand);
+        const dealerScore = this.calculateHand(this.dealerHand);
+        
+        this.blackjackGameOver = true;
+        
+        if (playerScore > 21) {
+          this.blackjackWon = false;
+          this.blackjackResult = "😢 خسرت! نقاطك تجاوزت 21";
+          this.result = this.blackjackResult;
+        } else if (dealerScore > 21) {
+          this.blackjackWon = true;
+          const profit = this.blackjackBet * 2;
+          this.balance += profit;
+          await this.updateBalance(this.balance);
+          this.blackjackResult = `🎉 فوز! الموزع خسر ربحت ${profit.toFixed(2)} USDT`;
+          this.result = this.blackjackResult;
+        } else if (playerScore > dealerScore) {
+          this.blackjackWon = true;
+          const profit = this.blackjackBet * 2;
+          this.balance += profit;
+          await this.updateBalance(this.balance);
+          this.blackjackResult = `🎉 فوز! ${playerScore} ضد ${dealerScore} ربحت ${profit.toFixed(2)} USDT`;
+          this.result = this.blackjackResult;
+        } else if (playerScore < dealerScore) {
+          this.blackjackWon = false;
+          this.blackjackResult = `😢 خسارة! ${playerScore} ضد ${dealerScore}`;
+          this.result = this.blackjackResult;
+        } else {
+          this.blackjackWon = true;
+          this.balance += this.blackjackBet;
+          await this.updateBalance(this.balance);
+          this.blackjackResult = `🤝 تعادل! استرداد الرهان`;
+          this.result = this.blackjackResult;
+        }
+      }, 1000);
     },
     
     /* ===== Slot Machine ===== */
@@ -1327,6 +1428,7 @@ export default {
       await this.updateBalance(this.balance);
       
       this.slotStarted = true;
+      this.slotSpinning = true;
       
       let spins = 0;
       const spinInterval = setInterval(() => {
@@ -1337,11 +1439,12 @@ export default {
         ];
         spins++;
         
-        if (spins >= 10) {
+        if (spins >= 15) {
           clearInterval(spinInterval);
+          this.slotSpinning = false;
           this.checkSlotWin();
         }
-      }, 100);
+      }, 150);
     },
     
     async checkSlotWin() {
@@ -1350,7 +1453,7 @@ export default {
       
       if (this.slotWon) {
         let multiplier = 1;
-        if (a === '7') multiplier = 10;
+        if (a === '7️⃣') multiplier = 10;
         else if (a === '💎') multiplier = 8;
         else if (a === '🔔') multiplier = 5;
         else multiplier = 3;
@@ -1405,6 +1508,10 @@ export default {
         } else {
           this.result = `😢 خسارة! كانت النتيجة ${this.coinflipResult}`;
         }
+        
+        setTimeout(() => {
+          this.coinflipStarted = false;
+        }, 3000);
       }, 2000);
     },
     
@@ -1424,7 +1531,7 @@ export default {
       await this.updateBalance(this.balance);
       
       this.wheelStarted = true;
-      const spins = 5 + Math.floor(Math.random() * 10);
+      const spins = 10 + Math.floor(Math.random() * 10);
       const targetIndex = Math.floor(Math.random() * 8);
       const targetRotation = 360 * spins + (targetIndex * 45);
       
@@ -1433,12 +1540,19 @@ export default {
         this.wheelRotation += 15;
         if (this.wheelRotation >= targetRotation) {
           clearInterval(interval);
-          const multiplier = this.wheelMultipliers[targetIndex];
-          const profit = this.wheelBet * multiplier;
-          this.balance += profit;
-          this.updateBalance(this.balance);
-          this.wheelResult = `🎉 وقفت على x${multiplier} ربحت ${profit.toFixed(2)} USDT`;
-          this.result = this.wheelResult;
+          
+          setTimeout(async () => {
+            const multiplier = this.wheelMultipliers[targetIndex];
+            const profit = this.wheelBet * multiplier;
+            this.balance += profit;
+            await this.updateBalance(this.balance);
+            this.wheelResult = `🎉 وقفت على x${multiplier} ربحت ${profit.toFixed(2)} USDT`;
+            this.result = this.wheelResult;
+            
+            setTimeout(() => {
+              this.wheelStarted = false;
+            }, 3000);
+          }, 500);
         }
       }, 20);
     },
@@ -1461,6 +1575,7 @@ export default {
       this.kenoStarted = true;
       this.kenoSelected = [];
       this.kenoDrawn = [];
+      this.kenoMatches = 0;
     },
     
     toggleKenoNumber(n) {
@@ -1482,19 +1597,29 @@ export default {
       this.kenoDrawn = [];
       const numbers = Array.from({ length: 40 }, (_, i) => i + 1);
       
-      for (let i = 0; i < 20; i++) {
-        const index = Math.floor(Math.random() * numbers.length);
-        this.kenoDrawn.push(numbers[index]);
-        numbers.splice(index, 1);
-      }
-      
+      // تأثير السحب التدريجي
+      let drawn = 0;
+      const interval = setInterval(() => {
+        if (drawn < 20) {
+          const index = Math.floor(Math.random() * numbers.length);
+          this.kenoDrawn.push(numbers[index]);
+          numbers.splice(index, 1);
+          drawn++;
+        } else {
+          clearInterval(interval);
+          this.calculateKenoResult();
+        }
+      }, 200);
+    },
+    
+    async calculateKenoResult() {
       this.kenoMatches = this.kenoSelected.filter(n => this.kenoDrawn.includes(n)).length;
       
       const multipliers = [0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
-      const multiplier = multipliers[this.kenoMatches] || 0;
+      this.kenoMultiplier = multipliers[this.kenoMatches] || 0;
       
-      if (multiplier > 0) {
-        const profit = this.kenoBet * multiplier;
+      if (this.kenoMultiplier > 0) {
+        const profit = this.kenoBet * this.kenoMultiplier;
         this.balance += profit;
         await this.updateBalance(this.balance);
         this.result = `🎉 ${this.kenoMatches} أرقام متطابقة! ربحت ${profit.toFixed(2)} USDT`;
@@ -1524,25 +1649,43 @@ export default {
       
       setTimeout(() => {
         const knocked = Math.floor(Math.random() * 11);
-        this.bowlingKnocked = Array.from({ length: knocked }, (_, i) => i + 1);
-        this.bowlingRolling = false;
         
-        let multiplier = 1;
-        if (knocked === 10) multiplier = 3;
-        else if (knocked >= 8) multiplier = 2;
-        else if (knocked >= 5) multiplier = 1.5;
-        
-        const profit = this.bowlingBet * multiplier;
-        this.balance += profit;
-        this.updateBalance(this.balance);
-        
-        if (knocked === 10) {
-          this.bowlingResult = `🎳 سترايك! ربحت ${profit.toFixed(2)} USDT`;
-        } else {
-          this.bowlingResult = `🎳 ضربت ${knocked} قوارير ربحت ${profit.toFixed(2)} USDT`;
-        }
-        this.result = this.bowlingResult;
-      }, 2000);
+        // تأثير سقوط القوارير
+        let knockInterval = setInterval(() => {
+          if (this.bowlingKnocked.length < knocked) {
+            const pin = Math.floor(Math.random() * 10) + 1;
+            if (!this.bowlingKnocked.includes(pin)) {
+              this.bowlingKnocked.push(pin);
+            }
+          } else {
+            clearInterval(knockInterval);
+            this.bowlingRolling = false;
+            this.calculateBowlingResult(knocked);
+          }
+        }, 100);
+      }, 1500);
+    },
+    
+    async calculateBowlingResult(knocked) {
+      let multiplier = 1;
+      if (knocked === 10) multiplier = 3;
+      else if (knocked >= 8) multiplier = 2;
+      else if (knocked >= 5) multiplier = 1.5;
+      
+      const profit = this.bowlingBet * multiplier;
+      this.balance += profit;
+      await this.updateBalance(this.balance);
+      
+      if (knocked === 10) {
+        this.bowlingResult = `🎳 سترايك! ربحت ${profit.toFixed(2)} USDT`;
+      } else {
+        this.bowlingResult = `🎳 ضربت ${knocked} قوارير ربحت ${profit.toFixed(2)} USDT`;
+      }
+      this.result = this.bowlingResult;
+      
+      setTimeout(() => {
+        this.bowlingStarted = false;
+      }, 3000);
     },
     
     /* ===== Puzzle ===== */
@@ -1588,6 +1731,10 @@ export default {
         this.balance += profit;
         this.updateBalance(this.balance);
         this.result = `🧩 أحسنت! حللت اللغز وربحت ${profit.toFixed(2)} USDT`;
+        
+        setTimeout(() => {
+          this.puzzleStarted = false;
+        }, 3000);
       }
     },
     
@@ -1608,6 +1755,7 @@ export default {
       
       this.targetStarted = true;
       this.targetScore = 0;
+      this.targetResult = "اضرب الهدف لجمع النقاط";
     },
     
     async shootTarget(score) {
@@ -1627,7 +1775,10 @@ export default {
         await this.updateBalance(this.balance);
         this.targetResult = `🎉 فوز! مجموع النقاط ${this.targetScore} ربحت ${profit.toFixed(2)} USDT`;
         this.result = this.targetResult;
-        this.targetStarted = false;
+        
+        setTimeout(() => {
+          this.targetStarted = false;
+        }, 3000);
       }
     },
     
@@ -1651,21 +1802,31 @@ export default {
       await this.updateBalance(this.balance);
       
       this.luckyStarted = true;
-      this.luckyDrawn = Math.floor(Math.random() * 100) + 1;
-      this.luckyWon = this.luckyDrawn === this.luckyNumber;
       
-      if (this.luckyWon) {
-        const profit = this.luckyBet * 50;
-        this.balance += profit;
-        await this.updateBalance(this.balance);
-        this.result = `🎉 رقم محظوظ! ربحت ${profit.toFixed(2)} USDT`;
-      } else {
-        this.result = `😢 الرقم المسحوب ${this.luckyDrawn}`;
-      }
-      
-      setTimeout(() => {
-        this.luckyStarted = false;
-      }, 3000);
+      // تأثير السحب
+      let rolls = 0;
+      const interval = setInterval(() => {
+        this.luckyDrawn = Math.floor(Math.random() * 100) + 1;
+        rolls++;
+        
+        if (rolls >= 15) {
+          clearInterval(interval);
+          this.luckyWon = this.luckyDrawn === this.luckyNumber;
+          
+          if (this.luckyWon) {
+            const profit = this.luckyBet * 50;
+            this.balance += profit;
+            this.updateBalance(this.balance);
+            this.result = `🎉 رقم محظوظ! ربحت ${profit.toFixed(2)} USDT`;
+          } else {
+            this.result = `😢 الرقم المسحوب ${this.luckyDrawn}`;
+          }
+          
+          setTimeout(() => {
+            this.luckyStarted = false;
+          }, 3000);
+        }
+      }, 100);
     },
     
     /* ===== Mystery Box ===== */
@@ -1692,34 +1853,37 @@ export default {
       
       this.mysteryOpened = true;
       
-      const prizes = [0.5, 1, 1.5, 2, 3, 5, 10];
-      const weights = [0.2, 0.3, 0.2, 0.15, 0.1, 0.04, 0.01];
-      
-      let random = Math.random();
-      let cumulative = 0;
-      let multiplier = 1;
-      
-      for (let i = 0; i < weights.length; i++) {
-        cumulative += weights[i];
-        if (random < cumulative) {
-          multiplier = prizes[i];
-          break;
+      // تأثير الانتظار
+      setTimeout(async () => {
+        const prizes = [0.5, 1, 1.5, 2, 3, 5, 10];
+        const weights = [0.2, 0.3, 0.2, 0.15, 0.1, 0.04, 0.01];
+        
+        let random = Math.random();
+        let cumulative = 0;
+        let multiplier = 1;
+        
+        for (let i = 0; i < weights.length; i++) {
+          cumulative += weights[i];
+          if (random < cumulative) {
+            multiplier = prizes[i];
+            break;
+          }
         }
-      }
-      
-      const profit = this.mysteryBet * multiplier;
-      this.balance += profit;
-      await this.updateBalance(this.balance);
-      
-      if (multiplier >= 1) {
-        this.mysteryPrize = `💰 ${profit.toFixed(2)} USDT`;
-        this.mysteryResult = `🎉 ربحت ${profit.toFixed(2)} USDT!`;
-      } else {
-        this.mysteryPrize = `😢 ${profit.toFixed(2)} USDT`;
-        this.mysteryResult = `😢 خسرت جزء من الرهان`;
-      }
-      
-      this.result = this.mysteryResult;
+        
+        const profit = this.mysteryBet * multiplier;
+        this.balance += profit;
+        await this.updateBalance(this.balance);
+        
+        if (multiplier >= 1) {
+          this.mysteryPrize = `💰 ${profit.toFixed(2)} USDT`;
+          this.mysteryResult = `🎉 ربحت ${profit.toFixed(2)} USDT!`;
+        } else {
+          this.mysteryPrize = `😢 ${profit.toFixed(2)} USDT`;
+          this.mysteryResult = `😢 خسرت جزء من الرهان`;
+        }
+        
+        this.result = this.mysteryResult;
+      }, 1000);
     }
   }
 };    
@@ -1728,7 +1892,7 @@ export default {
 <style scoped>    
 /* الخلفية الرئيسية - أسود فاخر */
 .game-page {    
-  background: #0A0C10;
+  background: linear-gradient(135deg, #0A0C10 0%, #1A1F2A 100%);
   min-height: 100vh;    
   color: #ffffff;    
   padding: 20px;    
@@ -1745,25 +1909,33 @@ export default {
 }
 
 .balance-gold {
-  background: #11151C;
+  background: linear-gradient(145deg, #11151C, #1A1F2A);
   padding: 12px 25px;
   border-radius: 50px;
   border: 1px solid #D4AF37;
-  box-shadow: 0 5px 20px rgba(212, 175, 55, 0.2);
+  box-shadow: 0 5px 20px rgba(212, 175, 55, 0.3), inset 0 0 10px rgba(212, 175, 55, 0.2);
   display: flex;
   align-items: center;
   gap: 10px;
+  animation: glowPulse 2s infinite;
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 5px 20px rgba(212, 175, 55, 0.3), inset 0 0 10px rgba(212, 175, 55, 0.2); }
+  50% { box-shadow: 0 5px 30px rgba(212, 175, 55, 0.5), inset 0 0 20px rgba(212, 175, 55, 0.3); }
 }
 
 .balance-gold i {
   color: #D4AF37;
   font-size: 20px;
+  filter: drop-shadow(0 0 5px #D4AF37);
 }
 
 .balance-gold strong {
   color: #D4AF37;
   font-size: 18px;
   margin-right: 5px;
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
 }
 
 /* التبويبات */
@@ -1775,9 +1947,10 @@ export default {
   margin-bottom: 25px;
   max-height: 200px;
   overflow-y: auto;
-  padding: 10px;
-  background: #11151C;
+  padding: 15px;
+  background: linear-gradient(145deg, #11151C, #0A0C10);
   border-radius: 20px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
   scrollbar-width: thin;
   scrollbar-color: #D4AF37 #1A1F2A;
 }
@@ -1794,14 +1967,15 @@ export default {
 .tabs::-webkit-scrollbar-thumb {
   background: #D4AF37;
   border-radius: 10px;
+  box-shadow: inset 0 0 5px #F6E27A;
 }
 
 .tabs button {
   padding: 10px 15px;
   border-radius: 50px;
-  background: #1A1F2A;
+  background: linear-gradient(145deg, #1A1F2A, #11151C);
   color: #ffffff;
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  border: 1px solid rgba(212, 175, 55, 0.3);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -1810,22 +1984,31 @@ export default {
   align-items: center;
   gap: 5px;
   white-space: nowrap;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
 }
 
 .tabs button:hover {
   border-color: #D4AF37;
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(212, 175, 55, 0.3);
 }
 
 .tabs .active {
   background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
   color: #0A0C10;
   border: none;
-  box-shadow: 0 5px 20px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 5px 20px rgba(212, 175, 55, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.5);
+  animation: activePulse 2s infinite;
+}
+
+@keyframes activePulse {
+  0%, 100% { box-shadow: 0 5px 20px rgba(212, 175, 55, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.5); }
+  50% { box-shadow: 0 5px 30px rgba(212, 175, 55, 0.8), inset 0 0 20px rgba(255, 255, 255, 0.7); }
 }
 
 .tab-icon {
   font-size: 18px;
+  filter: drop-shadow(0 0 5px currentColor);
 }
 
 .tab-text {
@@ -1839,13 +2022,14 @@ export default {
 }
 
 .card {
-  background: #11151C;
+  background: linear-gradient(145deg, #11151C, #0A0C10);
   border-radius: 30px;
   padding: 20px;
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8), inset 0 0 50px rgba(212, 175, 55, 0.1);
   position: relative;
   overflow: hidden;
+  backdrop-filter: blur(10px);
 }
 
 .card::before {
@@ -1855,8 +2039,9 @@ export default {
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle, rgba(212, 175, 55, 0.03) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
   animation: rotate 20s linear infinite;
+  pointer-events: none;
 }
 
 @keyframes rotate {
@@ -1878,6 +2063,7 @@ export default {
   background-clip: text;
   position: relative;
   z-index: 1;
+  text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
 }
 
 .header-glow {
@@ -1887,20 +2073,27 @@ export default {
   transform: translate(-50%, -50%);
   width: 150px;
   height: 150px;
-  background: radial-gradient(circle, rgba(212, 175, 55, 0.2) 0%, transparent 70%);
-  filter: blur(30px);
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.3) 0%, transparent 70%);
+  filter: blur(40px);
   z-index: 0;
+  animation: glowMove 5s infinite;
+}
+
+@keyframes glowMove {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.8; }
 }
 
 .game-icon {
-  font-size: 60px;
+  font-size: 80px;
   margin: 20px 0;
+  filter: drop-shadow(0 0 20px #D4AF37);
   animation: bounce 2s infinite;
 }
 
 @keyframes bounce {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  50% { transform: translateY(-15px); }
 }
 
 /* ===== Chicken Road Styles ===== */
@@ -1913,10 +2106,21 @@ export default {
 }
 
 .chicken {
-  font-size: 80px;
-  animation: bounce 2s infinite;
+  font-size: 100px;
   position: relative;
   z-index: 2;
+  filter: drop-shadow(0 0 20px #D4AF37);
+  transition: all 0.3s ease;
+}
+
+.chicken.walking {
+  animation: walk 0.5s infinite;
+}
+
+@keyframes walk {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  25% { transform: translateX(-5px) rotate(-5deg); }
+  75% { transform: translateX(5px) rotate(5deg); }
 }
 
 .chicken-glow {
@@ -1924,26 +2128,33 @@ export default {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 100px;
-  height: 100px;
-  background: radial-gradient(circle, rgba(212, 175, 55, 0.3) 0%, transparent 70%);
-  filter: blur(20px);
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.4) 0%, transparent 70%);
+  filter: blur(30px);
   border-radius: 50%;
+  animation: pulseGlow 2s infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.8; }
 }
 
 .road {
   display: flex;
   justify-content: space-between;
   margin: 20px 0;
-  background: #1A1F2A;
+  background: linear-gradient(145deg, #1A1F2A, #11151C);
   padding: 15px;
   border-radius: 20px;
   gap: 5px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
 }
 
 .step {
   flex: 1;
-  background: #1E2430;
+  background: linear-gradient(145deg, #1E2430, #151A24);
   border-radius: 12px;
   padding: 10px 2px;
   font-size: 12px;
@@ -1953,23 +2164,37 @@ export default {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  border: 1px solid rgba(212, 175, 55, 0.1);
+  border: 1px solid rgba(212, 175, 55, 0.2);
   transition: all 0.3s ease;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
 }
 
 .step.active {
   background: linear-gradient(135deg, #D4AF37, #F6E27A);
   color: #0A0C10;
   transform: scale(1.05);
-  box-shadow: 0 10px 25px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 10px 25px rgba(212, 175, 55, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.5);
+  animation: activeStep 1s infinite;
+}
+
+@keyframes activeStep {
+  0%, 100% { box-shadow: 0 10px 25px rgba(212, 175, 55, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.5); }
+  50% { box-shadow: 0 15px 35px rgba(212, 175, 55, 0.8), inset 0 0 20px rgba(255, 255, 255, 0.7); }
+}
+
+.step.passed {
+  background: linear-gradient(145deg, #2A2F3A, #1E2430);
+  border-color: #22c55e;
 }
 
 .gold-step {
   border-color: #D4AF37;
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
 }
 
 .silver-step {
   border-color: #C0C0C0;
+  box-shadow: 0 0 10px rgba(192, 192, 192, 0.3);
 }
 
 .multiplier {
@@ -1979,23 +2204,37 @@ export default {
 
 .step-check {
   position: absolute;
-  top: 2px;
-  left: 2px;
+  top: 5px;
+  left: 5px;
   color: #22c55e;
-  font-size: 14px;
+  font-size: 16px;
+  filter: drop-shadow(0 0 5px #22c55e);
+  animation: checkPop 0.3s ease;
+}
+
+@keyframes checkPop {
+  0% { transform: scale(0); }
+  80% { transform: scale(1.2); }
+  100% { transform: scale(1); }
 }
 
 .chicken-icon {
-  font-size: 24px;
+  font-size: 28px;
   margin-top: 5px;
-  filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.3));
+  filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.5));
+  animation: iconBounce 0.5s infinite;
+}
+
+@keyframes iconBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
 }
 
 /* قسم الرهان */
 .bet-section {
   margin-top: 20px;
   padding-top: 15px;
-  border-top: 1px solid rgba(212, 175, 55, 0.2);
+  border-top: 1px solid rgba(212, 175, 55, 0.3);
 }
 
 .bet-controls {
@@ -2014,18 +2253,19 @@ export default {
   width: 100%;
   padding: 12px 20px;
   border-radius: 50px;
-  background: #1A1F2A;
+  background: linear-gradient(145deg, #1A1F2A, #11151C);
   color: #ffffff;
   border: 2px solid rgba(212, 175, 55, 0.3);
   font-size: 16px;
   text-align: center;
   transition: all 0.3s ease;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
 }
 
 .gold-input:focus {
   outline: none;
   border-color: #D4AF37;
-  box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.3), inset 0 2px 5px rgba(0, 0, 0, 0.5);
 }
 
 .input-currency {
@@ -2035,6 +2275,7 @@ export default {
   transform: translateY(-50%);
   color: #D4AF37;
   font-weight: 600;
+  text-shadow: 0 0 5px #D4AF37;
 }
 
 .gold-button {
@@ -2050,17 +2291,27 @@ export default {
   display: flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 5px 20px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 5px 20px rgba(212, 175, 55, 0.4), inset 0 2px 5px rgba(255, 255, 255, 0.5);
+}
+
+.gold-button.pulse {
+  animation: buttonPulse 2s infinite;
+}
+
+@keyframes buttonPulse {
+  0%, 100% { box-shadow: 0 5px 20px rgba(212, 175, 55, 0.4), inset 0 2px 5px rgba(255, 255, 255, 0.5); }
+  50% { box-shadow: 0 5px 30px rgba(212, 175, 55, 0.8), inset 0 2px 10px rgba(255, 255, 255, 0.7); }
 }
 
 .gold-button:hover:not(:disabled) {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 30px rgba(212, 175, 55, 0.4);
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(212, 175, 55, 0.6), inset 0 2px 10px rgba(255, 255, 255, 0.7);
 }
 
 .gold-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  filter: grayscale(0.5);
 }
 
 /* عناصر التحكم أثناء اللعبة */
@@ -2077,10 +2328,11 @@ export default {
 }
 
 .profit-display {
-  background: #1A1F2A;
+  background: linear-gradient(145deg, #1A1F2A, #11151C);
   padding: 15px;
   border-radius: 16px;
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
 }
 
 .profit-label {
@@ -2092,6 +2344,7 @@ export default {
   color: #D4AF37;
   font-size: 20px;
   font-weight: 800;
+  text-shadow: 0 0 10px #D4AF37;
 }
 
 .action-buttons {
@@ -2112,21 +2365,29 @@ export default {
   display: flex;
   align-items: center;
   gap: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 .action-btn.gold {
   background: linear-gradient(135deg, #D4AF37, #F6E27A);
   color: #0A0C10;
+  box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3), inset 0 2px 5px rgba(255, 255, 255, 0.5);
 }
 
 .action-btn.green {
   background: linear-gradient(135deg, #22c55e, #16a34a);
   color: white;
+  box-shadow: 0 5px 15px rgba(34, 197, 94, 0.3), inset 0 2px 5px rgba(255, 255, 255, 0.5);
 }
 
-.action-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(212, 175, 55, 0.3);
+.action-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(212, 175, 55, 0.4), inset 0 2px 5px rgba(255, 255, 255, 0.5);
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* رسائل الخطأ */
@@ -2136,10 +2397,11 @@ export default {
   display: flex;
   align-items: center;
   gap: 5px;
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(239, 68, 68, 0.15);
   padding: 5px 12px;
   border-radius: 20px;
   border: 1px solid #ef4444;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
 }
 
 /* نتيجة اللعبة */
@@ -2148,7 +2410,7 @@ export default {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: #11151C;
+  background: linear-gradient(145deg, #11151C, #0A0C10);
   padding: 20px 40px;
   border-radius: 20px;
   display: flex;
@@ -2158,35 +2420,38 @@ export default {
   font-weight: 700;
   z-index: 1000;
   border: 2px solid;
-  animation: popIn 0.3s ease;
+  animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
 }
 
 .result-popup.win {
   border-color: #D4AF37;
-  box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 0 50px rgba(212, 175, 55, 0.5), inset 0 0 20px rgba(212, 175, 55, 0.3);
 }
 
 .result-popup.win i {
   color: #D4AF37;
+  filter: drop-shadow(0 0 10px #D4AF37);
 }
 
 .result-popup.lose {
   border-color: #ef4444;
-  box-shadow: 0 0 30px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 0 50px rgba(239, 68, 68, 0.5), inset 0 0 20px rgba(239, 68, 68, 0.3);
 }
 
 .result-popup.lose i {
   color: #ef4444;
+  filter: drop-shadow(0 0 10px #ef4444);
 }
 
 @keyframes popIn {
-  from {
+  0% {
     opacity: 0;
-    transform: translate(-50%, -40%);
+    transform: translate(-50%, -40%) scale(0.8);
   }
-  to {
+  100% {
     opacity: 1;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 
@@ -2198,39 +2463,88 @@ export default {
   font-weight: 600;
 }
 
+.slider-container label {
+  font-size: 16px;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.highlight {
+  color: #D4AF37;
+  font-size: 20px;
+  font-weight: 800;
+  text-shadow: 0 0 10px #D4AF37;
+}
+
 .gold-slider {
   width: 100%;
   height: 8px;
   border-radius: 10px;
-  background: #1A1F2A;
+  background: linear-gradient(90deg, #1A1F2A, #D4AF37);
   outline: none;
   -webkit-appearance: none;
 }
 
 .gold-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
+  width: 25px;
+  height: 25px;
   border-radius: 50%;
-  background: #D4AF37;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A);
   cursor: pointer;
-  box-shadow: 0 0 10px #D4AF37;
+  box-shadow: 0 0 15px #D4AF37;
+  border: 2px solid white;
 }
 
 .multiplier-display {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 800;
-  color: #D4AF37;
   text-align: center;
   margin: 10px 0;
 }
 
-.dice-result {
-  font-size: 60px;
-  font-weight: 800;
+.glow-text {
   color: #D4AF37;
+  text-shadow: 0 0 20px #D4AF37, 0 0 40px #F6E27A;
+  animation: textPulse 2s infinite;
+}
+
+@keyframes textPulse {
+  0%, 100% { text-shadow: 0 0 20px #D4AF37, 0 0 40px #F6E27A; }
+  50% { text-shadow: 0 0 30px #D4AF37, 0 0 60px #F6E27A; }
+}
+
+.dice-result {
+  font-size: 80px;
+  font-weight: 800;
   text-align: center;
-  animation: roll 0.5s ease;
+  margin: 20px 0;
+  transition: all 0.3s ease;
+}
+
+.dice-result.win-effect {
+  color: #22c55e;
+  animation: winDance 0.5s ease;
+}
+
+.dice-result.lose-effect {
+  color: #ef4444;
+  animation: loseShake 0.5s ease;
+}
+
+@keyframes winDance {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2) rotate(10deg); }
+}
+
+@keyframes loseShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+.rolling {
+  animation: roll 0.5s infinite;
 }
 
 @keyframes roll {
@@ -2246,18 +2560,27 @@ export default {
 }
 
 .result-box {
-  background: #1A1F2A;
+  background: linear-gradient(145deg, #1A1F2A, #11151C);
   padding: 20px;
   border-radius: 20px;
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
 .win-text {
   color: #22c55e;
+  text-shadow: 0 0 10px #22c55e;
+  animation: winPulse 2s infinite;
+}
+
+@keyframes winPulse {
+  0%, 100% { text-shadow: 0 0 10px #22c55e; }
+  50% { text-shadow: 0 0 20px #22c55e; }
 }
 
 .lose-text {
   color: #ef4444;
+  text-shadow: 0 0 10px #ef4444;
 }
 
 /* Mines */
@@ -2266,12 +2589,16 @@ export default {
   grid-template-columns: repeat(5, 1fr);
   gap: 8px;
   margin: 15px 0;
+  padding: 10px;
+  background: linear-gradient(145deg, #1A1F2A, #11151C);
+  border-radius: 20px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
 }
 
 .mine-cell {
   aspect-ratio: 1;
-  background: #1E2430;
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  background: linear-gradient(145deg, #1E2430, #151A24);
+  border: 1px solid rgba(212, 175, 55, 0.3);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -2281,76 +2608,147 @@ export default {
   cursor: pointer;
   transition: all 0.3s ease;
   color: #D4AF37;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
 }
 
 .mine-cell:hover:not(:disabled) {
-  background: #2A2F3A;
+  background: linear-gradient(145deg, #2A2F3A, #1E2430);
   transform: scale(1.05);
   border-color: #D4AF37;
+  box-shadow: 0 8px 15px rgba(212, 175, 55, 0.3);
 }
 
 .mine-cell.revealed {
-  background: #2A2F3A;
+  background: linear-gradient(145deg, #2A2F3A, #1E2430);
 }
 
 .mine-cell.mine {
-  background: #ef4444;
+  background: linear-gradient(145deg, #ef4444, #dc2626);
   color: white;
   border-color: #ef4444;
+  animation: explode 0.5s ease;
+}
+
+@keyframes explode {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.5); opacity: 0.5; }
+  100% { transform: scale(1); }
 }
 
 .mine-cell.safe {
-  background: #22c55e;
+  background: linear-gradient(145deg, #22c55e, #16a34a);
   color: white;
   border-color: #22c55e;
+  animation: safe 0.3s ease;
+}
+
+@keyframes safe {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.mine-cell.explode {
+  animation: explodeBig 0.5s ease;
+}
+
+@keyframes explodeBig {
+  0% { transform: scale(1); }
+  50% { transform: scale(2); opacity: 0; }
+  100% { transform: scale(1); }
 }
 
 .mine-cell:disabled {
   cursor: not-allowed;
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
 /* Crash */
 .crash-display {
   text-align: center;
   padding: 20px;
-  background: #1A1F2A;
+  background: linear-gradient(145deg, #1A1F2A, #11151C);
   border-radius: 20px;
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
 .multiplier-box {
-  font-size: 48px;
+  font-size: 60px;
   font-weight: 800;
   color: #D4AF37;
   margin-bottom: 15px;
   transition: all 0.3s ease;
+  text-shadow: 0 0 20px #D4AF37;
+}
+
+.multiplier-box.pulse-text {
+  animation: multiplierPulse 0.5s infinite;
+}
+
+@keyframes multiplierPulse {
+  0%, 100% { transform: scale(1); text-shadow: 0 0 20px #D4AF37; }
+  50% { transform: scale(1.1); text-shadow: 0 0 40px #F6E27A; }
 }
 
 .multiplier-box.crashed {
   color: #ef4444;
-  animation: shake 0.5s ease;
+  animation: crashShake 0.5s ease;
+  text-shadow: 0 0 30px #ef4444;
 }
 
-@keyframes shake {
+@keyframes crashShake {
   0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-10px); }
-  75% { transform: translateX(10px); }
+  25% { transform: translateX(-15px); }
+  75% { transform: translateX(15px); }
+}
+
+.rocket-container {
+  position: relative;
+  height: 80px;
+  margin: 20px 0;
 }
 
 .rocket {
-  font-size: 40px;
-  margin: 10px 0;
+  font-size: 50px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   transition: all 0.3s ease;
+  filter: drop-shadow(0 0 20px #D4AF37);
 }
 
 .rocket.launched {
-  transform: translateY(-20px);
+  animation: fly 1s infinite;
+}
+
+@keyframes fly {
+  0% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-30px); }
+  100% { transform: translateX(-50%) translateY(0); }
 }
 
 .rocket.crashed {
-  transform: translateY(20px) rotate(90deg);
+  transform: translateX(-50%) rotate(180deg) translateY(50px);
   opacity: 0.5;
+  filter: drop-shadow(0 0 20px #ef4444);
+}
+
+.smoke {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 20px;
+  background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: smokePuff 1s infinite;
+}
+
+@keyframes smokePuff {
+  0% { transform: translateX(-50%) scale(0.5); opacity: 0.8; }
+  100% { transform: translateX(-50%) scale(3); opacity: 0; }
 }
 
 .crash-progress {
@@ -2363,66 +2761,200 @@ export default {
 .crash-progress::-webkit-progress-value {
   background: linear-gradient(90deg, #22c55e, #D4AF37, #ef4444);
   border-radius: 10px;
+  transition: width 0.2s ease;
+}
+
+/* Flying animation for crash icon */
+.flying {
+  animation: flyAround 2s infinite;
+}
+
+@keyframes flyAround {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(10px, -20px) rotate(10deg); }
+  50% { transform: translate(-10px, -40px) rotate(-10deg); }
+  75% { transform: translate(10px, -60px) rotate(10deg); }
+  100% { transform: translate(0, -80px) rotate(0deg); }
+}
+
+.exploding {
+  animation: explodeRocket 1s ease;
+}
+
+@keyframes explodeRocket {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(2); opacity: 0.5; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+/* Limbo */
+.limbo-display {
+  background: linear-gradient(145deg, #1A1F2A, #11151C);
+  padding: 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.result-number {
+  font-size: 70px;
+  font-weight: 800;
+  color: #D4AF37;
+  text-align: center;
+  margin: 20px 0;
+  transition: all 0.3s ease;
+}
+
+.result-number.win-effect {
+  animation: winPop 0.5s ease;
+}
+
+@keyframes winPop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+.result-number.lose-effect {
+  animation: loseShrink 0.5s ease;
+}
+
+@keyframes loseShrink {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.7); }
+  100% { transform: scale(1); }
+}
+
+.jumping {
+  animation: jump 0.5s infinite;
+}
+
+@keyframes jump {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-30px); }
 }
 
 /* Blackjack */
 .blackjack-table {
-  background: #1E2430;
+  background: linear-gradient(145deg, #1E2430, #151A24);
   padding: 20px;
   border-radius: 20px;
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
 .dealer-hand, .player-hand {
-  margin: 10px 0;
-  padding: 10px;
-  background: #11151C;
-  border-radius: 10px;
-  font-size: 18px;
+  margin: 15px 0;
+  padding: 15px;
+  background: linear-gradient(145deg, #11151C, #0A0C10);
+  border-radius: 15px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.hand-label {
+  display: block;
+  margin-bottom: 10px;
+  color: #D4AF37;
+  font-weight: 600;
+}
+
+.cards {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .card {
-  display: inline-block;
-  padding: 5px 10px;
-  margin: 0 3px;
-  background: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 50px;
+  height: 70px;
+  padding: 5px;
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
   color: #0A0C10;
-  border-radius: 5px;
+  border-radius: 8px;
   font-weight: 700;
+  font-size: 18px;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+  border: 1px solid #D4AF37;
+  animation: cardDeal 0.3s ease;
+}
+
+@keyframes cardDeal {
+  0% { transform: translateY(-50px) rotate(180deg); opacity: 0; }
+  100% { transform: translateY(0) rotate(0); opacity: 1; }
+}
+
+.card.card-back {
+  background: linear-gradient(135deg, #D4AF37, #C5A028);
+  color: transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.card.card-back::after {
+  content: '?';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.score {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 5px 15px;
+  background: linear-gradient(145deg, #D4AF37, #C5A028);
+  color: #0A0C10;
+  border-radius: 20px;
+  font-weight: 700;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
 }
 
 /* Slot Machine */
 .slot-machine {
-  background: #1E2430;
+  background: linear-gradient(145deg, #1A1F2A, #11151C);
   padding: 20px;
   border-radius: 20px;
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
 .slot-row {
   display: flex;
   justify-content: center;
-  gap: 10px;
+  gap: 15px;
   margin-bottom: 20px;
+  padding: 20px;
+  background: linear-gradient(145deg, #1E2430, #151A24);
+  border-radius: 15px;
+}
+
+.slot-row.spinning .slot-reel {
+  animation: spinReel 0.1s infinite;
+}
+
+@keyframes spinReel {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(20px); }
 }
 
 .slot-reel {
   width: 80px;
   height: 80px;
-  background: #11151C;
+  background: linear-gradient(145deg, #11151C, #0A0C10);
   border: 2px solid #D4AF37;
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 40px;
-  animation: spin 0.1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(212, 175, 55, 0.3);
 }
 
 /* Coinflip */
@@ -2430,60 +2962,88 @@ export default {
   display: flex;
   gap: 10px;
   justify-content: center;
+  width: 100%;
 }
 
 .choice-btn {
-  padding: 10px 20px;
+  flex: 1;
+  padding: 12px 20px;
   border-radius: 50px;
-  background: #1A1F2A;
+  background: linear-gradient(145deg, #1A1F2A, #11151C);
   color: white;
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  border: 1px solid rgba(212, 175, 55, 0.3);
   font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  flex: 1;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+}
+
+.choice-btn:hover {
+  border-color: #D4AF37;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px rgba(212, 175, 55, 0.3);
 }
 
 .choice-btn.active {
   background: linear-gradient(135deg, #D4AF37, #F6E27A);
   color: #0A0C10;
   border: none;
+  box-shadow: 0 5px 15px rgba(212, 175, 55, 0.5), inset 0 2px 5px rgba(255, 255, 255, 0.5);
+}
+
+.coinflip-result {
+  text-align: center;
+  padding: 20px;
+  background: linear-gradient(145deg, #1A1F2A, #11151C);
+  border-radius: 20px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
 }
 
 .coin {
-  font-size: 80px;
-  text-align: center;
+  font-size: 100px;
   margin: 20px 0;
-  animation: flip 0.5s ease;
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 0 20px #D4AF37);
 }
 
-@keyframes flip {
+.coin.flipping {
+  animation: flipCoin 0.2s linear infinite;
+}
+
+@keyframes flipCoin {
   0% { transform: rotateY(0deg); }
   100% { transform: rotateY(360deg); }
 }
 
-.coin.flipping {
-  animation: flip 0.2s linear infinite;
+.coin.show-result {
+  animation: coinLand 0.5s ease;
+}
+
+@keyframes coinLand {
+  0% { transform: rotateY(720deg) scale(0.8); }
+  100% { transform: rotateY(0deg) scale(1); }
 }
 
 /* Wheel */
 .wheel-container {
   position: relative;
-  height: 250px;
+  height: 300px;
   display: flex;
   flex-direction: column;
   align-items: center;
   margin: 20px 0;
 }
 
-.wheel {
-  width: 200px;
-  height: 200px;
+.wheel-spinner {
+  width: 250px;
+  height: 250px;
   border-radius: 50%;
-  background: #1E2430;
-  border: 3px solid #D4AF37;
+  background: linear-gradient(145deg, #1E2430, #151A24);
+  border: 4px solid #D4AF37;
   position: relative;
-  transition: transform 2s cubic-bezier(0.25, 0.1, 0.15, 1);
+  transition: transform 3s cubic-bezier(0.25, 0.1, 0.15, 1);
+  box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
 }
 
 .wheel-segment {
@@ -2498,28 +3058,31 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  font-weight: 700;
-  color: #D4AF37;
 }
 
-.wheel-segment:nth-child(1) { transform: rotate(0deg) translateX(-50%) translateY(-50%); }
-.wheel-segment:nth-child(2) { transform: rotate(45deg) translateX(-50%) translateY(-50%); }
-.wheel-segment:nth-child(3) { transform: rotate(90deg) translateX(-50%) translateY(-50%); }
-.wheel-segment:nth-child(4) { transform: rotate(135deg) translateX(-50%) translateY(-50%); }
-.wheel-segment:nth-child(5) { transform: rotate(180deg) translateX(-50%) translateY(-50%); }
-.wheel-segment:nth-child(6) { transform: rotate(225deg) translateX(-50%) translateY(-50%); }
-.wheel-segment:nth-child(7) { transform: rotate(270deg) translateX(-50%) translateY(-50%); }
-.wheel-segment:nth-child(8) { transform: rotate(315deg) translateX(-50%) translateY(-50%); }
+.segment-value {
+  transform: rotate(45deg);
+  font-size: 18px;
+  font-weight: 700;
+  color: #D4AF37;
+  text-shadow: 0 0 10px #D4AF37;
+}
 
 .wheel-pointer {
   position: absolute;
   top: -10px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 30px;
+  font-size: 40px;
   color: #D4AF37;
   z-index: 10;
+  filter: drop-shadow(0 0 10px #D4AF37);
+  animation: pointerWiggle 1s infinite;
+}
+
+@keyframes pointerWiggle {
+  0%, 100% { transform: translateX(-50%) rotate(0deg); }
+  50% { transform: translateX(-50%) rotate(5deg); }
 }
 
 /* Keno */
@@ -2528,12 +3091,16 @@ export default {
   grid-template-columns: repeat(8, 1fr);
   gap: 5px;
   margin: 15px 0;
+  padding: 10px;
+  background: linear-gradient(145deg, #1A1F2A, #11151C);
+  border-radius: 15px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
 }
 
 .keno-cell {
   aspect-ratio: 1;
-  background: #1E2430;
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  background: linear-gradient(145deg, #1E2430, #151A24);
+  border: 1px solid rgba(212, 175, 55, 0.3);
   border-radius: 5px;
   display: flex;
   align-items: center;
@@ -2543,64 +3110,131 @@ export default {
   cursor: pointer;
   transition: all 0.3s ease;
   color: white;
+  position: relative;
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3);
+}
+
+.keno-cell:hover {
+  transform: scale(1.05);
+  border-color: #D4AF37;
+  box-shadow: 0 5px 10px rgba(212, 175, 55, 0.3);
 }
 
 .keno-cell.selected {
-  background: #D4AF37;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A);
   color: #0A0C10;
+  border-color: #D4AF37;
+  box-shadow: 0 0 15px #D4AF37;
 }
 
 .keno-cell.drawn {
-  background: #22c55e;
+  background: linear-gradient(145deg, #22c55e, #16a34a);
   color: white;
+  border-color: #22c55e;
 }
 
 .keno-cell.match {
-  background: #D4AF37;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A);
   color: #0A0C10;
-  animation: pulse 1s infinite;
+  animation: matchPulse 1s infinite;
 }
 
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
+@keyframes matchPulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 15px #D4AF37; }
+  50% { transform: scale(1.1); box-shadow: 0 0 30px #F6E27A; }
+}
+
+.draw-effect {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 70%);
+  animation: drawFlash 0.5s ease;
+}
+
+@keyframes drawFlash {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(2); }
+}
+
+.keno-results {
+  margin-top: 15px;
+  padding: 15px;
+  background: linear-gradient(145deg, #1A1F2A, #11151C);
+  border-radius: 15px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.matches {
+  color: #D4AF37;
+  margin-bottom: 5px;
+}
+
+.multiplier {
+  color: #22c55e;
 }
 
 /* Bowling */
 .bowling-alley {
-  background: #1E2430;
+  background: linear-gradient(145deg, #1E2430, #151A24);
   padding: 20px;
   border-radius: 20px;
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
-.pins {
+.pins-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 5px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
   margin-bottom: 30px;
+  padding: 20px;
+  background: linear-gradient(145deg, #11151C, #0A0C10);
+  border-radius: 15px;
 }
 
 .pin {
-  font-size: 24px;
   text-align: center;
-  opacity: 1;
   transition: all 0.5s ease;
 }
 
+.pin-emoji {
+  font-size: 30px;
+  filter: drop-shadow(0 0 5px #D4AF37);
+}
+
 .pin.knocked {
-  opacity: 0.3;
-  transform: rotate(90deg);
+  transform: rotate(90deg) scale(0.5);
+  opacity: 0;
+  filter: blur(2px);
+}
+
+.bowling-ball-container {
+  position: relative;
+  height: 60px;
+  margin: 20px 0;
 }
 
 .bowling-ball {
-  font-size: 30px;
-  text-align: center;
-  transition: transform 1s ease;
+  font-size: 40px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 0 10px #D4AF37);
 }
 
 .bowling-ball.rolling {
-  transform: translateX(100px);
+  animation: rollBall 1s ease;
+}
+
+@keyframes rollBall {
+  0% { transform: translateX(-50%) translateY(0) rotate(0deg); }
+  100% { transform: translateX(100px) translateY(-50px) rotate(360deg); }
 }
 
 /* Puzzle */
@@ -2609,15 +3243,16 @@ export default {
   grid-template-columns: repeat(3, 1fr);
   gap: 5px;
   margin: 20px 0;
-  background: #1E2430;
-  padding: 10px;
-  border-radius: 10px;
+  padding: 15px;
+  background: linear-gradient(145deg, #1E2430, #151A24);
+  border-radius: 15px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
 }
 
 .puzzle-piece {
   aspect-ratio: 1;
-  background: #D4AF37;
-  border-radius: 5px;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A);
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2626,16 +3261,39 @@ export default {
   color: #0A0C10;
   cursor: pointer;
   transition: all 0.3s ease;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.3);
 }
 
 .puzzle-piece.empty {
-  background: #1E2430;
-  border: 1px dashed #D4AF37;
+  background: linear-gradient(145deg, #1E2430, #151A24);
+  border: 2px dashed #D4AF37;
+  box-shadow: none;
+}
+
+.puzzle-piece.correct {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+  animation: correctGlow 2s infinite;
+}
+
+@keyframes correctGlow {
+  0%, 100% { box-shadow: 0 0 10px #22c55e; }
+  50% { box-shadow: 0 0 20px #22c55e; }
+}
+
+.puzzle-piece.win-glow {
+  animation: winGlow 1s infinite;
+}
+
+@keyframes winGlow {
+  0%, 100% { box-shadow: 0 0 20px #D4AF37; }
+  50% { box-shadow: 0 0 40px #F6E27A; }
 }
 
 .puzzle-piece:hover:not(.empty) {
   transform: scale(1.05);
-  box-shadow: 0 0 15px #D4AF37;
+  box-shadow: 0 8px 20px rgba(212, 175, 55, 0.4);
 }
 
 /* Target */
@@ -2643,12 +3301,16 @@ export default {
   display: flex;
   justify-content: center;
   margin: 20px 0;
+  padding: 20px;
+  background: linear-gradient(145deg, #1A1F2A, #11151C);
+  border-radius: 20px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
 }
 
 .target {
   position: relative;
-  width: 200px;
-  height: 200px;
+  width: 250px;
+  height: 250px;
 }
 
 .target-circle {
@@ -2659,52 +3321,107 @@ export default {
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
+  border: 2px solid #D4AF37;
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
 }
 
 .target-circle:hover {
   transform: scale(1.1);
+  box-shadow: 0 0 30px rgba(212, 175, 55, 0.5);
+}
+
+.target-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: white;
+  text-shadow: 0 0 10px currentColor;
 }
 
 .bullseye {
-  width: 60px;
-  height: 60px;
-  background: #ef4444;
-  top: 70px;
-  left: 70px;
-  font-size: 30px;
+  width: 80px;
+  height: 80px;
+  background: radial-gradient(circle, #ef4444 0%, #dc2626 100%);
+  top: 85px;
+  left: 85px;
+  animation: pulseTarget 2s infinite;
+}
+
+@keyframes pulseTarget {
+  0%, 100% { box-shadow: 0 0 20px #ef4444; }
+  50% { box-shadow: 0 0 40px #ef4444; }
 }
 
 .middle {
-  width: 100px;
-  height: 100px;
-  background: #22c55e;
-  top: 50px;
-  left: 50px;
-  border: 2px solid #D4AF37;
+  width: 130px;
+  height: 130px;
+  background: radial-gradient(circle, #22c55e 0%, #16a34a 100%);
+  top: 60px;
+  left: 60px;
+  animation: pulseTarget 2s infinite 0.5s;
 }
 
 .outer {
-  width: 140px;
-  height: 140px;
-  background: #1E2430;
-  top: 30px;
-  left: 30px;
-  border: 2px solid #D4AF37;
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle, #1E2430 0%, #11151C 100%);
+  top: 35px;
+  left: 35px;
+  animation: pulseTarget 2s infinite 1s;
+}
+
+.score-display {
+  margin-top: 20px;
+  padding: 10px;
+  background: linear-gradient(145deg, #1E2430, #151A24);
+  border-radius: 50px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  font-size: 18px;
+  font-weight: 600;
+  color: #D4AF37;
 }
 
 /* Lucky Number */
 .lucky-display {
-  background: #1E2430;
+  background: linear-gradient(145deg, #1A1F2A, #11151C);
   padding: 20px;
   border-radius: 20px;
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
 .drawn-number {
-  font-size: 60px;
+  font-size: 80px;
   font-weight: 800;
   color: #D4AF37;
   margin-bottom: 15px;
+  text-align: center;
+  text-shadow: 0 0 30px #D4AF37;
+  transition: all 0.3s ease;
+}
+
+.drawn-number.match-effect {
+  animation: matchExplode 0.5s ease;
+}
+
+@keyframes matchExplode {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.5); color: #22c55e; }
+  100% { transform: scale(1); }
+}
+
+.your-number {
+  font-size: 20px;
+  margin-bottom: 10px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.spinning {
+  animation: spinFast 1s infinite;
+}
+
+@keyframes spinFast {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* Mystery Box */
@@ -2724,20 +3441,51 @@ export default {
   justify-content: center;
   font-size: 60px;
   cursor: pointer;
-  transition: all 0.5s ease;
-  box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);
+  transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  box-shadow: 0 10px 30px rgba(212, 175, 55, 0.4), inset 0 0 20px rgba(255, 255, 255, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.3);
 }
 
-.box:hover {
-  transform: scale(1.05);
-  box-shadow: 0 15px 40px rgba(212, 175, 55, 0.4);
+.box.shaking {
+  animation: shakeBox 0.5s infinite;
+}
+
+@keyframes shakeBox {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(10deg); }
+  75% { transform: rotate(-10deg); }
+}
+
+.box:hover:not(.opened) {
+  transform: scale(1.1);
+  box-shadow: 0 15px 40px rgba(212, 175, 55, 0.6), inset 0 0 30px rgba(255, 255, 255, 0.7);
 }
 
 .box.opened {
-  background: #1E2430;
+  background: linear-gradient(145deg, #1E2430, #151A24);
   border: 2px solid #D4AF37;
   font-size: 24px;
   color: #D4AF37;
+  animation: openBox 0.5s ease;
+}
+
+@keyframes openBox {
+  0% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.2) rotate(180deg); }
+  100% { transform: scale(1) rotate(360deg); }
+}
+
+.prize {
+  font-size: 24px;
+  font-weight: 700;
+  color: #D4AF37;
+  text-shadow: 0 0 20px #D4AF37;
+  animation: prizeGlow 1s infinite;
+}
+
+@keyframes prizeGlow {
+  0%, 100% { text-shadow: 0 0 10px #D4AF37; }
+  50% { text-shadow: 0 0 30px #F6E27A; }
 }
 
 /* تحسينات للجوال */
@@ -2747,7 +3495,8 @@ export default {
   }
 
   .tabs {
-    padding: 5px;
+    padding: 10px;
+    gap: 8px;
   }
 
   .tabs button {
@@ -2764,7 +3513,7 @@ export default {
   }
 
   .game-icon {
-    font-size: 50px;
+    font-size: 60px;
   }
 
   .step {
@@ -2794,6 +3543,8 @@ export default {
   .action-btn {
     flex: 1;
     justify-content: center;
+    font-size: 14px;
+    padding: 10px 15px;
   }
 
   .slot-reel {
@@ -2812,6 +3563,49 @@ export default {
 
   .keno-cell {
     font-size: 12px;
+  }
+
+  .puzzle-piece {
+    font-size: 18px;
+  }
+
+  .drawn-number {
+    font-size: 60px;
+  }
+
+  .wheel-spinner {
+    width: 200px;
+    height: 200px;
+  }
+
+  .segment-value {
+    font-size: 14px;
+  }
+
+  .target {
+    width: 200px;
+    height: 200px;
+  }
+
+  .bullseye {
+    width: 60px;
+    height: 60px;
+    top: 70px;
+    left: 70px;
+  }
+
+  .middle {
+    width: 100px;
+    height: 100px;
+    top: 50px;
+    left: 50px;
+  }
+
+  .outer {
+    width: 140px;
+    height: 140px;
+    top: 30px;
+    left: 30px;
   }
 }
 </style>
