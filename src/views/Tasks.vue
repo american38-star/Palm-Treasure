@@ -1,72 +1,112 @@
 <template>
+<div class="games-page">
 
-<div class="casino-container">
+<!-- top bar -->
+<div class="top-bar">
 
-<h1 class="title">Casino Games</h1>
+<div class="balance">
+رصيدك :
+<strong>{{ balance.toFixed(2) }} $</strong>
+</div>
 
+</div>
+
+<!-- games grid -->
 <div class="games-grid">
 
-<div class="game-card" @click="openGame('bigwheel')">
+<div
+v-for="game in games"
+:key="game.id"
+class="game-card"
+@click="openGame(game.id)"
+>
 
-<img
-src="@/assets/bigwheel.jpg"
-class="game-image"
-/>
+<img :src="game.image" class="game-image"/>
 
-<p class="game-name">Big Wheel Bonus</p>
-
+<div class="game-name">
+{{ game.name }}
 </div>
 
 </div>
 
-<div class="game-area" v-if="selectedGame">
+</div>
 
-<BigWheelGame v-if="selectedGame === 'bigwheel'" />
+<!-- game screen -->
+<div v-if="currentGame" class="game-screen">
 
-<button class="close-btn" @click="closeGame">
-Close Game
+<button class="back-btn" @click="closeGame">
+رجوع
 </button>
 
-</div>
+<ChickenRoadGame
+v-if="currentGame === 'chickenroad'"
+:balance="balance"
+@updateBalance="updateBalance"
+/>
+
+<BigWheelGame
+v-if="currentGame === 'bigwheel'"
+:balance="balance"
+@updateBalance="updateBalance"
+/>
 
 </div>
 
+</div>
 </template>
 
 <script>
 
+import ChickenRoadGame from "@/components/games/ChickenRoadGame.vue"
 import BigWheelGame from "@/components/games/BigWheelGame.vue"
 
 export default {
 
-name:"GamesView",
+name:"Tasks",
 
 components:{
+ChickenRoadGame,
 BigWheelGame
 },
 
 data(){
-
 return{
 
-selectedGame:null
+balance:1000,
 
+currentGame:null,
+
+games:[
+
+{
+id:"chickenroad",
+name:"Chicken Crash",
+image:"/games/chicken.jpg"
+},
+
+{
+id:"bigwheel",
+name:"Big Wheel",
+image:"/games/bigwheel.jpg"
 }
 
+]
+
+}
 },
 
 methods:{
 
-openGame(game){
-
-this.selectedGame = game
-
+openGame(id){
+this.currentGame=id
 },
 
 closeGame(){
+this.currentGame=null
+},
 
-this.selectedGame = null
-
+updateBalance(newBalance){
+this.balance=newBalance
 }
 
 }
@@ -77,96 +117,58 @@ this.selectedGame = null
 
 <style scoped>
 
-.casino-container{
-
-padding:20px;
-
+.games-page{
+padding:15px;
 background:#111;
-
 min-height:100vh;
-
 color:white;
-
 }
 
-.title{
+.top-bar{
+display:flex;
+justify-content:space-between;
+margin-bottom:15px;
+}
 
-text-align:center;
-
-margin-bottom:30px;
-
+.balance{
+font-size:18px;
 }
 
 .games-grid{
-
 display:grid;
-
 grid-template-columns:repeat(3,1fr);
-
-gap:20px;
-
+gap:10px;
 }
 
 .game-card{
-
-background:#1a1a1a;
-
+background:#222;
 border-radius:10px;
-
-cursor:pointer;
-
+padding:5px;
 text-align:center;
-
-padding:10px;
-
-transition:0.3s;
-
-}
-
-.game-card:hover{
-
-transform:scale(1.05);
-
+cursor:pointer;
 }
 
 .game-image{
-
 width:100%;
-
-border-radius:10px;
-
+border-radius:8px;
 }
 
 .game-name{
+margin-top:5px;
+font-size:14px;
+}
 
+.game-screen{
 margin-top:10px;
-
 }
 
-.game-area{
-
-margin-top:30px;
-
-text-align:center;
-
-}
-
-.close-btn{
-
-margin-top:20px;
-
-padding:10px 20px;
-
-background:red;
-
-border:none;
-
-border-radius:8px;
-
+.back-btn{
+background:#333;
 color:white;
-
-cursor:pointer;
-
+border:none;
+padding:10px;
+margin-bottom:10px;
+border-radius:8px;
 }
 
 </style>
