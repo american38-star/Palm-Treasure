@@ -857,8 +857,8 @@
             
             <!-- نقاط البداية والنهاية -->
             <div class="price-markers">
-              <div class="start-marker">بداية {{ startPrice.toFixed(2) }}</div>
-              <div class="end-marker" v-if="!isArrowMoving">نهاية {{ endPrice.toFixed(2) }}</div>
+              <div class="start-marker">بداية ${{ startPrice.toFixed(2) }}</div>
+              <div class="end-marker" v-if="!isArrowMoving">نهاية ${{ endPrice.toFixed(2) }}</div>
             </div>
             
             <!-- المؤقت -->
@@ -1104,7 +1104,7 @@ export default {
       arrowPosition: 0,
       
       // Timer
-      totalTime: 5, // 5 seconds
+      totalTime: 5,
       remainingTime: 5,
       timerProgress: 100,
       timerInterval: null,
@@ -1317,7 +1317,7 @@ export default {
       const newValue = lastValue + change;
       
       this.chartData.push(newValue);
-      this.chartData.shift(); // Remove oldest point
+      this.chartData.shift();
       
       this.currentPrice = newValue;
       this.drawChart();
@@ -1396,17 +1396,17 @@ export default {
       
       if (willPriceGoUp) {
         // السعر يرتفع (فوز إذا اختار high)
-        finalPrice = startPrice * (1 + (Math.random() * 0.15 + 0.05)); // +5% إلى +20%
+        finalPrice = startPrice * (1 + (Math.random() * 0.15 + 0.05));
       } else {
         // السعر ينخفض (فوز إذا اختار low)
-        finalPrice = startPrice * (1 - (Math.random() * 0.15 + 0.05)); // -5% إلى -20%
+        finalPrice = startPrice * (1 - (Math.random() * 0.15 + 0.05));
       }
       
       this.endPrice = finalPrice;
       
       // حركة السهم والمؤشر
       const startTime = Date.now();
-      const duration = this.totalTime * 1000; // 5 ثواني
+      const duration = this.totalTime * 1000;
         
       const animate = () => {
         const elapsed = Date.now() - startTime;
@@ -1417,7 +1417,6 @@ export default {
         
         // تحديث السعر الحالي (يتحرك بشكل عشوائي)
         const currentProgressPrice = startPrice + (finalPrice - startPrice) * progress;
-        // إضافة بعض العشوائية للحركة
         const randomFactor = (Math.random() - 0.5) * 2;
         this.currentPrice = currentProgressPrice + randomFactor;
         
@@ -1464,7 +1463,7 @@ export default {
           (this.highLowChoice === 'low' && !priceIncreased)) {
         // فوز
         this.highLowWon = true;
-        this.highLowProfit = this.highLowBet * 1.8; // max 1.8x
+        this.highLowProfit = this.highLowBet * 1.8;
         this.balance += this.highLowProfit;
         await this.updateBalance(this.balance);
         this.highLowResultMessage = `فوز! السعر ${priceIncreased ? 'ارتفع' : 'انخفض'} إلى $${this.endPrice.toFixed(2)}`;
@@ -2819,6 +2818,895 @@ export default {
   text-shadow: 0 0 10px #ffd700;
 }
 
+/* ===== Chicken Road ===== */
+.chicken-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  margin: 20px 0;
+}
+
+.chicken {
+  font-size: 90px;
+  filter: drop-shadow(0 0 25px #ffd700);
+  animation: float 3s infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+.chicken.walking {
+  animation: walkCycle 0.5s infinite;
+}
+
+@keyframes walkCycle {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px) rotate(-5deg); }
+  75% { transform: translateX(8px) rotate(5deg); }
+}
+
+.road-container {
+  background: linear-gradient(145deg, #1a1f30, #0f1422);
+  border-radius: 30px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.road {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.step {
+  flex: 1;
+  min-width: 45px;
+  background: linear-gradient(145deg, #252b3d, #1a1f30);
+  border-radius: 15px;
+  padding: 15px 5px;
+  position: relative;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.step.active {
+  background: linear-gradient(135deg, #ffd700, #ffed4a);
+  transform: scale(1.1);
+  box-shadow: 0 10px 30px rgba(255, 215, 0, 0.5);
+  z-index: 2;
+}
+
+.step.passed {
+  border-color: #4caf50;
+  opacity: 0.7;
+}
+
+.step.danger {
+  border-color: #f44336;
+}
+
+.step.warning {
+  border-color: #ff9800;
+}
+
+.step-multiplier {
+  font-weight: 700;
+  font-size: 14px;
+  color: #ffd700;
+}
+
+.step.active .step-multiplier {
+  color: #0a0f1e;
+}
+
+.chicken-icon {
+  font-size: 24px;
+  margin-top: 8px;
+  animation: bounce 0.5s infinite;
+}
+
+/* ===== Dice 3D ===== */
+.dice-container {
+  perspective: 1000px;
+  width: 120px;
+  height: 120px;
+  margin: 20px auto;
+}
+
+.dice-3d {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  animation: diceIdle 3s infinite;
+}
+
+@keyframes diceIdle {
+  0%, 100% { transform: rotateX(0) rotateY(0); }
+  25% { transform: rotateX(10deg) rotateY(10deg); }
+  75% { transform: rotateX(-10deg) rotateY(-10deg); }
+}
+
+.rolling .dice-3d {
+  animation: diceRoll 0.5s infinite linear !important;
+}
+
+@keyframes diceRoll {
+  0% { transform: rotateX(0) rotateY(0); }
+  100% { transform: rotateX(360deg) rotateY(360deg); }
+}
+
+.dice-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(145deg, #ffd700, #ffed4a);
+  border: 3px solid #0a0f1e;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  font-weight: 800;
+  color: #0a0f1e;
+  backface-visibility: hidden;
+}
+
+.front { transform: translateZ(60px); }
+.back { transform: rotateY(180deg) translateZ(60px); }
+.right { transform: rotateY(90deg) translateZ(60px); }
+.left { transform: rotateY(-90deg) translateZ(60px); }
+.top { transform: rotateX(90deg) translateZ(60px); }
+.bottom { transform: rotateX(-90deg) translateZ(60px); }
+
+/* ===== Mines ===== */
+.mines-container {
+  width: 100%;
+}
+
+.mines-header {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 20px;
+  color: #ffd700;
+  font-weight: 600;
+}
+
+.mines-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.mine-cell {
+  aspect-ratio: 1;
+  background: linear-gradient(145deg, #252b3d, #1a1f30);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #ffd700;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+}
+
+.mine-cell:hover:not(:disabled) {
+  transform: scale(1.05);
+  border-color: #ffd700;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+.mine-cell.revealed {
+  background: #1a1f30;
+}
+
+.mine-cell.mine {
+  background: linear-gradient(145deg, #f44336, #d32f2f);
+  color: white;
+  animation: explode 0.5s;
+}
+
+@keyframes explode {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.5); opacity: 0.5; }
+}
+
+.mine-cell.safe {
+  background: linear-gradient(145deg, #4caf50, #45a049);
+  color: white;
+}
+
+.mines-placeholder {
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8a8f9c;
+  font-size: 18px;
+}
+
+/* ===== Crash ===== */
+.crash-container {
+  text-align: center;
+  width: 100%;
+}
+
+.multiplier-display {
+  font-size: 70px;
+  font-weight: 800;
+  color: #ffd700;
+  text-shadow: 0 0 30px #ffd700;
+  margin-bottom: 20px;
+  transition: all 0.3s;
+}
+
+.multiplier-display.crashed {
+  color: #f44336;
+  text-shadow: 0 0 30px #f44336;
+  animation: crash 0.5s;
+}
+
+@keyframes crash {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-20px); }
+  75% { transform: translateX(20px); }
+}
+
+.rocket-animation {
+  height: 100px;
+  position: relative;
+  margin: 20px 0;
+}
+
+.rocket {
+  font-size: 50px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  transition: all 0.3s;
+  filter: drop-shadow(0 0 20px #ffd700);
+}
+
+.rocket.launched {
+  animation: flyUp 1s infinite;
+}
+
+@keyframes flyUp {
+  0% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-30px); }
+  100% { transform: translateX(-50%) translateY(0); }
+}
+
+.rocket.exploded {
+  transform: translateX(-50%) rotate(180deg) translateY(30px);
+  opacity: 0.3;
+  filter: drop-shadow(0 0 20px #f44336);
+}
+
+.smoke-effect {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 20px;
+  background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: smoke 1s infinite;
+}
+
+@keyframes smoke {
+  0% { transform: translateX(-50%) scale(0.5); opacity: 0.8; }
+  100% { transform: translateX(-50%) scale(3); opacity: 0; }
+}
+
+.progress-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4caf50, #ffd700, #f44336);
+  transition: width 0.2s;
+}
+
+/* ===== Limbo ===== */
+.limbo-container {
+  position: relative;
+  height: 200px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.target-line {
+  position: absolute;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(to top, #f44336, #ffd700);
+  border-radius: 4px;
+  transition: height 0.3s;
+}
+
+.target-label {
+  position: absolute;
+  top: -25px;
+  left: -15px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #ffd700;
+  border: 1px solid #ffd700;
+}
+
+.result-ball {
+  width: 60px;
+  height: 60px;
+  background: radial-gradient(circle at 30% 30%, #ffd700, #b8860b);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #0a0f1e;
+  box-shadow: 0 0 30px #ffd700;
+  position: relative;
+  z-index: 2;
+}
+
+.result-ball.jumping {
+  animation: jumpBall 1s infinite;
+}
+
+@keyframes jumpBall {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-50px); }
+}
+
+/* ===== Blackjack ===== */
+.blackjack-table {
+  background: linear-gradient(145deg, #0a5c0a, #0a4a0a);
+  padding: 25px;
+  border-radius: 30px;
+  border: 2px solid #ffd700;
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5);
+}
+
+.dealer-area, .player-area {
+  margin: 20px 0;
+}
+
+.area-label {
+  color: #ffd700;
+  font-size: 16px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.cards-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.casino-card-small {
+  width: 60px;
+  height: 90px;
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+  border: 2px solid #ffd700;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #0a0f1e;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  animation: dealCard 0.3s;
+}
+
+@keyframes dealCard {
+  0% { transform: translateY(-50px) rotate(180deg); opacity: 0; }
+  100% { transform: translateY(0) rotate(0); opacity: 1; }
+}
+
+.casino-card-small.card-back {
+  background: linear-gradient(135deg, #ffd700, #b8860b);
+  color: transparent;
+  position: relative;
+}
+
+.casino-card-small.card-back::after {
+  content: '?';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 24px;
+}
+
+.score-badge {
+  background: #ffd700;
+  color: #0a0f1e;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  margin-right: 10px;
+}
+
+/* ===== Slot Machine ===== */
+.slot-machine-container {
+  background: linear-gradient(145deg, #1a1f30, #0f1422);
+  padding: 25px;
+  border-radius: 30px;
+  border: 3px solid #ffd700;
+}
+
+.slot-reels {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  perspective: 500px;
+}
+
+.reel {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+  border: 3px solid #ffd700;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+}
+
+.spinning .reel {
+  animation: spinReel 0.1s infinite;
+}
+
+@keyframes spinReel {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(30px); }
+}
+
+/* ===== Coinflip ===== */
+.coin-container {
+  perspective: 1000px;
+  width: 120px;
+  height: 120px;
+  margin: 20px auto;
+}
+
+.coin-3d {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  animation: coinIdle 3s infinite;
+}
+
+@keyframes coinIdle {
+  0%, 100% { transform: rotateY(0); }
+  50% { transform: rotateY(30deg); }
+}
+
+.coin-3d.flipping {
+  animation: flipCoin 0.2s linear infinite !important;
+}
+
+@keyframes flipCoin {
+  0% { transform: rotateY(0); }
+  100% { transform: rotateY(360deg); }
+}
+
+.coin-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #ffd700, #b8860b);
+  border: 3px solid #0a0f1e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 50px;
+  backface-visibility: hidden;
+  box-shadow: 0 0 30px #ffd700;
+}
+
+.coin-face.front {
+  transform: translateZ(10px);
+}
+
+.coin-face.back {
+  transform: rotateY(180deg) translateZ(10px);
+}
+
+.choice-row {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  max-width: 280px;
+}
+
+.choice-btn-small {
+  flex: 1;
+  padding: 12px;
+  border-radius: 50px;
+  background: linear-gradient(145deg, #1e2333, #131826);
+  color: white;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.choice-btn-small.active {
+  background: linear-gradient(135deg, #ffd700, #ffed4a);
+  color: #0a0f1e;
+  border: none;
+  box-shadow: 0 0 20px #ffd700;
+}
+
+/* ===== Wheel ===== */
+.wheel-container {
+  position: relative;
+  height: 250px;
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.wheel-outer {
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #1e2333, #131826);
+  border: 4px solid #ffd700;
+  position: relative;
+  transition: transform 3s cubic-bezier(0.25, 0.1, 0.15, 1);
+  box-shadow: 0 0 40px rgba(255, 215, 0, 0.3);
+}
+
+.wheel-segment-casino {
+  position: absolute;
+  width: 50%;
+  height: 50%;
+  transform-origin: bottom right;
+  left: 50%;
+  top: 50%;
+  margin-left: -50%;
+  margin-top: -50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.segment-value-casino {
+  transform: rotate(45deg);
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffd700;
+}
+
+.wheel-pointer {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 30px;
+  color: #ffd700;
+  filter: drop-shadow(0 0 10px #ffd700);
+}
+
+/* ===== Keno ===== */
+.keno-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.keno-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 5px;
+  min-width: 280px;
+}
+
+.keno-ball {
+  aspect-ratio: 1;
+  background: linear-gradient(145deg, #1e2333, #131826);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.keno-ball:hover {
+  transform: scale(1.1);
+  border-color: #ffd700;
+}
+
+.keno-ball.selected {
+  background: linear-gradient(135deg, #ffd700, #ffed4a);
+  color: #0a0f1e;
+  border-color: #ffd700;
+  box-shadow: 0 0 20px #ffd700;
+}
+
+.keno-ball.drawn {
+  background: linear-gradient(145deg, #4caf50, #45a049);
+  color: white;
+  border-color: #4caf50;
+}
+
+/* ===== Bowling ===== */
+.bowling-container {
+  width: 100%;
+}
+
+.pins-setup {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+.bowling-pin {
+  font-size: 30px;
+  text-align: center;
+  transition: all 0.5s;
+  filter: drop-shadow(0 0 10px #ffd700);
+}
+
+.bowling-pin.knocked {
+  transform: rotate(90deg) scale(0.5);
+  opacity: 0;
+  filter: blur(2px);
+}
+
+.ball-track {
+  position: relative;
+  height: 50px;
+}
+
+.bowling-ball-casino {
+  font-size: 40px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  transition: all 0.3s;
+}
+
+.bowling-ball-casino.rolling {
+  animation: rollToPins 1s ease;
+}
+
+@keyframes rollToPins {
+  0% { transform: translateX(-50%) translateY(0); }
+  100% { transform: translateX(100px) translateY(-30px); }
+}
+
+/* ===== Puzzle ===== */
+.puzzle-container {
+  width: 100%;
+}
+
+.puzzle-grid-casino {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+  background: linear-gradient(145deg, #1e2333, #131826);
+  padding: 15px;
+  border-radius: 20px;
+}
+
+.puzzle-tile {
+  aspect-ratio: 1;
+  background: linear-gradient(135deg, #ffd700, #ffed4a);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  color: #0a0f1e;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+}
+
+.puzzle-tile.empty {
+  background: linear-gradient(145deg, #1e2333, #131826);
+  border: 2px dashed #ffd700;
+}
+
+.puzzle-tile:hover:not(.empty) {
+  transform: scale(1.05);
+  box-shadow: 0 8px 20px rgba(255, 215, 0, 0.4);
+}
+
+/* ===== Target ===== */
+.target-container-casino {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.target-casino {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  margin: 20px auto;
+}
+
+.target-ring {
+  position: absolute;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: 2px solid #ffd700;
+}
+
+.target-ring:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+}
+
+.ring-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 0 10px currentColor;
+}
+
+.target-ring.bullseye {
+  width: 60px;
+  height: 60px;
+  background: radial-gradient(circle, #f44336, #d32f2f);
+  top: 70px;
+  left: 70px;
+}
+
+.target-ring.middle {
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(circle, #4caf50, #45a049);
+  top: 50px;
+  left: 50px;
+}
+
+.target-ring.outer {
+  width: 140px;
+  height: 140px;
+  background: radial-gradient(circle, #1e2333, #131826);
+  top: 30px;
+  left: 30px;
+}
+
+.target-score {
+  margin-top: 20px;
+  padding: 10px 25px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 50px;
+  border: 1px solid #ffd700;
+  color: #ffd700;
+  font-weight: 600;
+}
+
+/* ===== Lucky Number ===== */
+.lucky-container {
+  text-align: center;
+}
+
+.number-drum {
+  width: 120px;
+  height: 120px;
+  margin: 20px auto;
+  background: linear-gradient(145deg, #1e2333, #131826);
+  border: 3px solid #ffd700;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  font-weight: 800;
+  color: #ffd700;
+  box-shadow: 0 0 40px rgba(255, 215, 0, 0.3);
+}
+
+.number-drum.spinning {
+  animation: spinDrum 0.1s linear infinite;
+}
+
+@keyframes spinDrum {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.chosen-number {
+  margin-top: 15px;
+  color: #8a8f9c;
+  font-size: 18px;
+}
+
+/* ===== Mystery Box ===== */
+.mystery-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.mystery-box {
+  width: 150px;
+  height: 150px;
+  background: linear-gradient(135deg, #ffd700, #ffed4a);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 60px;
+  cursor: pointer;
+  transition: all 0.5s;
+  box-shadow: 0 15px 40px rgba(255, 215, 0, 0.4);
+  border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.mystery-box.shaking {
+  animation: shake 0.5s infinite;
+}
+
+@keyframes shake {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(10deg); }
+  75% { transform: rotate(-10deg); }
+}
+
+.mystery-box.opened {
+  background: linear-gradient(145deg, #1e2333, #131826);
+  border: 2px solid #ffd700;
+  font-size: 24px;
+  color: #ffd700;
+  animation: openBox 0.5s;
+}
+
+@keyframes openBox {
+  0% { transform: scale(1) rotate(0); }
+  50% { transform: scale(1.2) rotate(180deg); }
+  100% { transform: scale(1) rotate(360deg); }
+}
+
+.box-content {
+  font-size: 20px;
+  font-weight: 700;
+}
+
 /* ===== High/Low Trading Game ===== */
 .trading-container {
   width: 100%;
@@ -3019,9 +3907,6 @@ export default {
     transform: translateY(0);
   }
 }
-
-/* ===== بقية الألعاب (نفس التنسيقات السابقة) ===== */
-/* ... (جميع تنسيقات الألعاب الأخرى كما هي) ... */
 
 /* ===== تحسينات الجوال ===== */
 @media (max-width: 480px) {
