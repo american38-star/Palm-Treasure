@@ -31,14 +31,14 @@
         class="game-card"
         @click="openGame(game)"
       >
-        <!-- عرض الصورة إذا وجدت، وإلا عرض الأيقونة -->
+        <!-- عرض الصورة من مجلد assets -->
         <div class="game-image-container">
           <img 
             v-if="game.image" 
             :src="game.image" 
             :alt="game.name"
             class="game-image"
-            @error="handleImageError"
+            @error="handleImageError($event, game)"
           >
           <div v-else class="game-icon">{{ game.icon || '🎮' }}</div>
         </div>
@@ -80,16 +80,13 @@ export default {
     // استيراد جميع الألعاب تلقائياً من مجلد games
     const gameModules = import.meta.glob('../components/games/*.vue', { eager: true })
     
-    // استيراد جميع الصور من مجلد games-images
-    let gameImages = {}
-    try {
-      gameImages = import.meta.glob('../components/games-images/*.{png,jpg,jpeg,svg,gif}', { 
-        eager: true,
-        as: 'url'
-      })
-    } catch (error) {
-      console.warn("⚠️ مجلد الصور غير موجود:", error)
-    }
+    // استيراد جميع الصور من مجلد assets
+    const assetImages = import.meta.glob('../assets/*.{png,jpg,jpeg,svg,gif,webp}', { 
+      eager: true,
+      as: 'url'
+    })
+    
+    console.log("📸 الصور الموجودة في assets:", Object.keys(assetImages))
     
     const gamesComponents = []
     
@@ -97,16 +94,36 @@ export default {
     for (const path in gameModules) {
       const component = gameModules[path].default
       const fileName = path.split('/').pop().replace('.vue', '')
+      const fileNameLower = fileName.toLowerCase()
       
-      // البحث عن صورة بنفس اسم اللعبة
+      // البحث عن صورة بنفس اسم اللعبة في مجلد assets
       let gameImage = null
-      const imageExtensions = ['.png', '.jpg', '.jpeg', '.svg', '.gif']
       
-      for (const ext of imageExtensions) {
-        const imagePath = `../components/games-images/${fileName}${ext}`
-        if (gameImages[imagePath]) {
-          gameImage = gameImages[imagePath]
+      // قائمة بامتدادات الصور المدعومة
+      const imageExtensions = ['.png', '.jpg', '.jpeg', '.svg', '.gif', '.webp']
+      
+      // البحث عن صورة تطابق اسم اللعبة
+      for (const imagePath in assetImages) {
+        const imageFileName = imagePath.split('/').pop().toLowerCase()
+        
+        // التحقق مما إذا كان اسم الصورة يحتوي على اسم اللعبة
+        if (imageFileName.includes(fileNameLower) || 
+            fileNameLower.includes(imageFileName.replace(/\.[^/.]+$/, ""))) {
+          gameImage = assetImages[imagePath]
+          console.log(`✅ تم العثور على صورة للعبة ${fileName}: ${imagePath}`)
           break
+        }
+      }
+      
+      // إذا لم يتم العثور على صورة، حاول استخدام صورة افتراضية
+      if (!gameImage) {
+        // البحث عن أي صورة jpg أو png عامة
+        for (const imagePath in assetImages) {
+          if (imagePath.endsWith('.jpg') || imagePath.endsWith('.png')) {
+            gameImage = assetImages[imagePath]
+            console.log(`⚠️ استخدام صورة افتراضية للعبة ${fileName}: ${imagePath}`)
+            break
+          }
         }
       }
       
@@ -126,7 +143,7 @@ export default {
         id: fileName,
         name: gameName,
         icon: gameIcon,
-        image: gameImage, // إضافة مسار الصورة
+        image: gameImage, // مسار الصورة من assets
         description: gameDescription,
         component: shallowRef(component)
       })
@@ -148,7 +165,8 @@ export default {
         icon: '',
         text: ''
       },
-      resultTimeout: null
+      resultTimeout: null,
+      failedImages: new Set() // لتتبع الصور الفاشلة
     }
   },
 
@@ -238,10 +256,21 @@ export default {
       }, 2000)
     },
 
-    handleImageError(event) {
-      // في حالة فشل تحميل الصورة، نظهر الأيقونة بدلاً منها
+    handleImageError(event, game) {
+      // تجنب تكرار محاولة تحميل الصورة الفاشلة
+      if (this.failedImages.has(game.id)) return
+      
+      this.failedImages.add(game.id)
+      console.warn(`⚠️ فشل تحميل صورة اللعبة: ${game.name}`)
+      
+      // إخفاء الصورة وإظهار الأيقونة
       event.target.style.display = 'none'
-      event.target.parentElement.innerHTML = '<div class="game-icon">🎮</div>'
+      
+      // إنشاء عنصر الأيقونة كبديل
+      const iconDiv = document.createElement('div')
+      iconDiv.className = 'game-icon'
+      iconDiv.textContent = game.icon || '🎮'
+      event.target.parentNode.appendChild(iconDiv)
     }
   },
 
@@ -368,6 +397,7 @@ export default {
   gap: 25px;
   max-width: 1200px;
   margin: 0 auto;
+  padding: 20px 0;
 }
 
 .game-card {
@@ -399,6 +429,7 @@ export default {
   overflow: hidden;
   border-radius: 10px;
   background: linear-gradient(135deg, #f6f9fc 0%, #e6f0f5 100%);
+  position: relative;
 }
 
 .game-image {
@@ -416,6 +447,12 @@ export default {
   font-size: 64px;
   margin: 30px 0;
   filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.2));
+  animation: bounce 2s infinite ease-in-out;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
 }
 
 .game-name {
