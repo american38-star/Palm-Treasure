@@ -1,12 +1,11 @@
 <!-- src/views/Tasks.vue -->
 <template>
   <div class="games-page">
-    <!-- الرصيد - بنفس تصميم الصورة -->
+    <!-- الرصيد -->
     <div class="balance-container">
       <div class="balance-card">
         <i class="fas fa-coins"></i>
-        <span>Balance : <strong>${{ balance.toFixed(2) }}</strong></span>
-        <span class="emoji">😊</span>
+        <span>Balance: ${{ balance.toFixed(2) }}</span>
       </div>
     </div>
 
@@ -24,75 +23,77 @@
       <span>جاري تحميل الألعاب...</span>
     </div>
 
-    <!-- شبكة الألعاب - بنفس ترتيب الصورة -->
+    <!-- عرض الألعاب -->
     <div v-else class="games-container">
-      <!-- لعبة Chicken Crash -->
-      <div v-if="getGameByName('Chicken Crash')" class="game-section">
-        <div class="game-header">
-          <h2 class="game-title-large">CHICKEN CRASH</h2>
-          <div class="game-price">$999,99</div>
-        </div>
-        
-        <div class="game-row">
-          <div 
-            class="game-card-large"
-            @click="openGame(getGameByName('Chicken Crash'))"
-          >
-            <div class="game-image-wrapper">
-              <img 
-                v-if="getGameByName('Chicken Crash').image" 
-                :src="getGameByName('Chicken Crash').image" 
-                :alt="getGameByName('Chicken Crash').name"
-                class="game-image-large"
-                @error="handleImageError($event, getGameByName('Chicken Crash'))"
-              >
-              <div v-else class="game-icon-large">{{ getGameByName('Chicken Crash').icon || '🐔' }}</div>
-            </div>
+      <!-- الصف الأول: Chicken Crash و Big Wheel -->
+      <div class="featured-row">
+        <!-- لعبة Chicken Crash -->
+        <div 
+          v-if="chickenGame" 
+          class="featured-card chicken-card"
+          @click="openGame(chickenGame)"
+        >
+          <div class="game-image-container featured">
+            <img 
+              v-if="chickenGame.image" 
+              :src="chickenGame.image" 
+              :alt="chickenGame.name"
+              class="game-image"
+              @error="handleImageError($event, chickenGame)"
+            >
+            <div v-else class="game-icon featured">{{ chickenGame.icon || '🐔' }}</div>
+          </div>
+          <div class="game-info">
+            <h3 class="game-name featured">{{ chickenGame.name }}</h3>
             <div class="game-stats">
               <span class="stat-value">0.000</span>
             </div>
           </div>
+        </div>
 
-          <!-- لعبة Big Wheel بجانبها -->
-          <div 
-            v-if="getGameByName('Big Wheel')"
-            class="game-card-large secondary"
-            @click="openGame(getGameByName('Big Wheel'))"
-          >
-            <div class="game-image-wrapper">
-              <img 
-                v-if="getGameByName('Big Wheel').image" 
-                :src="getGameByName('Big Wheel').image" 
-                :alt="getGameByName('Big Wheel').name"
-                class="game-image-large"
-                @error="handleImageError($event, getGameByName('Big Wheel'))"
-              >
-              <div v-else class="game-icon-large">{{ getGameByName('Big Wheel').icon || '🎡' }}</div>
-            </div>
-            <h3 class="game-title-small">BIG WHEEL BONUS</h3>
+        <!-- لعبة Big Wheel -->
+        <div 
+          v-if="bigWheelGame" 
+          class="featured-card wheel-card"
+          @click="openGame(bigWheelGame)"
+        >
+          <div class="game-image-container featured">
+            <img 
+              v-if="bigWheelGame.image" 
+              :src="bigWheelGame.image" 
+              :alt="bigWheelGame.name"
+              class="game-image"
+              @error="handleImageError($event, bigWheelGame)"
+            >
+            <div v-else class="game-icon featured">{{ bigWheelGame.icon || '🎡' }}</div>
+          </div>
+          <div class="game-info">
+            <h3 class="game-name featured">{{ bigWheelGame.name }}</h3>
+            <p class="game-subtitle">BIG WHEEL BONUS</p>
           </div>
         </div>
       </div>
 
-      <!-- ألعاب إضافية في شبكة -->
-      <div v-if="otherGames.length > 0" class="extra-games-grid">
+      <!-- باقي الألعاب في شبكة -->
+      <div v-if="otherGames.length > 0" class="games-grid">
         <div 
           v-for="game in otherGames" 
           :key="game.id"
-          class="game-card-small"
+          class="game-card"
           @click="openGame(game)"
         >
-          <div class="game-image-wrapper-small">
+          <div class="game-image-container">
             <img 
               v-if="game.image" 
               :src="game.image" 
               :alt="game.name"
-              class="game-image-small"
+              class="game-image"
               @error="handleImageError($event, game)"
             >
-            <div v-else class="game-icon-small">{{ game.icon || '🎮' }}</div>
+            <div v-else class="game-icon">{{ game.icon || '🎮' }}</div>
           </div>
-          <h4 class="game-title-small">{{ game.name }}</h4>
+          <h3 class="game-name">{{ game.name }}</h3>
+          <p class="game-description">{{ game.description || 'اضغط للعب' }}</p>
         </div>
       </div>
     </div>
@@ -149,9 +150,6 @@ export default {
       // البحث عن صورة بنفس اسم اللعبة في مجلد assets
       let gameImage = null
       
-      // قائمة بامتدادات الصور المدعومة
-      const imageExtensions = ['.png', '.jpg', '.jpeg', '.svg', '.gif', '.webp']
-      
       // البحث عن صورة تطابق اسم اللعبة
       for (const imagePath in assetImages) {
         const imageFileName = imagePath.split('/').pop().toLowerCase()
@@ -162,6 +160,17 @@ export default {
           gameImage = assetImages[imagePath]
           console.log(`✅ تم العثور على صورة للعبة ${fileName}: ${imagePath}`)
           break
+        }
+      }
+      
+      // إذا لم يتم العثور على صورة، حاول استخدام صورة افتراضية
+      if (!gameImage) {
+        for (const imagePath in assetImages) {
+          if (imagePath.endsWith('.jpg') || imagePath.endsWith('.png')) {
+            gameImage = assetImages[imagePath]
+            console.log(`⚠️ استخدام صورة افتراضية للعبة ${fileName}: ${imagePath}`)
+            break
+          }
         }
       }
       
@@ -194,7 +203,7 @@ export default {
 
   data() {
     return {
-      balance: 100.00, // قيمة افتراضية
+      balance: 0,
       loading: true,
       selectedGame: null,
       resultMessage: {
@@ -209,21 +218,31 @@ export default {
   },
 
   computed: {
-    // الحصول على لعبة Chicken Crash
-    getGameByName() {
-      return (name) => {
-        return this.gamesComponents.find(game => 
-          game.name.toLowerCase().includes(name.toLowerCase())
-        )
-      }
+    // البحث عن لعبة Chicken Crash
+    chickenGame() {
+      return this.gamesComponents.find(game => 
+        game.name.toLowerCase().includes('chicken') || 
+        game.id.toLowerCase().includes('chicken')
+      )
     },
     
-    // الألعاب الأخرى (باستثناء Chicken Crash و Big Wheel)
-    otherGames() {
-      return this.gamesComponents.filter(game => 
-        !game.name.toLowerCase().includes('chicken') && 
-        !game.name.toLowerCase().includes('wheel')
+    // البحث عن لعبة Big Wheel
+    bigWheelGame() {
+      return this.gamesComponents.find(game => 
+        game.name.toLowerCase().includes('wheel') || 
+        game.name.toLowerCase().includes('big') ||
+        game.id.toLowerCase().includes('wheel') ||
+        game.id.toLowerCase().includes('big')
       )
+    },
+    
+    // باقي الألعاب
+    otherGames() {
+      const featuredIds = []
+      if (this.chickenGame) featuredIds.push(this.chickenGame.id)
+      if (this.bigWheelGame) featuredIds.push(this.bigWheelGame.id)
+      
+      return this.gamesComponents.filter(game => !featuredIds.includes(game.id))
     }
   },
 
@@ -238,7 +257,6 @@ export default {
       
       if (!user) {
         console.log("⚠️ لا يوجد مستخدم مسجل الدخول")
-        this.balance = 100.00 // قيمة افتراضية
         this.loading = false
         return
       }
@@ -248,7 +266,6 @@ export default {
         console.log("✅ تم جلب الرصيد:", this.balance)
       } catch (error) {
         console.error("❌ خطأ في جلب الرصيد:", error)
-        this.balance = 100.00
       } finally {
         this.loading = false
       }
@@ -320,7 +337,7 @@ export default {
       
       event.target.style.display = 'none'
       const iconDiv = document.createElement('div')
-      iconDiv.className = game.id.includes('Chicken') ? 'game-icon-large' : 'game-icon-small'
+      iconDiv.className = 'game-icon'
       iconDiv.textContent = game.icon || '🎮'
       event.target.parentNode.appendChild(iconDiv)
     }
@@ -335,21 +352,22 @@ export default {
 </script>
 
 <style scoped>
-/* ===== التصميم العام ===== */
 .games-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #1a1f2e 0%, #2a2f3f 100%);
   padding: 20px;
-  font-family: 'Montserrat', 'Arial', sans-serif;
+  font-family: 'Arial', sans-serif;
   color: #ffffff;
 }
 
-/* ===== حاوية الرصيد - بنفس تصميم الصورة ===== */
+/* حاوية الرصيد */
 .balance-container {
   display: flex;
   justify-content: center;
   margin-bottom: 30px;
-  padding: 0 15px;
+  position: sticky;
+  top: 20px;
+  z-index: 100;
 }
 
 .balance-card {
@@ -370,65 +388,26 @@ export default {
   font-size: 28px;
 }
 
-.balance-card strong {
-  color: #ffd700;
-  font-weight: 700;
-  margin: 0 5px;
+.balance-card span {
+  color: #ffffff;
 }
 
-.balance-card .emoji {
-  font-size: 28px;
-}
-
-/* ===== حاوية الألعاب ===== */
+/* حاوية الألعاب */
 .games-container {
   max-width: 1200px;
   margin: 0 auto;
 }
 
-/* ===== قسم اللعبة الرئيسي ===== */
-.game-section {
-  background: #1e2335;
-  border-radius: 20px;
-  padding: 25px;
-  margin-bottom: 30px;
-  border: 1px solid #3a4055;
-}
-
-.game-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 2px solid #3a4055;
-}
-
-.game-title-large {
-  font-size: 28px;
-  font-weight: 800;
-  color: #ffffff;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin: 0;
-}
-
-.game-price {
-  font-size: 32px;
-  font-weight: 700;
-  color: #ffd700;
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
-}
-
-/* ===== صف الألعاب الرئيسي ===== */
-.game-row {
+/* الصف المميز */
+.featured-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 25px;
+  margin-bottom: 40px;
 }
 
-/* ===== بطاقة اللعبة الكبيرة ===== */
-.game-card-large {
+/* البطاقات المميزة */
+.featured-card {
   background: #2a2f42;
   border-radius: 15px;
   padding: 20px;
@@ -438,37 +417,41 @@ export default {
   text-align: center;
 }
 
-.game-card-large:hover {
+.featured-card:hover {
   transform: translateY(-5px);
   border-color: #ffd700;
   box-shadow: 0 10px 30px rgba(255, 215, 0, 0.2);
 }
 
-.game-card-large.secondary {
+.chicken-card {
+  background: #2a2f42;
+}
+
+.wheel-card {
   background: #252a3c;
 }
 
-.game-image-wrapper {
+.game-image-container.featured {
   width: 100%;
-  height: 200px;
+  height: 220px;
   margin-bottom: 15px;
   border-radius: 10px;
   overflow: hidden;
   background: #1e2335;
 }
 
-.game-image-large {
+.game-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
   transition: transform 0.3s ease;
 }
 
-.game-card-large:hover .game-image-large {
+.featured-card:hover .game-image {
   transform: scale(1.05);
 }
 
-.game-icon-large {
+.game-icon.featured {
   width: 100%;
   height: 100%;
   display: flex;
@@ -479,11 +462,22 @@ export default {
   color: #1e2335;
 }
 
-.game-stats {
+.game-info {
   margin-top: 10px;
+}
+
+.game-name.featured {
+  font-size: 24px;
+  color: #ffffff;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.game-stats {
   padding: 10px;
   background: #1e2335;
   border-radius: 8px;
+  display: inline-block;
 }
 
 .stat-value {
@@ -492,24 +486,23 @@ export default {
   color: #ffd700;
 }
 
-/* ===== عنوان اللعبة الصغير ===== */
-.game-title-small {
-  font-size: 20px;
+.game-subtitle {
+  font-size: 18px;
+  color: #ffd700;
+  margin: 10px 0 0;
   font-weight: 600;
-  color: #ffffff;
-  margin: 15px 0 5px;
   text-transform: uppercase;
 }
 
-/* ===== شبكة الألعاب الإضافية ===== */
-.extra-games-grid {
+/* شبكة الألعاب */
+.games-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 20px;
-  margin-top: 30px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 25px;
+  margin-top: 20px;
 }
 
-.game-card-small {
+.game-card {
   background: #2a2f42;
   border-radius: 12px;
   padding: 15px;
@@ -519,13 +512,13 @@ export default {
   text-align: center;
 }
 
-.game-card-small:hover {
+.game-card:hover {
   transform: translateY(-3px);
   border-color: #ffd700;
   box-shadow: 0 5px 20px rgba(255, 215, 0, 0.2);
 }
 
-.game-image-wrapper-small {
+.game-image-container {
   width: 100%;
   height: 150px;
   border-radius: 8px;
@@ -534,13 +527,7 @@ export default {
   margin-bottom: 10px;
 }
 
-.game-image-small {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.game-icon-small {
+.game-icon {
   width: 100%;
   height: 100%;
   display: flex;
@@ -551,7 +538,20 @@ export default {
   color: #ffd700;
 }
 
-/* ===== رسالة النتيجة ===== */
+.game-name {
+  font-size: 18px;
+  color: #ffffff;
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+
+.game-description {
+  color: #a0a0a0;
+  font-size: 13px;
+  margin: 0;
+}
+
+/* رسالة النتيجة */
 .result-message {
   position: fixed;
   top: 100px;
@@ -601,7 +601,7 @@ export default {
   transform: translateX(-50%) translateY(-20px);
 }
 
-/* ===== التحميل ===== */
+/* التحميل */
 .loading {
   display: flex;
   flex-direction: column;
@@ -618,7 +618,7 @@ export default {
   color: #ffd700;
 }
 
-/* ===== نافذة اللعبة ===== */
+/* نافذة اللعبة */
 .game-modal {
   position: fixed;
   top: 0;
@@ -695,7 +695,7 @@ export default {
   padding: 20px;
 }
 
-/* ===== تحسينات الجوال ===== */
+/* تحسينات الجوال */
 @media (max-width: 768px) {
   .games-page {
     padding: 10px;
@@ -706,24 +706,26 @@ export default {
     padding: 12px 25px;
   }
 
-  .game-row {
+  .featured-row {
     grid-template-columns: 1fr;
+    gap: 15px;
   }
 
-  .game-title-large {
-    font-size: 22px;
+  .game-image-container.featured {
+    height: 180px;
   }
 
-  .game-price {
-    font-size: 24px;
+  .game-name.featured {
+    font-size: 20px;
   }
 
-  .game-image-wrapper {
-    height: 150px;
+  .game-subtitle {
+    font-size: 16px;
   }
 
-  .extra-games-grid {
+  .games-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
   }
 }
 
@@ -733,21 +735,15 @@ export default {
     padding: 10px 20px;
   }
 
-  .game-header {
-    flex-direction: column;
-    gap: 10px;
-    text-align: center;
+  .game-image-container.featured {
+    height: 150px;
   }
 
-  .game-image-wrapper {
-    height: 120px;
-  }
-
-  .game-icon-large {
+  .game-icon.featured {
     font-size: 60px;
   }
 
-  .extra-games-grid {
+  .games-grid {
     grid-template-columns: 1fr;
   }
 
@@ -755,6 +751,10 @@ export default {
     font-size: 14px;
     padding: 10px 20px;
     top: 80px;
+  }
+
+  .game-image-container {
+    height: 130px;
   }
 }
 </style>
