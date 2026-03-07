@@ -1,3 +1,4 @@
+// src/firebase.js
 // ===============================
 // firebase.js — الإصدار النهائي
 // بدون أي خطأ — تشغيل Analytics بأمان
@@ -15,7 +16,11 @@ import {
   query, 
   where, 
   orderBy, 
-  getDocs 
+  getDocs,
+  doc,
+  getDoc,
+  updateDoc,
+  setDoc
 } from "firebase/firestore";
 
 import { getStorage } from "firebase/storage";
@@ -84,6 +89,54 @@ export const getTransactionsByUserId = async (userId) => {
   } catch (error) {
     console.error("❌ خطأ في جلب المعاملات:", error);
     return [];
+  }
+};
+
+// دوال إدارة الرصيد
+export const getUserBalance = async (userId) => {
+  try {
+    const userRef = doc(db, "users", userId);
+    const userSnap = await getDoc(userRef);
+    
+    if (userSnap.exists()) {
+      return userSnap.data().balance || 0;
+    } else {
+      // إنشاء مستخدم جديد برصيد 0
+      await setDoc(userRef, { balance: 0, createdAt: new Date() });
+      return 0;
+    }
+  } catch (error) {
+    console.error("❌ خطأ في جلب الرصيد:", error);
+    return 0;
+  }
+};
+
+export const updateUserBalance = async (userId, newBalance) => {
+  try {
+    const userRef = doc(db, "users", userId);
+    await updateDoc(userRef, { 
+      balance: newBalance,
+      updatedAt: new Date()
+    });
+    return true;
+  } catch (error) {
+    console.error("❌ خطأ في تحديث الرصيد:", error);
+    return false;
+  }
+};
+
+export const addTransaction = async (userId, transactionData) => {
+  try {
+    const transactionsRef = collection(db, "transactions");
+    await setDoc(doc(transactionsRef), {
+      userId,
+      ...transactionData,
+      createdAt: new Date()
+    });
+    return true;
+  } catch (error) {
+    console.error("❌ خطأ في إضافة المعاملة:", error);
+    return false;
   }
 };
 
