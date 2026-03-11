@@ -19,7 +19,7 @@
           <div class="bubble-chat-title">
             <div class="bubble-avatar">🎁</div>
             <div>
-              <div class="bubble-sender">Mall of the World</div>
+              <div class="bubble-sender">Palm Treasure 🌴</div>
               <div class="bubble-time">عرض خاص</div>
             </div>
           </div>
@@ -36,7 +36,7 @@
             <div class="bubble-content">
               <strong>🎉✨ عرض رأس السنة الجديد – فرصة ذهبية! ✨🎉</strong>
               <br><br>
-              بمناسبة حلول رأس السنة الجديدة، يسرّ Mall of the World أن يقدّم لكم عرضًا خاصًا ومحدودًا 🎁
+              بمناسبة حلول رأس السنة الجديدة، يسرّ Palm Treasure أن يقدّم لكم عرضًا خاصًا ومحدودًا 🎁
               <br><br>
               <strong>🔔 تفاصيل العرض:</strong><br>
               قم بدعوة 10 أشخاص جدد للتسجيل في المنصة، ويجب على كل شخص منهم القيام بشحن رصيد بقيمة 100 دولار.
@@ -51,7 +51,7 @@
               <br><br>
               <strong>🚀 لا تفوّت الفرصة، ابدأ بدعوة أصدقائك الآن واحتفل بالعام الجديد مع أرباح حقيقية!</strong>
               <br><br>
-              <em>🎆 Mall of the World يتمنى لكم سنة جديدة مليئة بالنجاح والربح 🎆</em>
+              <em>🎆 Palm Treasure يتمنى لكم سنة جديدة مليئة بالنجاح والربح 🎆</em>
             </div>
             <div class="bubble-time">12:00</div>
           </div>
@@ -159,7 +159,7 @@
           <div class="ad-header">
             <h2>
               <i class="fas fa-crown"></i>
-              إعلان الشركة
+              Palm Treasure 🌴
               <i class="fas fa-crown"></i>
             </h2>
             <button class="ad-close-btn" @click="closeAd">
@@ -168,37 +168,65 @@
           </div>
 
           <div class="ad-content">
-            <div class="ad-welcome">
-              <i class="fas fa-bell"></i>
-              <span>🎉 عرض خاص بمناسبة رأس السنة 🎉</span>
+            <div class="company-message">
+              <p>
+                مرحباً بالجميع 🌟<br><br>
+                يسرّنا أن نعرّفكم بشركة Palm Treasure التي تأسست في سنغافورة بتاريخ 5 فبراير 2026، وهي شركة استثمارية متخصصة في مجال التجارة الإلكترونية. تمتلك الشركة فريقاً تقنياً محترفاً وخبرة مالية قوية، ويقع مقرها الرئيسي حالياً في منطقة الأعمال المركزية في سنغافورة.<br><br>
+                وانطلاقاً من رؤيتنا للتوسع وبناء شبكة تعاون واسعة، قمنا بإنشاء فروع ووكالات في عدد من الدول العربية مثل لبنان، الجزائر، ليبيا، والعراق، ونسعى خلال المرحلة القادمة إلى توسيع نشاطنا وانتشارنا في مختلف دول الشرق الأوسط.<br><br>
+                لقد جاء تأسيس هذه الشركة بعد دراسة عميقة لما حدث خلال عامي 2024 و2025، حيث ظهرت العديد من المنصات الوهمية التي خدعت الكثير من الناس ولم تستمر طويلاً. ومن هنا كان هدفنا واضحاً: تحويل هذا المجال إلى منصة حقيقية وموثوقة يستفيد منها الأعضاء كما تستفيد منها الشركة، ضمن نظام عادل وشفاف.<br><br>
+                وقد تحقق هذا المشروع بجهود كبيرة من الفريق التقني تحت إشراف المهندس أليكس ديروب، الذي لعب دوراً أساسياً في تطوير النظام التقني للشركة. وتقديراً لجهوده المميزة ومساهمته في نجاح هذا المشروع، تمت ترقيته إلى منصب نائب المدير.<br><br>
+                نحن في Palm Treasure نؤمن بأن النجاح الحقيقي يجب أن يكون متاحاً للجميع، لذلك تم تصميم هذا المشروع ليكون فرصة متاحة لكل الناس، وخاصة للطبقة المتوسطة وذوي الدخل المحدود، حتى يتمكنوا من تحسين أوضاعهم والمشاركة في فرص الاقتصاد الرقمي.<br><br>
+                ولهذا السبب تم وضع نظام واضح وقوانين عادلة تضمن حماية حقوق الموظفين والأعضاء قبل حقوق المستثمرين، مع مراعاة الظروف الاقتصادية والاجتماعية في المجتمعات العربية.<br><br>
+                وسيتم تطبيق هذا النظام المبرمج في معظم الدول العربية ابتداءً من 1 مارس 2026 وحتى نهاية عام 2028، وخلال هذه الفترة سيتم تقييم الأداء والنتائج. وبعد ذلك قد يتم تطوير النظام وإجراء بعض التعديلات بناءً على كفاءة الأعضاء وجهودهم وإخلاصهم في العمل.<br><br>
+                كما نعمل منذ الآن على التخطيط لمجموعة من الفرص المستقبلية والمشاريع الجديدة التي ستوفر مزيداً من الإمكانيات لأعضاء الشركة في السنوات القادمة.<br><br>
+                نتمنى للجميع التوفيق، ونسعد بانضمامكم إلى مجتمع Palm Treasure 🌴
+              </p>
             </div>
-            
-            <p>
-              🎉🎉🎉🎉 مرحبا بالجميع! تأسست Mall of the world في سنغافورة في 20 أغسطس 2021 ومقرها حاليًا في منطقة الأعمال المركزية في سنغافورة. نحن شركة استثمار في التجارة الإلكترونية مع فريق تقني قوي وقوة مالية قوية.
-            </p>
-            
+
             <div class="ad-highlight">
               <i class="fas fa-handshake"></i>
               <span>شراكات عالمية مع Amazon, eBay, TikTok, Aliexpress, Alibaba, Shopee</span>
             </div>
 
-            <div class="ad-stats">
-              <div class="stat-item">
-                <i class="fas fa-coins"></i>
-                <span>الحد الأدنى للشحن: 12 USDT</span>
-              </div>
-              <div class="stat-item">
-                <i class="fas fa-hand-holding-usd"></i>
-                <span>الحد الأدنى للسحب: 3 USDT</span>
-              </div>
-            </div>
-
-            <div class="vip-table">
-              <h3>💎 خطط VIP</h3>
-              <div class="vip-row" v-for="vip in vipPlans" :key="vip.level">
-                <span class="vip-level">VIP {{ vip.level }}</span>
-                <span class="vip-recharge">شحن {{ vip.recharge }} USDT</span>
-                <span class="vip-daily">ربح {{ vip.daily }} USDT/يوم</span>
+            <div class="vip-section">
+              <h3>📊 خطط العضوية والأرباح</h3>
+              
+              <div class="vip-grid">
+                <div class="vip-card" v-for="vip in vipPlans" :key="vip.level">
+                  <div class="vip-header" :class="getVipClass(vip.level)">
+                    <span class="vip-level-badge">{{ vip.level }}</span>
+                  </div>
+                  <div class="vip-details">
+                    <div class="vip-detail-item">
+                      <span class="detail-label">💰 الاشتراك:</span>
+                      <span class="detail-value">{{ vip.recharge }} USDT</span>
+                    </div>
+                    <div class="vip-detail-item">
+                      <span class="detail-label">📈 الربح اليومي:</span>
+                      <span class="detail-value">{{ vip.daily }} USDT</span>
+                    </div>
+                    <div class="vip-detail-item">
+                      <span class="detail-label">📅 الربح الشهري:</span>
+                      <span class="detail-value">{{ vip.monthly }} USDT</span>
+                    </div>
+                    <div v-if="vip.yearly" class="vip-detail-item">
+                      <span class="detail-label">📊 الإجمالي السنوي:</span>
+                      <span class="detail-value">{{ vip.yearly }} USDT</span>
+                    </div>
+                    <div v-if="vip.percentage" class="vip-detail-item">
+                      <span class="detail-label">📊 نسبة الربح:</span>
+                      <span class="detail-value highlight">{{ vip.percentage }}</span>
+                    </div>
+                    <div v-if="vip.tasks" class="vip-detail-item">
+                      <span class="detail-label">📝 مهمة يومية:</span>
+                      <span class="detail-value">{{ vip.tasks }}</span>
+                    </div>
+                    <div v-if="vip.status" class="vip-detail-item">
+                      <span class="detail-label">✅ الحالة:</span>
+                      <span class="detail-value status-active">{{ vip.status }}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -210,11 +238,15 @@
                 <span>المستوى 3: 1%</span>
               </div>
             </div>
+
+            <div class="cta-message">
+              <p>🚀 اختر المستوى المناسب لك وابدأ اليوم، فكل خطوة صغيرة قد تكون بداية لنجاح كبير مع Palm Treasure 🌴</p>
+            </div>
           </div>
 
           <button class="ad-btn" @click="closeAd">
             <i class="fas fa-check-circle"></i>
-            فهمت وشكراً!
+            أنا أعرف
           </button>
         </div>
       </div>
@@ -240,17 +272,20 @@ export default {
       showNewYearMessage: false,
 
       vipPlans: [
-        { level: 1, recharge: '12', daily: '3' },
-        { level: 2, recharge: '52', daily: '13' },
-        { level: 3, recharge: '100', daily: '26' },
-        { level: 4, recharge: '300', daily: '82' },
-        { level: 5, recharge: '500', daily: '145' },
-        { level: 6, recharge: '1500', daily: '479' },
-        { level: 7, recharge: '3000', daily: '1078' },
-        { level: 8, recharge: '5000', daily: '2000' },
-        { level: 9, recharge: '10000', daily: '4546' },
-        { level: 10, recharge: '30000', daily: '17699' },
-        { level: 11, recharge: '90000', daily: '81818' }
+        { level: 'VIP 1', recharge: '0', daily: '0.3', monthly: '9', yearly: '109.5', tasks: '1', status: 'مفعل الآن' },
+        { level: 'VIP 2', recharge: '50', daily: '1.6', monthly: '48', percentage: '96% شهرياً', yearly: '584' },
+        { level: 'VIP 3', recharge: '100', daily: '3.25', monthly: '97.5', percentage: '97.5% شهرياً', yearly: '1186.25' },
+        { level: 'VIP 4', recharge: '300', daily: '10', monthly: '300', percentage: '100% شهرياً', yearly: '3650' },
+        { level: 'VIP 5', recharge: '900', daily: '33', monthly: '990', percentage: '110% شهرياً' },
+        { level: 'VIP 6', recharge: '1350', daily: '51', monthly: '1530', percentage: '113% شهرياً' },
+        { level: 'VIP 7', recharge: '1800', daily: '70', monthly: '2100', percentage: '116% شهرياً' },
+        { level: 'VIP 8', recharge: '3600', daily: '150', monthly: '4500', percentage: '125% شهرياً' },
+        { level: 'VIP 9', recharge: '7200', daily: '330', monthly: '9900', percentage: '137% شهرياً' },
+        { level: 'VIP 10', recharge: '14400', daily: '700', monthly: '21000', percentage: '146% شهرياً' },
+        { level: 'VIP 11', recharge: '18800', daily: '1600', monthly: '48000', percentage: '255% شهرياً' },
+        { level: 'VIP 12', recharge: '37600', daily: '3500', monthly: '105000', percentage: '279% شهرياً' },
+        { level: 'VIP 13', recharge: '75200', daily: '7500', monthly: '225000', percentage: '299% شهرياً' },
+        { level: 'VIP 14', recharge: '150400', daily: '16000', monthly: '480000', percentage: '319% شهرياً' }
       ],
 
       languages: [
@@ -312,6 +347,15 @@ export default {
       this.showLangMenu = false;
       
       document.documentElement.dir = lang.code === 'AR' ? 'rtl' : 'ltr';
+    },
+
+    getVipClass(level) {
+      if (level.includes('VIP 1')) return 'vip-bronze';
+      if (level.includes('VIP 2') || level.includes('VIP 3')) return 'vip-silver';
+      if (level.includes('VIP 4') || level.includes('VIP 5')) return 'vip-gold';
+      if (level.includes('VIP 6') || level.includes('VIP 7') || level.includes('VIP 8') || level.includes('VIP 9')) return 'vip-platinum';
+      if (level.includes('VIP 10') || level.includes('VIP 11') || level.includes('VIP 12') || level.includes('VIP 13') || level.includes('VIP 14')) return 'vip-elite';
+      return '';
     },
 
     closeAd() {
@@ -809,12 +853,15 @@ body {
 
 .ad-box {
   background: #11151C;
-  width: 90%;
-  max-width: 500px;
+  width: 95%;
+  max-width: 900px;
+  max-height: 90vh;
   border-radius: 30px;
   overflow: hidden;
   border: 2px solid #D4AF37;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(212, 175, 55, 0.3);
+  display: flex;
+  flex-direction: column;
 }
 
 .ad-header {
@@ -828,7 +875,7 @@ body {
 
 .ad-header h2 {
   margin: 0;
-  font-size: 22px;
+  font-size: 24px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -859,9 +906,9 @@ body {
 }
 
 .ad-content {
-  padding: 25px;
-  max-height: 60vh;
+  flex: 1;
   overflow-y: auto;
+  padding: 25px;
   color: #ffffff;
   scrollbar-width: thin;
   scrollbar-color: #D4AF37 #1A1F2A;
@@ -880,20 +927,19 @@ body {
   border-radius: 10px;
 }
 
-.ad-welcome {
-  background: rgba(212, 175, 55, 0.1);
-  padding: 15px;
+.company-message {
+  background: #1A1F2A;
   border-radius: 16px;
+  padding: 20px;
   margin-bottom: 20px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border-right: 4px solid #D4AF37;
+  border: 1px solid rgba(212, 175, 55, 0.2);
 }
 
-.ad-welcome i {
-  color: #D4AF37;
-  font-size: 20px;
+.company-message p {
+  margin: 0;
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 1.8;
 }
 
 .ad-highlight {
@@ -907,60 +953,94 @@ body {
   border: 1px solid rgba(212, 175, 55, 0.3);
 }
 
-.ad-stats {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  margin: 15px 0;
+.vip-section {
+  margin-bottom: 25px;
 }
 
-.stat-item {
-  background: #1A1F2A;
-  padding: 10px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-}
-
-.stat-item i {
-  color: #D4AF37;
-}
-
-.vip-table {
-  background: #1A1F2A;
-  border-radius: 16px;
-  padding: 15px;
-  margin: 20px 0;
-  border: 1px solid rgba(212, 175, 55, 0.3);
-}
-
-.vip-table h3 {
+.vip-section h3 {
   color: #D4AF37;
   text-align: center;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
+  font-size: 22px;
 }
 
-.vip-row {
+.vip-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 15px;
+}
+
+.vip-card {
+  background: #1A1F2A;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  transition: all 0.3s ease;
+}
+
+.vip-card:hover {
+  transform: translateY(-5px);
+  border-color: #D4AF37;
+  box-shadow: 0 10px 20px rgba(212, 175, 55, 0.2);
+}
+
+.vip-header {
+  padding: 12px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.vip-level-badge {
+  font-size: 18px;
+}
+
+.vip-bronze {
+  background: linear-gradient(135deg, #CD7F32, #B87333);
+}
+.vip-silver {
+  background: linear-gradient(135deg, #C0C0C0, #A8A8A8);
+}
+.vip-gold {
+  background: linear-gradient(135deg, #D4AF37, #F6E27A);
+}
+.vip-platinum {
+  background: linear-gradient(135deg, #E5E4E2, #B0C4DE);
+}
+.vip-elite {
+  background: linear-gradient(135deg, #8A2BE2, #4B0082);
+}
+
+.vip-details {
+  padding: 15px;
+}
+
+.vip-detail-item {
   display: flex;
   justify-content: space-between;
   padding: 8px 0;
   border-bottom: 1px solid rgba(212, 175, 55, 0.1);
-  font-size: 13px;
 }
 
-.vip-level {
+.vip-detail-item:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.detail-value {
   color: #D4AF37;
-  font-weight: 700;
+  font-weight: 600;
 }
 
-.vip-recharge {
+.detail-value.highlight {
   color: #F6E27A;
+  font-size: 16px;
 }
 
-.vip-daily {
-  color: #ffffff;
+.status-active {
+  color: #4CAF50;
 }
 
 .commission-box {
@@ -968,6 +1048,7 @@ body {
   border-radius: 16px;
   padding: 15px;
   text-align: center;
+  margin: 20px 0;
 }
 
 .commission-box h4 {
@@ -980,6 +1061,23 @@ body {
   justify-content: center;
   gap: 20px;
   color: #ffffff;
+  font-weight: 600;
+}
+
+.cta-message {
+  text-align: center;
+  margin: 25px 0;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(246, 226, 122, 0.1));
+  border-radius: 16px;
+  border: 1px solid #D4AF37;
+}
+
+.cta-message p {
+  color: #F6E27A;
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
 }
 
 .ad-btn {
@@ -1055,6 +1153,19 @@ body {
   .nav-item span {
     font-size: 10px;
   }
+  
+  .vip-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .commission-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .ad-content {
+    padding: 15px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1085,6 +1196,14 @@ body {
   
   .nav-item span {
     font-size: 9px;
+  }
+  
+  .ad-header h2 {
+    font-size: 20px;
+  }
+  
+  .vip-section h3 {
+    font-size: 18px;
   }
 }
 </style>
