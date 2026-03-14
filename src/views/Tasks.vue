@@ -357,9 +357,8 @@ export default {
       
       const winningSegment = this.wheelSegments[winningIndex]
       
-      // دوران أكثر واقعية
-      // عدد الدورات الكاملة (8-12 دورة)
-      const spins = 8 + Math.floor(Math.random() * 5)
+      // دوران واقعي جداً - عدد دورات كبير (15-25 دورة)
+      const spins = 15 + Math.floor(Math.random() * 10) // 15-25 دورة كاملة
       
       // منتصف القطاع الفائز
       const segmentMiddle = winningIndex * this.segmentAngle + this.segmentAngle / 2
@@ -370,16 +369,16 @@ export default {
       let targetRotation = (360 * spins) + (360 - segmentMiddle) - 90
       
       const start = this.wheelRotation
-      const duration = 4500 // 4.5 ثواني دوران
+      const duration = 5000 // 5 ثواني دوران كامل
       const startTime = performance.now()
       
       const animate = (time) => {
         const elapsed = time - startTime
         const progress = Math.min(elapsed / duration, 1)
         
-        // منحنى التباطؤ الطبيعي (يبدأ سريعاً ثم يبطئ)
-        // باستخدام دالة easeOutCubic: 1 - (1-t)^3
-        const easeOut = 1 - Math.pow(1 - progress, 3)
+        // منحنى التباطؤ الطبيعي جداً - يبدأ سريعاً ثم يبطئ تدريجياً
+        // باستخدام دالة easeOutQuart: 1 - (1-t)^4 (تباطؤ أكثر واقعية)
+        const easeOut = 1 - Math.pow(1 - progress, 4)
         
         this.wheelRotation = start + ((targetRotation - start) * easeOut)
         
@@ -389,10 +388,10 @@ export default {
           // التأكد من الزاوية النهائية مضبوطة بالضبط
           this.wheelRotation = targetRotation
           
-          // انتظار لحظة قصيرة ثم عرض النتيجة
+          // انتظار لحظة قصيرة (200ms) ثم عرض النتيجة
           setTimeout(() => {
             this.finishSpin(winningIndex, winningSegment)
-          }, 100)
+          }, 200)
         }
       }
       
@@ -737,7 +736,7 @@ export default {
 .wheel-svg {
   width: 100%;
   height: 100%;
-  transition: transform 4.5s cubic-bezier(0.25, 0.1, 0.15, 1);
+  transition: transform 5s cubic-bezier(0.1, 0.8, 0.2, 1);
   filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.3));
 }
 
