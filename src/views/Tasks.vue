@@ -158,12 +158,11 @@ export default {
       gameError: "",
       
       // بيانات عجلة الحظ
-      wheelRotation: 0,
+      wheelRotation: 337.5, // الزاوية الابتدائية: السهم على 0x
       isSpinning: false,
       betAmount: null,
       
       // أجزاء العجلة (8 أجزاء) - المضاعفات المطلوبة
-      // الترتيب: 0x (أحمر) في الأعلى، ثم باتجاه عقارب الساعة
       wheelSegments: [
         { value: 0 },     // قطاع 0 - أحمر
         { value: 0.5 },   // قطاع 1 - برتقالي
@@ -187,7 +186,7 @@ export default {
   
   computed: {
     segmentAngle() {
-      return 360 / this.wheelSegments.length
+      return 360 / this.wheelSegments.length // 45 درجة
     },
     
     canSpin() {
@@ -209,9 +208,6 @@ export default {
     
     // تهيئة الأصوات
     this.initSounds()
-    
-    // جعل السهم يقف على 0x في البداية
-    this.setWheelToZero()
   },
   
   methods: {
@@ -247,14 +243,6 @@ export default {
       }
     },
     
-    // جعل السهم يقف على 0x (القطاع 0)
-    setWheelToZero() {
-      // نريد أن يكون منتصف القطاع 0 تحت السهم
-      // السهم في الأعلى (زاوية -90 درجة)
-      // منتصف القطاع 0 هو 22.5 درجة (لأن القطاع 0 من 0° إلى 45°)
-      this.wheelRotation = -22.5 - 90 // -112.5 درجة
-    },
-    
     getSegmentColor(value) {
       if (value === 0) return '#d32f2f' // أحمر
       if (value === 0.5 || value === 1) return '#fb8c00' // برتقالي
@@ -273,8 +261,9 @@ export default {
       const centerX = 100
       const centerY = 100
       const radius = 85
-      const startAngle = (index * this.segmentAngle - 90) * Math.PI / 180
-      const endAngle = ((index + 1) * this.segmentAngle - 90) * Math.PI / 180
+      // SVG: الزاوية 0 على اليمين، 90 للأسفل
+      const startAngle = (index * this.segmentAngle) * Math.PI / 180
+      const endAngle = ((index + 1) * this.segmentAngle) * Math.PI / 180
       
       const x1 = centerX + radius * Math.cos(startAngle)
       const y1 = centerY + radius * Math.sin(startAngle)
@@ -287,24 +276,21 @@ export default {
     getTextX(index) {
       const centerX = 100
       const radius = 60
-      const angle = ((index + 0.5) * this.segmentAngle - 90) * Math.PI / 180
+      // منتصف القطاع
+      const angle = ((index + 0.5) * this.segmentAngle) * Math.PI / 180
       return centerX + radius * Math.cos(angle)
     },
     
     getTextY(index) {
       const centerY = 100
       const radius = 60
-      const angle = ((index + 0.5) * this.segmentAngle - 90) * Math.PI / 180
+      const angle = ((index + 0.5) * this.segmentAngle) * Math.PI / 180
       return centerY + radius * Math.sin(angle)
     },
     
     getTextRotation(index) {
-      const angle = (index + 0.5) * this.segmentAngle
-      // نجعل النص دائمًا في وضع مستقيم
-      if (angle > 90 && angle < 270) {
-        return `rotate(${angle + 180}, ${this.getTextX(index)}, ${this.getTextY(index)})`
-      }
-      return `rotate(${angle}, ${this.getTextX(index)}, ${this.getTextY(index)})`
+      // النصوص تكون مستقيمة دائماً
+      return ''
     },
     
     openGame(gameId) {
@@ -342,7 +328,7 @@ export default {
     },
     
     resetGame() {
-      this.setWheelToZero() // السهم يقف على 0x
+      this.wheelRotation = 337.5 // السهم على 0x
       this.isSpinning = false
       this.betAmount = null
       this.lastResult = null
@@ -388,17 +374,23 @@ export default {
       
       const winningSegment = this.wheelSegments[winningIndex]
       
-      // حساب الزاوية المستهدفة بدقة باستخدام المعادلة الصحيحة
-      // targetRotation = (360 * spins) + (360 - (winningIndex * segmentAngle) - (segmentAngle / 2))
+      // المعادلة الصحيحة للدوران
+      // عدد الدورات الكاملة
+      const spins = 8 + Math.floor(Math.random() * 8) // 8-15 دورة
       
-      const spins = 6 + Math.floor(Math.random() * 4) // 6-9 دورات
+      // منتصف القطاع الفائز
+      const segmentMiddle = winningIndex * this.segmentAngle + this.segmentAngle / 2
       
-      // المعادلة الصحيحة: نريد أن يكون منتصف القطاع الفائز تحت السهم
-      // السهم في الأعلى يشير إلى الزاوية -90 درجة
-      // منتصف القطاع الفائز هو (winningIndex * segmentAngle) + (segmentAngle / 2)
-      // نحتاج لتدوير العجلة بحيث يصبح هذا المنصف تحت السهم
+      // الزاوية المستهدفة: نريد أن يكون منتصف القطاع الفائز تحت السهم
+      // السهم في الأعلى (زاوية 270 درجة في نظام SVG)
+      // targetRotation = (360 * spins) + (270 - segmentMiddle)
+      // نبسطها: targetRotation = 360 * spins + 270 - segmentMiddle
       
-      const targetRotation = (360 * spins) + (360 - (winningIndex * this.segmentAngle) - (this.segmentAngle / 2))
+      let targetRotation = 360 * spins + 270 - segmentMiddle
+      
+      // تصحيح الزاوية لتكون ضمن النطاق المنطقي
+      targetRotation = targetRotation % 360
+      if (targetRotation < 0) targetRotation += 360
       
       const start = this.wheelRotation
       const duration = 4000
@@ -415,20 +407,15 @@ export default {
         if (progress < 1) {
           requestAnimationFrame(animate)
         } else {
-          // التأكد من الزاوية النهائية مضبوطة
+          // التأكد من الزاوية النهائية
           this.wheelRotation = targetRotation
           
           // التحقق من أن القطاع تحت السهم هو القطاع الفائز
           // هذا للتصحيح والتأكد
-          const currentAngle = (this.wheelRotation + 90) % 360
-          const segmentIndex = Math.floor(currentAngle / this.segmentAngle) % 8
+          const currentAngle = (this.wheelRotation + 90) % 360 // تعديل للتحقق
+          const calculatedIndex = Math.floor(currentAngle / this.segmentAngle) % 8
           
-          // إذا كان هناك خطأ بسيط (1-2 درجة)، نقوم بتصحيحه
-          if (segmentIndex !== winningIndex) {
-            const correction = (winningIndex * this.segmentAngle + this.segmentAngle / 2) - currentAngle
-            this.wheelRotation += correction
-          }
-          
+          // إذا كان هناك خطأ بسيط، نستخدم winningIndex الصحيح
           this.finishSpin(winningIndex, winningSegment)
         }
       }
