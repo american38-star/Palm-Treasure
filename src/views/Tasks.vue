@@ -147,17 +147,17 @@ export default {
       gameError: "",
       
       // بيانات عجلة الحظ
-      wheelRotation: 0, // نبدأ من 0 (السهم على 0x)
+      wheelRotation: 0,
       isSpinning: false,
       betAmount: null,
       
       // أجزاء العجلة (8 أجزاء) - المضاعفات المطلوبة
       wheelSegments: [
-        { value: 0 },     // قطاع 0 - أحمر (خسارة)
+        { value: 2 },     // قطاع 0 - أخضر (ربح)
         { value: 0.5 },   // قطاع 1 - برتقالي (خسارة نصف)
         { value: 1 },     // قطاع 2 - برتقالي (تعادل)
         { value: 1.5 },   // قطاع 3 - أخضر (ربح)
-        { value: 2 },     // قطاع 4 - أخضر (ربح)
+        { value: 0 },     // قطاع 4 - أحمر (خسارة)
         { value: 3 },     // قطاع 5 - أخضر (ربح)
         { value: 5 },     // قطاع 6 - أخضر (ربح)
         { value: 10 }     // قطاع 7 - ذهبي (ربح كبير)
@@ -237,12 +237,14 @@ export default {
       if (value === 0.5 || value === 1) return '#fb8c00' // برتقالي
       if (value >= 1.5 && value <= 5) return '#388e3c' // أخضر
       if (value === 10) return '#ffd700' // ذهبي
+      if (value === 2) return '#388e3c' // أخضر
       return '#388e3c'
     },
     
     getTextColor(value) {
       if (value === 0 || value === 0.5 || value === 1) return 'white'
       if (value === 10) return '#222'
+      if (value === 2) return 'white'
       return 'white'
     },
     
@@ -312,7 +314,7 @@ export default {
     },
     
     resetGame() {
-      this.wheelRotation = 0 // السهم على 0x
+      this.wheelRotation = 0
       this.isSpinning = false
       this.lastResult = null
       this.gameError = ''
@@ -337,7 +339,8 @@ export default {
       // تشغيل صوت الدوران
       this.playSound(this.spinSound)
       
-      // دائمًا نختار القطاع 0 (0x) - خسارة دائمة
+      // نختار القطاع الذي يحتوي على 2x (المضاعف المطلوب)
+      // 2x موجود في القطاع 0
       const winningIndex = 0
       const winningSegment = this.wheelSegments[winningIndex]
       
@@ -352,8 +355,8 @@ export default {
       // الزاوية المستهدفة: (360 * عدد الدورات) + الزاوية المطلوبة
       const targetRotation = (360 * spins) + requiredAngle
       
-      const start = 0 // نبدأ دائمًا من 0
-      const duration = 3500 // 3.5 ثواني
+      const start = 0
+      const duration = 3500
       const startTime = performance.now()
       
       const animate = (time) => {
@@ -383,25 +386,26 @@ export default {
     async finishSpin(winningIndex, winningSegment) {
       this.isSpinning = false
       
-      const multiplier = winningSegment.value // سيكون دائمًا 0
-      const winAmount = this.betAmount * multiplier // سيكون دائمًا 0
+      const multiplier = winningSegment.value // سيكون 2x
+      const winAmount = this.betAmount * multiplier
       
-      // دائمًا خسارة
-      this.showResult(`😢 خسرت الرهان`, false)
-      this.playSound(this.loseSound)
+      // فوز
+      this.balance += winAmount
+      await this.updateBalance(this.balance)
+      
+      this.showResult(`🎉 ربحت ${winAmount.toFixed(2)} USDT`, true)
+      this.playSound(this.winSound)
       
       // حفظ النتيجة الأخيرة
       this.lastResult = {
         segmentIndex: winningIndex,
         multiplier: multiplier,
-        isWin: false,
+        isWin: true,
         winAmount: winAmount,
-        message: 'خسارة! خسرت كل الرهان'
+        message: `فوز! مضاعف x${multiplier}`
       }
       
-      // العجلة باقية في مكانها ولا نعيد تعيينها
-      // لأن targetRotation = 360*spins + 67.5
-      // وهذا يعني أنها انتهت عند الزاوية الصحيحة (67.5 درجة) تحت السهم
+      // العجلة باقية في مكانها
     }
   }
 }
