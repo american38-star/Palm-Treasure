@@ -50,19 +50,37 @@
           <!-- العجلة مع المضاعفات داخلها -->
           <div class="wheel-wrapper">
             <div class="pointer">▼</div>
-            <div
-              class="wheel"
-              :style="{ transform: `rotate(${wheelRotation}deg)` }"
-            >
-              <div
-                v-for="(segment, index) in wheelSegments"
-                :key="index"
-                class="segment"
-                :class="segment.color"
-                :style="{ transform: `rotate(${index * segmentAngle}deg)` }"
+            <div class="wheel-container">
+              <svg 
+                class="wheel-svg" 
+                viewBox="0 0 200 200"
+                :style="{ transform: `rotate(${wheelRotation}deg)` }"
               >
-                <span class="label">{{ segment.value }}x</span>
-              </div>
+                <!-- رسم القطاعات الدائرية -->
+                <g v-for="(segment, index) in wheelSegments" :key="index">
+                  <path
+                    :d="getSegmentPath(index)"
+                    :fill="getSegmentColor(segment.value)"
+                    stroke="white"
+                    stroke-width="1"
+                  />
+                  <text
+                    :x="getTextX(index)"
+                    :y="getTextY(index)"
+                    text-anchor="middle"
+                    dominant-baseline="middle"
+                    :fill="getTextColor(segment.value)"
+                    font-size="14"
+                    font-weight="bold"
+                    :transform="getTextRotation(index)"
+                  >
+                    {{ segment.value }}x
+                  </text>
+                </g>
+                
+                <!-- الدائرة الداخلية -->
+                <circle cx="100" cy="100" r="25" fill="#222" stroke="gold" stroke-width="3" />
+              </svg>
             </div>
           </div>
 
@@ -146,14 +164,14 @@ export default {
       
       // أجزاء العجلة (8 أجزاء) - المضاعفات المطلوبة
       wheelSegments: [
-        { value: 0, color: 'red' },      // 0x أحمر
-        { value: 0.5, color: 'orange' },  // 0.5x برتقالي
-        { value: 1, color: 'orange' },    // 1x برتقالي
-        { value: 1.5, color: 'green' },   // 1.5x أخضر
-        { value: 2, color: 'green' },     // 2x أخضر
-        { value: 3, color: 'green' },     // 3x أخضر
-        { value: 5, color: 'green' },     // 5x أخضر
-        { value: 10, color: 'gold' }      // 10x ذهبي
+        { value: 0 },
+        { value: 0.5 },
+        { value: 1 },
+        { value: 1.5 },
+        { value: 2 },
+        { value: 3 },
+        { value: 5 },
+        { value: 10 }
       ],
       
       lastResult: null,
@@ -225,6 +243,58 @@ export default {
       }
     },
     
+    getSegmentColor(value) {
+      if (value === 0) return '#d32f2f' // أحمر
+      if (value === 0.5 || value === 1) return '#fb8c00' // برتقالي
+      if (value >= 1.5 && value <= 5) return '#388e3c' // أخضر
+      if (value === 10) return '#ffd700' // ذهبي
+      return '#388e3c'
+    },
+    
+    getTextColor(value) {
+      if (value === 0 || value === 0.5 || value === 1) return 'white'
+      if (value === 10) return '#222'
+      return 'white'
+    },
+    
+    getSegmentPath(index) {
+      const centerX = 100
+      const centerY = 100
+      const radius = 85
+      const startAngle = (index * this.segmentAngle - 90) * Math.PI / 180
+      const endAngle = ((index + 1) * this.segmentAngle - 90) * Math.PI / 180
+      
+      const x1 = centerX + radius * Math.cos(startAngle)
+      const y1 = centerY + radius * Math.sin(startAngle)
+      const x2 = centerX + radius * Math.cos(endAngle)
+      const y2 = centerY + radius * Math.sin(endAngle)
+      
+      return `M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 0 1 ${x2} ${y2} Z`
+    },
+    
+    getTextX(index) {
+      const centerX = 100
+      const radius = 60
+      const angle = ((index + 0.5) * this.segmentAngle - 90) * Math.PI / 180
+      return centerX + radius * Math.cos(angle)
+    },
+    
+    getTextY(index) {
+      const centerY = 100
+      const radius = 60
+      const angle = ((index + 0.5) * this.segmentAngle - 90) * Math.PI / 180
+      return centerY + radius * Math.sin(angle)
+    },
+    
+    getTextRotation(index) {
+      const angle = (index + 0.5) * this.segmentAngle
+      // نجعل النص دائمًا في وضع مستقيم
+      if (angle > 90 && angle < 270) {
+        return `rotate(${angle + 180}, ${this.getTextX(index)}, ${this.getTextY(index)})`
+      }
+      return `rotate(${angle}, ${this.getTextX(index)}, ${this.getTextY(index)})`
+    },
+    
     openGame(gameId) {
       this.selectedGame = gameId
       this.gameOpened = true
@@ -293,7 +363,7 @@ export default {
       } else if (random < 0.6) { // 25% برتقالي (0.5x, 1x)
         const orange = [1, 2]
         winningIndex = orange[Math.floor(Math.random() * orange.length)]
-      } else if (random < 0.8) { // 20% أخضر (1.5x, 2x, 3x, 5x)
+      } else if (random < 0.85) { // 25% أخضر (1.5x, 2x, 3x, 5x)
         const green = [3, 4, 5, 6]
         winningIndex = green[Math.floor(Math.random() * green.length)]
       } else { // 15% ذهبي (10x)
@@ -303,10 +373,18 @@ export default {
       const winningSegment = this.wheelSegments[winningIndex]
       
       // حساب الزاوية المستهدفة بدقة
-      // السهم في الأعلى يشير إلى الزاوية 90 درجة
+      // السهم في الأعلى يشير إلى الزاوية -90 درجة
       // نريد أن يتوقف الجزء الفائز تحت السهم مباشرة
-      const spins = 10 + Math.floor(Math.random() * 8) // 10-18 دورة
-      const targetRotation = 360 * spins + (90 - (winningIndex * this.segmentAngle) - this.segmentAngle / 2)
+      const spins = 8 + Math.floor(Math.random() * 8) // 8-15 دورة
+      
+      // الزاوية المستهدفة: نجعل القطاع الفائز في الأعلى (زاوية -90 درجة)
+      // القطاع يبدأ عند winningIndex * segmentAngle وينتهي عند (winningIndex + 1) * segmentAngle
+      // نريد منتصف القطاع ليكون تحت السهم
+      const targetSegmentCenter = winningIndex * this.segmentAngle + this.segmentAngle / 2
+      
+      // نحتاج لتدوير العجلة بحيث يصبح targetSegmentCenter في الأعلى (زاوية -90)
+      // الفرق بين الزاوية الحالية والزاوية المطلوبة
+      const targetRotation = 360 * spins - targetSegmentCenter - 90
       
       const start = this.wheelRotation
       const duration = 4000
@@ -661,75 +739,17 @@ export default {
   50% { text-shadow: 0 0 30px gold; }
 }
 
-.wheel {
+.wheel-container {
   width: 100%;
   height: 100%;
-  border-radius: 50%;
-  border: 6px solid gold;
   position: relative;
-  overflow: hidden;
-  box-shadow: 0 0 40px rgba(255, 215, 0, 0.4);
-  background: #222;
+}
+
+.wheel-svg {
+  width: 100%;
+  height: 100%;
   transition: transform 4s cubic-bezier(0.25, 0.1, 0.15, 1);
-}
-
-.segment {
-  position: absolute;
-  width: 50%;
-  height: 50%;
-  left: 50%;
-  top: 50%;
-  transform-origin: 0% 0%;
-  clip-path: polygon(0 0, 100% 0, 0 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-sizing: border-box;
-}
-
-.label {
-  transform: rotate(-45deg);
-  font-weight: bold;
-  font-size: 24px;
-  text-shadow: 0 2px 5px black;
-  color: white;
-}
-
-@media (max-width: 480px) {
-  .label {
-    font-size: 18px;
-  }
-}
-
-/* ألوان الأجزاء */
-.segment.red {
-  background: linear-gradient(135deg, #d32f2f, #b71c1c);
-}
-
-.segment.orange {
-  background: linear-gradient(135deg, #fb8c00, #f57c00);
-}
-
-.segment.green {
-  background: linear-gradient(135deg, #388e3c, #2e7d32);
-}
-
-.segment.gold {
-  background: linear-gradient(135deg, #ffd700, #ff8c00);
-  position: relative;
-  overflow: hidden;
-}
-
-.segment.gold::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3), transparent);
-  pointer-events: none;
+  filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.3));
 }
 
 /* ===== قسم الرهان ===== */
