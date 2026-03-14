@@ -341,26 +341,21 @@ export default {
       const winningIndex = 0
       const winningSegment = this.wheelSegments[winningIndex]
       
-      // دوران واقعي جداً - نختار عدد دورات مختلف في كل مرة (20-30 دورة)
-      // هذا يعطي إحساس بالواقعية لأن العجلة تدور عدد مرات مختلف
-      const spins = 20 + Math.floor(Math.random() * 10) // 20-30 دورة كاملة
-      
       // منتصف القطاع الفائز (القطاع 0)
       const segmentMiddle = winningIndex * this.segmentAngle + this.segmentAngle / 2 // 22.5 درجة
+      
+      // عدد دورات كبير وثابت لضمان دوران كامل وسريع في كل مرة
+      // 25 دورة كاملة لضمان دوران سريع وواقعي
+      const spins = 25
       
       // الزاوية المستهدفة: نريد أن يكون منتصف القطاع 0 تحت السهم
       // targetRotation = (360 * spins) + (270 - segmentMiddle)
       let targetRotation = (360 * spins) + (270 - segmentMiddle)
       
-      // نضيف variation بسيط للزاوية (±2 درجة) لإعطاء إحساس بالواقعية
-      // مع الحفاظ على القطاع 0 تحت السهم
-      const variation = (Math.random() * 4) - 2 // -2 إلى +2 درجة
-      targetRotation += variation
-      
       const start = this.wheelRotation
       
-      // مدة الدوران تختلف في كل مرة (4-7 ثواني) لإعطاء إحساس واقعي
-      const duration = 4000 + Math.floor(Math.random() * 3000) // 4-7 ثواني
+      // مدة دوران ثابتة وقصيرة (3 ثواني) لضمان دوران سريع في كل مرة
+      const duration = 3000 // 3 ثواني ثابتة
       
       const startTime = performance.now()
       
@@ -368,7 +363,7 @@ export default {
         const elapsed = time - startTime
         const progress = Math.min(elapsed / duration, 1)
         
-        // منحنى التباطؤ الطبيعي - يبدأ سريعاً ثم يبطئ تدريجياً
+        // منحنى التباطؤ الطبيعي - يبدأ سريعاً ثم يبطئ قليلاً في النهاية
         // استخدام easeOutCubic: 1 - (1-t)^3
         const easeOut = 1 - Math.pow(1 - progress, 3)
         
@@ -378,14 +373,12 @@ export default {
           requestAnimationFrame(animate)
         } else {
           // التأكد من الزاوية النهائية مضبوطة بالضبط على القطاع 0
-          // نعيد حساب الزاوية المثالية بدون variation لضمان الدقة
-          const finalTarget = (360 * spins) + (270 - segmentMiddle)
-          this.wheelRotation = finalTarget
+          this.wheelRotation = targetRotation
           
-          // انتظار لحظة قصيرة (300-500ms) ثم عرض النتيجة
+          // انتظار لحظة قصيرة (200ms) ثم عرض النتيجة
           setTimeout(() => {
             this.finishSpin(winningIndex, winningSegment)
-          }, 300 + Math.floor(Math.random() * 200))
+          }, 200)
         }
       }
       
@@ -696,7 +689,7 @@ export default {
 .wheel-svg {
   width: 100%;
   height: 100%;
-  transition: transform 4s cubic-bezier(0.1, 0.8, 0.2, 1);
+  transition: transform 3s cubic-bezier(0.1, 0.9, 0.2, 1);
   filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.3));
 }
 
