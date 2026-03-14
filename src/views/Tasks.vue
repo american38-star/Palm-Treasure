@@ -153,14 +153,14 @@ export default {
       
       // أجزاء العجلة (8 أجزاء) - المضاعفات المطلوبة
       wheelSegments: [
-        { value: 0 },     // قطاع 0 - أحمر
-        { value: 0.5 },   // قطاع 1 - برتقالي
-        { value: 1 },     // قطاع 2 - برتقالي
-        { value: 1.5 },   // قطاع 3 - أخضر
-        { value: 2 },     // قطاع 4 - أخضر
-        { value: 3 },     // قطاع 5 - أخضر
-        { value: 5 },     // قطاع 6 - أخضر
-        { value: 10 }     // قطاع 7 - ذهبي
+        { value: 0 },     // قطاع 0 - أحمر (خسارة)
+        { value: 0.5 },   // قطاع 1 - برتقالي (خسارة نصف)
+        { value: 1 },     // قطاع 2 - برتقالي (تعادل)
+        { value: 1.5 },   // قطاع 3 - أخضر (ربح)
+        { value: 2 },     // قطاع 4 - أخضر (ربح)
+        { value: 3 },     // قطاع 5 - أخضر (ربح)
+        { value: 5 },     // قطاع 6 - أخضر (ربح)
+        { value: 10 }     // قطاع 7 - ذهبي (ربح كبير)
       ],
       
       lastResult: null,
@@ -338,47 +338,44 @@ export default {
       // تشغيل صوت الدوران
       this.playSound(this.spinSound)
       
-      // اختيار القطاع الفائز أولاً
+      // اختيار القطاع الفائز - اللاعب دائمًا يخسر (لصالح الموقع)
+      // 80% فرصة للخسارة الكلية أو الجزئية
       const random = Math.random()
       let winningIndex
       
-      // توزيع النتائج (لصالح الموقع - فرصة ربح قليلة)
-      if (random < 0.35) { // 35% أحمر (0x)
+      if (random < 0.5) { // 50% أحمر (0x) - خسارة كل الرهان
         winningIndex = 0
-      } else if (random < 0.6) { // 25% برتقالي (0.5x, 1x)
+      } else if (random < 0.8) { // 30% برتقالي (0.5x أو 1x) - خسارة نصف أو تعادل
         const orange = [1, 2]
         winningIndex = orange[Math.floor(Math.random() * orange.length)]
-      } else if (random < 0.85) { // 25% أخضر (1.5x, 2x, 3x, 5x)
-        const green = [3, 4, 5, 6]
+      } else { // 20% أخضر (1.5x, 2x, 3x, 5x, 10x) - ربح نادر
+        const green = [3, 4, 5, 6, 7]
         winningIndex = green[Math.floor(Math.random() * green.length)]
-      } else { // 15% ذهبي (10x)
-        winningIndex = 7
       }
       
       const winningSegment = this.wheelSegments[winningIndex]
       
-      // دوران واقعي جداً - عدد دورات كبير (15-25 دورة)
-      const spins = 15 + Math.floor(Math.random() * 10) // 15-25 دورة كاملة
+      // دوران واقعي جداً - عدد دورات كبير (20-30 دورة) لدوران كامل
+      const spins = 20 + Math.floor(Math.random() * 10) // 20-30 دورة كاملة
       
       // منتصف القطاع الفائز
       const segmentMiddle = winningIndex * this.segmentAngle + this.segmentAngle / 2
       
       // الزاوية المستهدفة: نريد أن يكون منتصف القطاع الفائز تحت السهم
-      // السهم في الأعلى (زاوية -90 درجة في نظام الدوران)
-      // targetRotation = (360 * spins) + (360 - segmentMiddle) - 90
-      let targetRotation = (360 * spins) + (360 - segmentMiddle) - 90
+      // targetRotation = (360 * spins) + (270 - segmentMiddle)
+      let targetRotation = (360 * spins) + (270 - segmentMiddle)
       
       const start = this.wheelRotation
-      const duration = 5000 // 5 ثواني دوران كامل
+      const duration = 6000 // 6 ثواني دوران كامل
       const startTime = performance.now()
       
       const animate = (time) => {
         const elapsed = time - startTime
         const progress = Math.min(elapsed / duration, 1)
         
-        // منحنى التباطؤ الطبيعي جداً - يبدأ سريعاً ثم يبطئ تدريجياً
-        // باستخدام دالة easeOutQuart: 1 - (1-t)^4 (تباطؤ أكثر واقعية)
-        const easeOut = 1 - Math.pow(1 - progress, 4)
+        // منحنى التباطؤ الطبيعي - يبدأ سريعاً ثم يبطئ تدريجياً
+        // استخدام easeOutCubic: 1 - (1-t)^3
+        const easeOut = 1 - Math.pow(1 - progress, 3)
         
         this.wheelRotation = start + ((targetRotation - start) * easeOut)
         
@@ -388,10 +385,10 @@ export default {
           // التأكد من الزاوية النهائية مضبوطة بالضبط
           this.wheelRotation = targetRotation
           
-          // انتظار لحظة قصيرة (200ms) ثم عرض النتيجة
+          // انتظار لحظة قصيرة (300ms) ثم عرض النتيجة
           setTimeout(() => {
             this.finishSpin(winningIndex, winningSegment)
-          }, 200)
+          }, 300)
         }
       }
       
@@ -408,7 +405,7 @@ export default {
       let message = ''
       
       if (multiplier > 1) {
-        // فوز
+        // فوز نادر
         isWin = true
         this.balance += winAmount
         await this.updateBalance(this.balance)
@@ -736,7 +733,7 @@ export default {
 .wheel-svg {
   width: 100%;
   height: 100%;
-  transition: transform 5s cubic-bezier(0.1, 0.8, 0.2, 1);
+  transition: transform 6s cubic-bezier(0.1, 0.9, 0.2, 1);
   filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.3));
 }
 
