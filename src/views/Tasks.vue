@@ -39,98 +39,46 @@
 
     <!-- عرض اللعبة المختارة - تظهر بملء الشاشة -->
     <div v-if="gameOpened" class="game-fullscreen">
-      <!-- Şanslı Rulet (لعبة الروليت) -->
-      <div v-if="selectedGame === 'rulet'" class="rulet-card">
-        <div class="rulet-header">
-          <h2>🎰 ŞANSLI RULET</h2>
+      <!-- لعبة عجلة الحظ -->
+      <div v-if="selectedGame === 'wheel-of-fortune'" class="wheel-card">
+        <div class="wheel-header">
+          <h2>🎡 WHEEL OF FORTUNE</h2>
           <div class="header-glow"></div>
         </div>
 
-        <div class="rulet-content">
-          <!-- عجلة الروليت -->
+        <div class="wheel-content">
+          <!-- العجلة -->
           <div class="wheel-container">
             <div class="wheel" :style="{ transform: `rotate(${wheelRotation}deg)` }">
-              <div v-for="(number, index) in ruletNumbers" 
+              <div v-for="(segment, index) in wheelSegments" 
                    :key="index"
-                   class="wheel-number"
-                   :style="{ transform: `rotate(${index * 9.73}deg)` }"
-                   :class="getNumberColorClass(number)">
-                <span>{{ number }}</span>
+                   class="wheel-segment"
+                   :style="{ transform: `rotate(${index * 45}deg)` }"
+                   :class="getSegmentColorClass(index)">
+                <span class="segment-value">{{ segment.value }}x</span>
               </div>
             </div>
             <div class="wheel-pointer">▼</div>
           </div>
 
+          <!-- معلومات الجائزة الكبرى -->
+          <div class="jackpot-info" v-if="showJackpot">
+            <div class="jackpot-glow"></div>
+            <span class="jackpot-label">الجائزة الكبرى</span>
+            <span class="jackpot-value">{{ jackpotAmount.toFixed(2) }} USDT</span>
+          </div>
+
           <!-- لوحة الرهان -->
           <div class="betting-board">
-            <div class="bet-type-selector">
+            <div class="segment-selector">
               <button 
-                v-for="type in betTypes" 
-                :key="type.value"
-                @click="selectedBetType = type.value"
-                :class="{ active: selectedBetType === type.value }"
-                class="bet-type-btn"
+                v-for="(segment, index) in wheelSegments" 
+                :key="index"
+                @click="selectSegment(index)"
+                :class="['segment-btn', getSegmentColorClass(index), { active: selectedSegment === index }]"
               >
-                {{ type.name }}
-                <span class="multiplier">x{{ type.multiplier }}</span>
-              </button>
-            </div>
-
-            <div class="number-buttons" v-if="selectedBetType === 'number'">
-              <button 
-                v-for="n in 36" 
-                :key="n"
-                @click="selectNumber(n)"
-                :class="['number-btn', getNumberColorClass(n), { active: selectedNumber === n }]"
-              >
-                {{ n }}
-              </button>
-            </div>
-
-            <div class="color-buttons" v-if="selectedBetType === 'color'">
-              <button 
-                @click="selectColor('red')"
-                :class="['color-btn', 'red-btn', { active: selectedColor === 'red' }]"
-              >
-                <span class="color-dot red"></span>
-                أحمر
-              </button>
-              <button 
-                @click="selectColor('black')"
-                :class="['color-btn', 'black-btn', { active: selectedColor === 'black' }]"
-              >
-                <span class="color-dot black"></span>
-                أسود
-              </button>
-            </div>
-
-            <div class="parity-buttons" v-if="selectedBetType === 'parity'">
-              <button 
-                @click="selectParity('even')"
-                :class="['parity-btn', { active: selectedParity === 'even' }]"
-              >
-                زوجي
-              </button>
-              <button 
-                @click="selectParity('odd')"
-                :class="['parity-btn', { active: selectedParity === 'odd' }]"
-              >
-                فردي
-              </button>
-            </div>
-
-            <div class="half-buttons" v-if="selectedBetType === 'half'">
-              <button 
-                @click="selectHalf('1-18')"
-                :class="['half-btn', { active: selectedHalf === '1-18' }]"
-              >
-                1 - 18
-              </button>
-              <button 
-                @click="selectHalf('19-36')"
-                :class="['half-btn', { active: selectedHalf === '19-36' }]"
-              >
-                19 - 36
+                <span class="segment-multiplier">{{ segment.value }}x</span>
+                <span class="segment-chance">{{ segment.chance }}%</span>
               </button>
             </div>
 
@@ -158,24 +106,44 @@
                 ❌ {{ gameError }}
               </div>
 
+              <div class="multiplier-info" v-if="selectedSegment !== null">
+                <span>المضاعف المحتمل:</span>
+                <span class="multiplier-value">{{ wheelSegments[selectedSegment].value }}x</span>
+              </div>
+
               <button 
                 @click="spinWheel"
                 class="spin-btn"
                 :disabled="!canSpin || isSpinning"
               >
-                <span v-if="!isSpinning">🎰 دير العجلة</span>
+                <span v-if="!isSpinning">🎡 دير العجلة</span>
                 <span v-else>جاري الدوران...</span>
               </button>
             </div>
 
             <!-- نتيجة الجولة -->
             <div v-if="lastResult" class="last-result" :class="{ 'win': lastResult.isWin, 'lose': !lastResult.isWin }">
-              <div class="result-number" :class="getNumberColorClass(lastResult.number)">
-                {{ lastResult.number }}
-              </div>
+              <div class="result-icon">{{ lastResult.isWin ? '🎉' : '😢' }}</div>
               <div class="result-details">
                 <span class="result-text">{{ lastResult.message }}</span>
                 <span v-if="lastResult.isWin" class="result-amount">+{{ lastResult.winAmount.toFixed(2) }} USDT</span>
+                <span v-else class="result-segment">x{{ lastResult.segmentValue }}</span>
+              </div>
+            </div>
+
+            <!-- إحصائيات -->
+            <div class="statistics">
+              <div class="stat-item">
+                <span class="stat-label">أعلى مضاعف</span>
+                <span class="stat-value">{{ maxMultiplier }}x</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">أقل مضاعف</span>
+                <span class="stat-value">{{ minMultiplier }}x</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">فرصة الفوز</span>
+                <span class="stat-value">{{ winChance }}%</span>
               </div>
             </div>
           </div>
@@ -195,7 +163,7 @@ export default {
   data() {
     return {
       gameOpened: false,
-      selectedGame: "rulet",
+      selectedGame: "wheel-of-fortune",
       showResultMessage: false,
       resultType: '',
       resultIcon: '',
@@ -203,61 +171,63 @@ export default {
       resultTimeout: null,
       
       gamesList: [
-        { id: 'rulet', name: 'Şanslı Rulet', icon: '🎰' }
+        { id: 'wheel-of-fortune', name: 'Wheel of Fortune', icon: '🎡' }
       ],
       
       balance: 0,
       gameError: "",
       
-      // بيانات لعبة الروليت
-      ruletNumbers: Array.from({ length: 37 }, (_, i) => i), // 0-36
+      // بيانات عجلة الحظ
       wheelRotation: 0,
       isSpinning: false,
       betAmount: null,
+      selectedSegment: null,
       
-      // أنواع الرهان
-      betTypes: [
-        { name: 'رقم محدد', value: 'number', multiplier: 36 },
-        { name: 'لون', value: 'color', multiplier: 2 },
-        { name: 'زوجي/فردي', value: 'parity', multiplier: 2 },
-        { name: 'نصف', value: 'half', multiplier: 2 }
+      // أجزاء العجلة (8 أجزاء)
+      wheelSegments: [
+        { value: 10, chance: 5 },   // 10x (نادر)
+        { value: 5, chance: 10 },    // 5x
+        { value: 3, chance: 15 },    // 3x
+        { value: 2, chance: 20 },    // 2x
+        { value: 1.5, chance: 20 },  // 1.5x
+        { value: 1, chance: 15 },    // 1x
+        { value: 0.5, chance: 10 },  // 0.5x
+        { value: 0.2, chance: 5 }    // 0.2x (خسارة كبيرة)
       ],
-      
-      selectedBetType: 'number',
-      selectedNumber: null,
-      selectedColor: null,
-      selectedParity: null,
-      selectedHalf: null,
       
       lastResult: null,
       
-      // أرقام حمراء في الروليت
-      redNumbers: [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
+      // الجائزة الكبرى
+      showJackpot: true,
+      jackpotAmount: 10000,
+      
+      // ألوان الأجزاء
+      segmentColors: ['gold', 'silver', 'bronze', 'blue', 'green', 'purple', 'orange', 'red']
     }
   },
   
   computed: {
     canSpin() {
-      if (!this.betAmount || this.betAmount <= 0 || this.betAmount > this.balance) return false
-      if (this.isSpinning) return false
-      
-      switch(this.selectedBetType) {
-        case 'number':
-          return this.selectedNumber !== null
-        case 'color':
-          return this.selectedColor !== null
-        case 'parity':
-          return this.selectedParity !== null
-        case 'half':
-          return this.selectedHalf !== null
-        default:
-          return false
-      }
+      return this.betAmount && 
+             this.betAmount > 0 && 
+             this.betAmount <= this.balance && 
+             this.selectedSegment !== null && 
+             !this.isSpinning
     },
     
-    currentMultiplier() {
-      const betType = this.betTypes.find(t => t.value === this.selectedBetType)
-      return betType ? betType.multiplier : 1
+    maxMultiplier() {
+      return Math.max(...this.wheelSegments.map(s => s.value))
+    },
+    
+    minMultiplier() {
+      return Math.min(...this.wheelSegments.map(s => s.value))
+    },
+    
+    winChance() {
+      // حساب فرصة الفوز (المضاعف >= 1)
+      const winSegments = this.wheelSegments.filter(s => s.value >= 1)
+      const totalChance = winSegments.reduce((sum, s) => sum + s.chance, 0)
+      return totalChance
     }
   },
   
@@ -269,6 +239,10 @@ export default {
     if (snap.exists()) {
       this.balance = Number(snap.data().balance || 0)
     }
+    
+    // تحديث الجائزة الكبرى بشكل عشوائي
+    this.updateJackpot()
+    setInterval(() => this.updateJackpot(), 30000) // كل 30 ثانية
   },
   
   methods: {
@@ -276,6 +250,7 @@ export default {
       this.selectedGame = gameId
       this.gameOpened = true
       this.gameError = ""
+      this.resetGame()
     },
     
     closeGame() {
@@ -305,30 +280,27 @@ export default {
       }, 2000)
     },
     
-    // دوال لعبة الروليت
-    getNumberColorClass(number) {
-      if (number === 0) return 'green'
-      return this.redNumbers.includes(number) ? 'red' : 'black'
+    // دوال عجلة الحظ
+    getSegmentColorClass(index) {
+      return this.segmentColors[index % this.segmentColors.length]
     },
     
-    selectNumber(number) {
-      this.selectedNumber = number
-      this.selectedBetType = 'number'
+    selectSegment(index) {
+      this.selectedSegment = index
     },
     
-    selectColor(color) {
-      this.selectedColor = color
-      this.selectedBetType = 'color'
+    updateJackpot() {
+      // تحديث الجائزة الكبرى بشكل عشوائي
+      this.jackpotAmount = 5000 + Math.floor(Math.random() * 15000)
     },
     
-    selectParity(parity) {
-      this.selectedParity = parity
-      this.selectedBetType = 'parity'
-    },
-    
-    selectHalf(half) {
-      this.selectedHalf = half
-      this.selectedBetType = 'half'
+    resetGame() {
+      this.wheelRotation = 0
+      this.isSpinning = false
+      this.betAmount = null
+      this.selectedSegment = null
+      this.lastResult = null
+      this.gameError = ''
     },
     
     async spinWheel() {
@@ -341,12 +313,13 @@ export default {
       this.balance -= this.betAmount
       await this.updateBalance(this.balance)
       
-      // رقم الفائز العشوائي
-      const winningNumber = Math.floor(Math.random() * 37)
+      // اختيار الجزء الفائز بناءً على النسب المئوية
+      const winningIndex = this.getWinningSegment()
+      const winningSegment = this.wheelSegments[winningIndex]
       
       // دوران العجلة
-      const spins = 5 + Math.floor(Math.random() * 5)
-      const targetRotation = 360 * spins + (winningNumber * 9.73)
+      const spins = 5 + Math.floor(Math.random() * 8)
+      const targetRotation = 360 * spins + (winningIndex * 45)
       
       // أنيميشن الدوران
       const startTime = Date.now()
@@ -363,83 +336,65 @@ export default {
         if (progress < 1) {
           requestAnimationFrame(animate)
         } else {
-          this.finishSpin(winningNumber)
+          this.finishSpin(winningIndex, winningSegment)
         }
       }
       
       requestAnimationFrame(animate)
     },
     
-    async finishSpin(winningNumber) {
+    getWinningSegment() {
+      // اختيار جزء بناءً على النسب المئوية
+      const random = Math.random() * 100
+      let cumulative = 0
+      
+      for (let i = 0; i < this.wheelSegments.length; i++) {
+        cumulative += this.wheelSegments[i].chance
+        if (random < cumulative) {
+          return i
+        }
+      }
+      
+      return 0 // افتراضي
+    },
+    
+    async finishSpin(winningIndex, winningSegment) {
       this.isSpinning = false
       
       // التحقق من الفوز
-      let isWin = false
-      let winAmount = 0
-      let message = ''
-      
-      switch(this.selectedBetType) {
-        case 'number':
-          isWin = winningNumber === this.selectedNumber
-          winAmount = isWin ? this.betAmount * 36 : 0
-          message = isWin ? `🎉 الفائز: ${winningNumber}` : `😢 الفائز: ${winningNumber}`
-          break
-          
-        case 'color':
-          const winningColor = this.getNumberColorClass(winningNumber)
-          isWin = winningColor === this.selectedColor
-          winAmount = isWin ? this.betAmount * 2 : 0
-          message = isWin ? `🎉 الفائز: ${winningNumber} ${winningColor === 'red' ? 'أحمر' : 'أسود'}` : `😢 الفائز: ${winningNumber} ${winningColor === 'red' ? 'أحمر' : 'أسود'}`
-          break
-          
-        case 'parity':
-          if (winningNumber === 0) {
-            isWin = false
-          } else {
-            const isEven = winningNumber % 2 === 0
-            isWin = (this.selectedParity === 'even' && isEven) || (this.selectedParity === 'odd' && !isEven)
-          }
-          winAmount = isWin ? this.betAmount * 2 : 0
-          message = isWin ? `🎉 الفائز: ${winningNumber}` : `😢 الفائز: ${winningNumber}`
-          break
-          
-        case 'half':
-          if (winningNumber === 0) {
-            isWin = false
-          } else {
-            const isLow = winningNumber <= 18
-            isWin = (this.selectedHalf === '1-18' && isLow) || (this.selectedHalf === '19-36' && !isLow)
-          }
-          winAmount = isWin ? this.betAmount * 2 : 0
-          message = isWin ? `🎉 الفائز: ${winningNumber}` : `😢 الفائز: ${winningNumber}`
-          break
-      }
+      const isWin = winningSegment.value >= 1
+      const winAmount = this.betAmount * winningSegment.value
       
       // تحديث الرصيد في حالة الفوز
       if (isWin) {
         this.balance += winAmount
         await this.updateBalance(this.balance)
-        this.showResult(`🎉 ربحت ${winAmount.toFixed(2)} USDT`, true)
+        
+        // فرصة للجائزة الكبرى (إذا كان المضاعف 10x)
+        if (winningSegment.value === 10) {
+          this.balance += this.jackpotAmount
+          await this.updateBalance(this.balance)
+          this.showResult(`🎉 جاكبوت! ربحت ${(winAmount + this.jackpotAmount).toFixed(2)} USDT`, true)
+        } else {
+          this.showResult(`🎉 ربحت ${winAmount.toFixed(2)} USDT`, true)
+        }
       } else {
         this.showResult(`😢 خسرت الرهان`, false)
       }
       
       // حفظ النتيجة الأخيرة
       this.lastResult = {
-        number: winningNumber,
+        segmentIndex: winningIndex,
+        segmentValue: winningSegment.value,
         isWin,
         winAmount,
-        message
+        message: isWin ? `فوز x${winningSegment.value}` : `خسارة x${winningSegment.value}`
       }
       
       // إعادة تعيين الرهان بعد 3 ثواني
       setTimeout(() => {
         this.betAmount = null
-        this.selectedNumber = null
-        this.selectedColor = null
-        this.selectedParity = null
-        this.selectedHalf = null
-        this.selectedBetType = 'number'
+        this.selectedSegment = null
       }, 3000)
     }
   }
@@ -637,8 +592,8 @@ export default {
   padding: 10px 0;
 }
 
-/* ===== بطاقة الروليت ===== */
-.rulet-card {
+/* ===== بطاقة عجلة الحظ ===== */
+.wheel-card {
   background: rgba(20, 25, 40, 0.95);
   backdrop-filter: blur(10px);
   border-radius: 40px;
@@ -652,13 +607,13 @@ export default {
   overflow: hidden;
 }
 
-.rulet-header {
+.wheel-header {
   position: relative;
   margin-bottom: 25px;
   text-align: center;
 }
 
-.rulet-header h2 {
+.wheel-header h2 {
   font-size: 28px;
   font-weight: 800;
   background: linear-gradient(135deg, #ffd700, #ffed4a, #ffd700);
@@ -681,7 +636,7 @@ export default {
   z-index: 0;
 }
 
-/* ===== عجلة الروليت ===== */
+/* ===== عجلة الحظ ===== */
 .wheel-container {
   position: relative;
   width: 300px;
@@ -701,7 +656,7 @@ export default {
   overflow: hidden;
 }
 
-.wheel-number {
+.wheel-segment {
   position: absolute;
   width: 50%;
   height: 50%;
@@ -713,22 +668,47 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.wheel-segment.gold {
+  background: linear-gradient(135deg, #ffd700, #b8860b);
+}
+
+.wheel-segment.silver {
+  background: linear-gradient(135deg, #c0c0c0, #808080);
+}
+
+.wheel-segment.bronze {
+  background: linear-gradient(135deg, #cd7f32, #8b4513);
+}
+
+.wheel-segment.blue {
+  background: linear-gradient(135deg, #4169e1, #1e3c72);
+}
+
+.wheel-segment.green {
+  background: linear-gradient(135deg, #32cd32, #228b22);
+}
+
+.wheel-segment.purple {
+  background: linear-gradient(135deg, #9370db, #4b0082);
+}
+
+.wheel-segment.orange {
+  background: linear-gradient(135deg, #ffa500, #ff8c00);
+}
+
+.wheel-segment.red {
+  background: linear-gradient(135deg, #f44336, #b22222);
+}
+
+.segment-value {
+  transform: rotate(45deg);
+  font-size: 18px;
   font-weight: 700;
   color: white;
-  text-shadow: 0 0 5px black;
-}
-
-.wheel-number.red {
-  color: #f44336;
-}
-
-.wheel-number.black {
-  color: #ffffff;
-}
-
-.wheel-number.green {
-  color: #4caf50;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
 .wheel-pointer {
@@ -748,6 +728,54 @@ export default {
   50% { transform: translateX(-50%) scale(1.1); }
 }
 
+/* ===== الجائزة الكبرى ===== */
+.jackpot-info {
+  position: relative;
+  text-align: center;
+  margin: 20px 0;
+  padding: 15px;
+  background: linear-gradient(145deg, #2a1f0a, #1a150a);
+  border-radius: 50px;
+  border: 2px solid #ffd700;
+  overflow: hidden;
+}
+
+.jackpot-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.3) 0%, transparent 70%);
+  filter: blur(20px);
+  animation: jackpotPulse 2s infinite;
+}
+
+@keyframes jackpotPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.jackpot-label {
+  display: block;
+  color: #ffd700;
+  font-size: 14px;
+  margin-bottom: 5px;
+  position: relative;
+  z-index: 1;
+}
+
+.jackpot-value {
+  display: block;
+  color: #ffd700;
+  font-size: 28px;
+  font-weight: 800;
+  text-shadow: 0 0 20px #ffd700;
+  position: relative;
+  z-index: 1;
+}
+
 /* ===== لوحة الرهان ===== */
 .betting-board {
   background: rgba(0, 0, 0, 0.3);
@@ -756,192 +784,81 @@ export default {
   border: 1px solid rgba(255, 215, 0, 0.2);
 }
 
-.bet-type-selector {
-  display: flex;
-  flex-wrap: wrap;
+.segment-selector {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 10px;
-  justify-content: center;
   margin-bottom: 20px;
 }
 
-.bet-type-btn {
-  padding: 10px 20px;
-  border-radius: 50px;
-  background: linear-gradient(145deg, #1e2333, #131826);
-  color: white;
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  font-size: 14px;
-  font-weight: 600;
+.segment-btn {
+  padding: 15px 5px;
+  border-radius: 15px;
+  border: 2px solid transparent;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.3s;
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 100px;
+  gap: 5px;
 }
 
-.bet-type-btn .multiplier {
-  font-size: 12px;
-  color: #ffd700;
-  margin-top: 5px;
+.segment-btn.gold {
+  background: linear-gradient(135deg, #ffd700, #b8860b);
+  color: #000;
 }
 
-.bet-type-btn.active {
-  background: linear-gradient(135deg, #ffd700, #ffed4a);
-  color: #0a0f1e;
-  border: none;
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+.segment-btn.silver {
+  background: linear-gradient(135deg, #c0c0c0, #808080);
+  color: #000;
 }
 
-.bet-type-btn.active .multiplier {
-  color: #0a0f1e;
+.segment-btn.bronze {
+  background: linear-gradient(135deg, #cd7f32, #8b4513);
+  color: #fff;
 }
 
-/* ===== أزرار الأرقام ===== */
-.number-buttons {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 8px;
-  margin-bottom: 20px;
+.segment-btn.blue {
+  background: linear-gradient(135deg, #4169e1, #1e3c72);
+  color: #fff;
 }
 
-.number-btn {
-  aspect-ratio: 1;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  background: linear-gradient(145deg, #1e2333, #131826);
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-  font-size: 14px;
+.segment-btn.green {
+  background: linear-gradient(135deg, #32cd32, #228b22);
+  color: #000;
 }
 
-.number-btn.red {
-  background: linear-gradient(145deg, #f44336, #d32f2f);
+.segment-btn.purple {
+  background: linear-gradient(135deg, #9370db, #4b0082);
+  color: #fff;
 }
 
-.number-btn.black {
-  background: linear-gradient(145deg, #333333, #222222);
+.segment-btn.orange {
+  background: linear-gradient(135deg, #ffa500, #ff8c00);
+  color: #000;
 }
 
-.number-btn.active {
-  transform: scale(1.1);
+.segment-btn.red {
+  background: linear-gradient(135deg, #f44336, #b22222);
+  color: #fff;
+}
+
+.segment-btn.active {
+  transform: scale(1.05);
   box-shadow: 0 0 20px #ffd700;
   border-color: #ffd700;
   z-index: 2;
 }
 
-/* ===== أزرار الألوان ===== */
-.color-buttons {
-  display: flex;
-  gap: 15px;
-  justify-content: center;
-  margin-bottom: 20px;
+.segment-multiplier {
+  font-size: 18px;
+  font-weight: 800;
 }
 
-.color-btn {
-  flex: 1;
-  padding: 15px;
-  border-radius: 15px;
-  border: none;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.3s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  max-width: 150px;
-}
-
-.color-btn.red-btn {
-  background: linear-gradient(135deg, #f44336, #d32f2f);
-  color: white;
-}
-
-.color-btn.black-btn {
-  background: linear-gradient(135deg, #333333, #222222);
-  color: white;
-}
-
-.color-btn.active {
-  transform: scale(1.05);
-  box-shadow: 0 0 20px #ffd700;
-}
-
-.color-dot {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-}
-
-.color-dot.red {
-  background: #f44336;
-  box-shadow: 0 0 10px #f44336;
-}
-
-.color-dot.black {
-  background: #000000;
-  box-shadow: 0 0 10px #000000;
-}
-
-/* ===== أزرار الزوجي/الفردي ===== */
-.parity-buttons {
-  display: flex;
-  gap: 15px;
-  justify-content: center;
-  margin-bottom: 20px;
-}
-
-.parity-btn {
-  flex: 1;
-  padding: 15px;
-  border-radius: 15px;
-  border: none;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.3s;
-  background: linear-gradient(145deg, #1e2333, #131826);
-  color: white;
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  max-width: 150px;
-}
-
-.parity-btn.active {
-  background: linear-gradient(135deg, #ffd700, #ffed4a);
-  color: #0a0f1e;
-  border: none;
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-}
-
-/* ===== أزرار النصف ===== */
-.half-buttons {
-  display: flex;
-  gap: 15px;
-  justify-content: center;
-  margin-bottom: 20px;
-}
-
-.half-btn {
-  flex: 1;
-  padding: 15px;
-  border-radius: 15px;
-  border: none;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.3s;
-  background: linear-gradient(145deg, #1e2333, #131826);
-  color: white;
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  max-width: 150px;
-}
-
-.half-btn.active {
-  background: linear-gradient(135deg, #ffd700, #ffed4a);
-  color: #0a0f1e;
-  border: none;
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+.segment-chance {
+  font-size: 12px;
+  opacity: 0.9;
 }
 
 /* ===== قسم الرهان ===== */
@@ -1004,6 +921,25 @@ export default {
   font-size: 14px;
 }
 
+.multiplier-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 280px;
+  padding: 10px 20px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 50px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  color: #8a8f9c;
+}
+
+.multiplier-value {
+  color: #ffd700;
+  font-size: 18px;
+  font-weight: 700;
+}
+
 .spin-btn {
   background: linear-gradient(135deg, #ffd700, #ffed4a, #ffd700);
   color: #0a0f1e;
@@ -1062,28 +998,8 @@ export default {
   border: 1px solid #f44336;
 }
 
-.result-number {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  font-weight: 700;
-  color: white;
-}
-
-.result-number.red {
-  background: #f44336;
-}
-
-.result-number.black {
-  background: #222222;
-}
-
-.result-number.green {
-  background: #4caf50;
+.result-icon {
+  font-size: 40px;
 }
 
 .result-details {
@@ -1104,6 +1020,12 @@ export default {
   color: #4caf50;
 }
 
+.result-segment {
+  font-size: 18px;
+  font-weight: 700;
+  color: #f44336;
+}
+
 @keyframes slideUp {
   from {
     opacity: 0;
@@ -1113,6 +1035,38 @@ export default {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* ===== إحصائيات ===== */
+.statistics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.stat-item {
+  text-align: center;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 15px;
+  border: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.stat-label {
+  display: block;
+  color: #8a8f9c;
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+.stat-value {
+  display: block;
+  color: #ffd700;
+  font-size: 18px;
+  font-weight: 700;
 }
 
 /* ===== تحسينات الجوال ===== */
@@ -1126,11 +1080,11 @@ export default {
     font-size: 12px;
   }
 
-  .rulet-card {
+  .wheel-card {
     padding: 15px;
   }
 
-  .rulet-header h2 {
+  .wheel-header h2 {
     font-size: 22px;
   }
 
@@ -1139,41 +1093,29 @@ export default {
     height: 250px;
   }
 
-  .wheel-number {
-    font-size: 12px;
+  .segment-value {
+    font-size: 14px;
   }
 
-  .number-buttons {
-    grid-template-columns: repeat(4, 1fr);
+  .segment-selector {
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  .bet-type-selector {
-    flex-direction: column;
-    align-items: stretch;
+  .jackpot-value {
+    font-size: 22px;
   }
 
-  .bet-type-btn {
-    width: 100%;
+  .statistics {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
   }
 
-  .color-buttons,
-  .parity-buttons,
-  .half-buttons {
-    flex-direction: column;
-    align-items: center;
+  .stat-value {
+    font-size: 14px;
   }
 
-  .color-btn,
-  .parity-btn,
-  .half-btn {
-    width: 100%;
-    max-width: none;
-  }
-
-  .result-number {
-    width: 40px;
-    height: 40px;
-    font-size: 16px;
+  .result-icon {
+    font-size: 30px;
   }
 }
 </style>
