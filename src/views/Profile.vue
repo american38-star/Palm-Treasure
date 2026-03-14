@@ -116,9 +116,65 @@
         </div>
       </div>
 
+      <!-- نافذة تغيير كلمة المرور -->
+      <div v-if="showChangePasswordModal" class="modal-overlay" @click.self="closeChangePasswordModal">
+        <div class="modal-content">
+          <h3 class="modal-title">
+            <i class="fas fa-key"></i>
+            تغيير كلمة المرور
+          </h3>
+          
+          <div class="modal-body">
+            <div class="input-group">
+              <label class="input-label">كلمة المرور الحالية</label>
+              <input 
+                type="password" 
+                v-model="passwordForm.currentPassword" 
+                class="modal-input"
+                placeholder="أدخل كلمة المرور الحالية"
+              />
+            </div>
+            
+            <div class="input-group">
+              <label class="input-label">كلمة المرور الجديدة</label>
+              <input 
+                type="password" 
+                v-model="passwordForm.newPassword" 
+                class="modal-input"
+                placeholder="أدخل كلمة المرور الجديدة"
+              />
+            </div>
+            
+            <div class="input-group">
+              <label class="input-label">تأكيد كلمة المرور الجديدة</label>
+              <input 
+                type="password" 
+                v-model="passwordForm.confirmPassword" 
+                class="modal-input"
+                placeholder="أعد إدخال كلمة المرور الجديدة"
+              />
+            </div>
+            
+            <p v-if="passwordError" class="error-message">{{ passwordError }}</p>
+            <p v-if="passwordSuccess" class="success-message">{{ passwordSuccess }}</p>
+          </div>
+          
+          <div class="modal-actions">
+            <button class="btn btn-gold" @click="updatePassword" :disabled="passwordLoading">
+              <i class="fas fa-save"></i>
+              {{ passwordLoading ? 'جاري التغيير...' : 'تغيير كلمة المرور' }}
+            </button>
+            <button class="btn btn-gold-outline" @click="closeChangePasswordModal">
+              <i class="fas fa-times"></i>
+              إلغاء
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- الأزرار -->
       <div class="actions">
-        <button class="btn btn-gold" @click="changePassword">
+        <button class="btn btn-gold" @click="openChangePasswordModal">
           <i class="fas fa-key"></i>
           تغيير كلمة المرور
         </button>
@@ -140,7 +196,7 @@
 <script>
 import { auth, db } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { onAuthStateChanged, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 
 export default {
   name: "Profile",
@@ -148,6 +204,15 @@ export default {
   data() {
     return {
       loading: true,
+      showChangePasswordModal: false,
+      passwordLoading: false,
+      passwordError: "",
+      passwordSuccess: "",
+      passwordForm: {
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+      },
       userData: {
         email: "",
         phoneNumber: "",
@@ -253,9 +318,85 @@ export default {
       }
     },
 
-    changePassword() {
-      // يمكن إضافة وظيفة تغيير كلمة المرور لاحقاً
-      this.showInfoMessage("سيتم إضافة تغيير كلمة المرور قريباً");
+    // فتح نافذة تغيير كلمة المرور
+    openChangePasswordModal() {
+      this.showChangePasswordModal = true;
+      this.passwordError = "";
+      this.passwordSuccess = "";
+      this.passwordForm = {
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+      };
+    },
+
+    // إغلاق نافذة تغيير كلمة المرور
+    closeChangePasswordModal() {
+      this.showChangePasswordModal = false;
+      this.passwordError = "";
+      this.passwordSuccess = "";
+    },
+
+    // تحديث كلمة المرور
+    async updatePassword() {
+      // التحقق من المدخلات
+      if (!this.passwordForm.currentPassword || !this.passwordForm.newPassword || !this.passwordForm.confirmPassword) {
+        this.passwordError = "جميع الحقول مطلوبة";
+        return;
+      }
+
+      if (this.passwordForm.newPassword.length < 6) {
+        this.passwordError = "كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل";
+        return;
+      }
+
+      if (this.passwordForm.newPassword !== this.passwordForm.confirmPassword) {
+        this.passwordError = "كلمة المرور الجديدة وتأكيدها غير متطابقين";
+        return;
+      }
+
+      this.passwordLoading = true;
+      this.passwordError = "";
+      this.passwordSuccess = "";
+
+      try {
+        const user = auth.currentUser;
+        
+        if (!user) {
+          throw new Error("المستخدم غير مسجل الدخول");
+        }
+
+        // إعادة المصادقة بكلمة المرور الحالية
+        const credential = EmailAuthProvider.credential(
+          user.email,
+          this.passwordForm.currentPassword
+        );
+        
+        await reauthenticateWithCredential(user, credential);
+        
+        // تحديث كلمة المرور
+        await updatePassword(user, this.passwordForm.newPassword);
+        
+        this.passwordSuccess = "تم تغيير كلمة المرور بنجاح";
+        
+        // إغلاق النافذة بعد 2 ثانية
+        setTimeout(() => {
+          this.closeChangePasswordModal();
+        }, 2000);
+        
+      } catch (error) {
+        console.error("Password update error:", error);
+        
+        if (error.code === 'auth/wrong-password') {
+          this.passwordError = "كلمة المرور الحالية غير صحيحة";
+        } else if (error.code === 'auth/weak-password') {
+          this.passwordError = "كلمة المرور الجديدة ضعيفة جداً";
+        } else {
+          this.passwordError = "حدث خطأ في تغيير كلمة المرور";
+        }
+      } finally {
+        this.passwordLoading = false;
+      }
     },
 
     async logout() {
@@ -556,6 +697,125 @@ export default {
   color: #D4AF37;
 }
 
+/* ===== نافذة تغيير كلمة المرور ===== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: #11151C;
+  border-radius: 30px;
+  padding: 30px;
+  width: 100%;
+  max-width: 450px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(212, 175, 55, 0.2);
+  animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #D4AF37;
+  text-align: center;
+  margin-bottom: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.modal-body {
+  margin-bottom: 25px;
+}
+
+.input-group {
+  margin-bottom: 20px;
+}
+
+.input-label {
+  display: block;
+  font-size: 14px;
+  color: #D4AF37;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.modal-input {
+  width: 100%;
+  padding: 14px 16px;
+  background: #1A1F2A;
+  border: 2px solid rgba(212, 175, 55, 0.2);
+  border-radius: 12px;
+  font-size: 16px;
+  color: #ffffff;
+  transition: all 0.3s ease;
+  font-family: 'Cairo', sans-serif;
+}
+
+.modal-input:focus {
+  outline: none;
+  border-color: #D4AF37;
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
+}
+
+.modal-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.error-message {
+  color: #ff4b4b;
+  font-size: 14px;
+  margin-top: 10px;
+  text-align: center;
+  background: rgba(255, 75, 75, 0.1);
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 75, 75, 0.3);
+}
+
+.success-message {
+  color: #4CAF50;
+  font-size: 14px;
+  margin-top: 10px;
+  text-align: center;
+  background: rgba(76, 175, 80, 0.1);
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.modal-actions .btn {
+  flex: 1;
+}
+
 /* ===== الأزرار ===== */
 .actions {
   display: flex;
@@ -579,13 +839,19 @@ export default {
   width: 100%;
 }
 
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
 .btn-gold {
   background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
   color: #0A0C10;
   box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
 }
 
-.btn-gold:hover {
+.btn-gold:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 10px 25px rgba(212, 175, 55, 0.4);
 }
@@ -596,7 +862,7 @@ export default {
   color: #D4AF37;
 }
 
-.btn-gold-outline:hover {
+.btn-gold-outline:hover:not(:disabled) {
   background: #D4AF37;
   color: #0A0C10;
   transform: translateY(-2px);
@@ -688,6 +954,18 @@ export default {
   .btn {
     padding: 12px 15px;
     font-size: 15px;
+  }
+
+  .modal-content {
+    padding: 20px;
+  }
+
+  .modal-title {
+    font-size: 20px;
+  }
+
+  .modal-actions {
+    flex-direction: column;
   }
 }
 
