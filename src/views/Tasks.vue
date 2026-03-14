@@ -47,7 +47,7 @@
         </div>
 
         <div class="wheel-content">
-          <!-- العجلة -->
+          <!-- العجلة مع عرض المضاعفات -->
           <div class="wheel-container">
             <div class="wheel" :style="{ transform: `rotate(${wheelRotation}deg)` }">
               <div v-for="(segment, index) in wheelSegments" 
@@ -59,6 +59,15 @@
               </div>
             </div>
             <div class="wheel-pointer">▼</div>
+            <div class="wheel-center">
+              <span class="center-text">{{ currentMultiplier }}x</span>
+            </div>
+          </div>
+
+          <!-- عرض المضاعف الحالي -->
+          <div class="multiplier-display">
+            <span class="multiplier-label">المضاعف</span>
+            <span class="multiplier-value" :class="{ 'zero': currentMultiplier === 0 }">{{ currentMultiplier }}x</span>
           </div>
 
           <!-- حقل الرهان -->
@@ -104,6 +113,16 @@
               <span v-if="lastResult.isWin" class="result-amount">+{{ lastResult.winAmount.toFixed(2) }} USDT</span>
             </div>
           </div>
+
+          <!-- قائمة المضاعفات -->
+          <div class="multipliers-list">
+            <div v-for="(segment, index) in wheelSegments" 
+                 :key="index"
+                 class="multiplier-item"
+                 :class="[getSegmentColorClass(index), { 'active': index === currentSegmentIndex }]">
+              <span class="item-value">{{ segment.value }}x</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -138,17 +157,19 @@ export default {
       wheelRotation: 0,
       isSpinning: false,
       betAmount: null,
+      currentMultiplier: 0,
+      currentSegmentIndex: 0,
       
-      // أجزاء العجلة (8 أجزاء)
+      // أجزاء العجلة (8 أجزاء) - كلها مضاعفات منخفضة
       wheelSegments: [
-        { value: 10, color: 'gold' },    // 10x (ذهبي)
-        { value: 5, color: 'silver' },    // 5x (فضي)
-        { value: 3, color: 'bronze' },    // 3x (برونزي)
-        { value: 2, color: 'blue' },      // 2x (أزرق)
-        { value: 1.5, color: 'green' },   // 1.5x (أخضر)
-        { value: 1, color: 'purple' },    // 1x (بنفسجي) - استرداد الرهان
-        { value: 0.5, color: 'orange' },  // 0.5x (برتقالي) - خسارة نصف الرهان
-        { value: 0, color: 'red' }        // 0x (أحمر) - خسارة كل الرهان
+        { value: 0.1, color: 'red' },    // 0.1x (أحمر) - خسارة كبيرة
+        { value: 0.2, color: 'orange' }, // 0.2x (برتقالي) - خسارة
+        { value: 0.3, color: 'orange' }, // 0.3x (برتقالي) - خسارة
+        { value: 0.5, color: 'yellow' }, // 0.5x (أصفر) - خسارة نصف الرهان
+        { value: 0.8, color: 'yellow' }, // 0.8x (أصفر) - خسارة قليلة
+        { value: 1.0, color: 'green' },  // 1.0x (أخضر) - استرداد الرهان
+        { value: 1.2, color: 'green' },  // 1.2x (أخضر) - ربح قليل
+        { value: 1.5, color: 'green' }   // 1.5x (أخضر) - ربح
       ],
       
       lastResult: null
@@ -172,6 +193,9 @@ export default {
     if (snap.exists()) {
       this.balance = Number(snap.data().balance || 0)
     }
+    
+    // تعيين المضاعف الحالي إلى 0
+    this.currentMultiplier = 0
   },
   
   methods: {
@@ -220,6 +244,8 @@ export default {
       this.betAmount = null
       this.lastResult = null
       this.gameError = ''
+      this.currentMultiplier = 0
+      this.currentSegmentIndex = 0
     },
     
     async spinWheel() {
@@ -227,18 +253,39 @@ export default {
       
       this.gameError = ''
       this.isSpinning = true
+      this.currentMultiplier = 0
       
       // خصم الرهان
       this.balance -= this.betAmount
       await this.updateBalance(this.balance)
       
-      // اختيار الجزء الفائز عشوائياً
-      const winningIndex = Math.floor(Math.random() * this.wheelSegments.length)
+      // اختيار الجزء الفائز عشوائياً - مع وزن أكبر للخسارة
+      const random = Math.random()
+      let winningIndex
+      
+      // 70% فرصة للخسارة (مضاعفات أقل من 1)
+      // 20% فرصة للتعادل (مضاعف 1)
+      // 10% فرصة للربح (مضاعف أكبر من 1)
+      if (random < 0.7) {
+        // خسارة - اختيار من أول 4 أجزاء
+        const loseIndices = [0, 1, 2, 3]
+        winningIndex = loseIndices[Math.floor(Math.random() * loseIndices.length)]
+      } else if (random < 0.9) {
+        // تعادل - الجزء 4 (1.0x)
+        winningIndex = 5
+      } else {
+        // ربح - اختيار من آخر جزئين
+        const winIndices = [6, 7]
+        winningIndex = winIndices[Math.floor(Math.random() * winIndices.length)]
+      }
+      
       const winningSegment = this.wheelSegments[winningIndex]
       
       // دوران العجلة (دورانات متعددة + الجزء الفائز)
       const spins = 8 + Math.floor(Math.random() * 8) // 8-15 دورة
-      const targetRotation = 360 * spins + (winningIndex * 45)
+      // تعديل زاوية الدوران لتوقف السهم على الجزء الصحيح
+      // السهم في الأعلى (زاوية -90 درجة) نريد أن يتوقف على الجزء المطلوب
+      const targetRotation = 360 * spins + (winningIndex * 45) + 90
       
       // أنيميشن الدوران
       const startTime = Date.now()
@@ -252,6 +299,15 @@ export default {
         const easeProgress = 1 - Math.pow(1 - progress, 3)
         this.wheelRotation = targetRotation * easeProgress
         
+        // تحديث المضاعف الحالي أثناء الدوران (لإظهار التغيير)
+        if (progress < 1) {
+          const currentAngle = (this.wheelRotation + 90) % 360
+          const segmentAngle = 45
+          const currentSegment = Math.floor(currentAngle / segmentAngle) % 8
+          this.currentMultiplier = this.wheelSegments[currentSegment].value
+          this.currentSegmentIndex = currentSegment
+        }
+        
         if (progress < 1) {
           requestAnimationFrame(animate)
         } else {
@@ -264,6 +320,10 @@ export default {
     
     async finishSpin(winningIndex, winningSegment) {
       this.isSpinning = false
+      
+      // تعيين المضاعف النهائي
+      this.currentMultiplier = winningSegment.value
+      this.currentSegmentIndex = winningIndex
       
       // حساب الربح/الخسارة
       const multiplier = winningSegment.value
@@ -286,15 +346,14 @@ export default {
         await this.updateBalance(this.balance)
         message = `تعادل! استرداد الرهان`
         this.showResult(`🤝 استرداد الرهان`, true)
-      } else if (multiplier === 0.5) {
-        // خسارة نصف الرهان
-        isWin = false
-        message = `خسارة! خسرت نصف الرهان x${multiplier}`
-        this.showResult(`😢 خسرت نصف الرهان`, false)
       } else {
-        // خسارة كل الرهان
+        // خسارة
         isWin = false
-        message = `خسارة! خسرت كل الرهان`
+        if (multiplier === 0) {
+          message = `خسارة! خسرت كل الرهان`
+        } else {
+          message = `خسارة! خسرت ${((1 - multiplier) * 100).toFixed(0)}% من الرهان`
+        }
         this.showResult(`😢 خسرت الرهان`, false)
       }
       
@@ -310,6 +369,7 @@ export default {
       // إعادة تعيين الرهان بعد 3 ثواني
       setTimeout(() => {
         this.betAmount = null
+        this.currentMultiplier = 0
       }, 3000)
     }
   }
@@ -587,36 +647,20 @@ export default {
 }
 
 /* ألوان الأجزاء */
-.wheel-segment.gold {
-  background: linear-gradient(135deg, #ffd700, #b8860b);
-}
-
-.wheel-segment.silver {
-  background: linear-gradient(135deg, #c0c0c0, #808080);
-}
-
-.wheel-segment.bronze {
-  background: linear-gradient(135deg, #cd7f32, #8b4513);
-}
-
-.wheel-segment.blue {
-  background: linear-gradient(135deg, #4169e1, #1e3c72);
-}
-
-.wheel-segment.green {
-  background: linear-gradient(135deg, #32cd32, #228b22);
-}
-
-.wheel-segment.purple {
-  background: linear-gradient(135deg, #9370db, #4b0082);
+.wheel-segment.red {
+  background: linear-gradient(135deg, #f44336, #b22222);
 }
 
 .wheel-segment.orange {
-  background: linear-gradient(135deg, #ffa500, #ff8c00);
+  background: linear-gradient(135deg, #ff9800, #ff5722);
 }
 
-.wheel-segment.red {
-  background: linear-gradient(135deg, #f44336, #b22222);
+.wheel-segment.yellow {
+  background: linear-gradient(135deg, #ffeb3b, #ffc107);
+}
+
+.wheel-segment.green {
+  background: linear-gradient(135deg, #4caf50, #2e7d32);
 }
 
 .segment-value {
@@ -642,6 +686,58 @@ export default {
 @keyframes pointerPulse {
   0%, 100% { transform: translateX(-50%) scale(1); }
   50% { transform: translateX(-50%) scale(1.1); }
+}
+
+.wheel-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(145deg, #ffd700, #b8860b);
+  border-radius: 50%;
+  border: 3px solid white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+.center-text {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0a0f1e;
+}
+
+/* ===== عرض المضاعف الحالي ===== */
+.multiplier-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 50px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  margin: 20px 0;
+}
+
+.multiplier-label {
+  color: #8a8f9c;
+  font-size: 16px;
+}
+
+.multiplier-value {
+  font-size: 32px;
+  font-weight: 800;
+  color: #ffd700;
+  text-shadow: 0 0 10px #ffd700;
+}
+
+.multiplier-value.zero {
+  color: #f44336;
+  text-shadow: 0 0 10px #f44336;
 }
 
 /* ===== قسم الرهان ===== */
@@ -807,6 +903,59 @@ export default {
   }
 }
 
+/* ===== قائمة المضاعفات ===== */
+.multipliers-list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 20px;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.multiplier-item {
+  padding: 10px;
+  border-radius: 10px;
+  text-align: center;
+  font-weight: 700;
+  transition: all 0.3s;
+}
+
+.multiplier-item.red {
+  background: rgba(244, 67, 54, 0.3);
+  border: 1px solid #f44336;
+}
+
+.multiplier-item.orange {
+  background: rgba(255, 152, 0, 0.3);
+  border: 1px solid #ff9800;
+}
+
+.multiplier-item.yellow {
+  background: rgba(255, 235, 59, 0.3);
+  border: 1px solid #ffeb3b;
+}
+
+.multiplier-item.green {
+  background: rgba(76, 175, 80, 0.3);
+  border: 1px solid #4caf50;
+}
+
+.multiplier-item.active {
+  transform: scale(1.1);
+  box-shadow: 0 0 20px #ffd700;
+  border-color: #ffd700;
+  z-index: 2;
+}
+
+.item-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: white;
+}
+
 /* ===== تحسينات الجوال ===== */
 @media (max-width: 480px) {
   .game-page {
@@ -835,12 +984,29 @@ export default {
     font-size: 14px;
   }
 
+  .wheel-center {
+    width: 40px;
+    height: 40px;
+  }
+
+  .center-text {
+    font-size: 16px;
+  }
+
+  .multiplier-value {
+    font-size: 24px;
+  }
+
   .result-icon {
     font-size: 30px;
   }
 
   .result-multiplier {
     font-size: 16px;
+  }
+
+  .multipliers-list {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 </style>
