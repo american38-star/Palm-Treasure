@@ -1,7 +1,7 @@
 <template>
   <div id="app" :class="{ 'rtl': currentLang === 'AR' }">
     <!-- زر تغيير اللغة -->
-    <div class="circle-btn lang-btn" @click.stop="toggleLanguageMenu" @mousedown="startDrag" @touchstart="startDrag">
+    <div class="circle-btn lang-btn" @click="toggleLanguageMenu" @mousedown="startDrag" @touchstart="startDrag">
       <i class="fas fa-globe"></i>
       <span class="lang-code">{{ currentLang }}</span>
     </div>
@@ -9,23 +9,19 @@
     <!-- زر الدعم - تم تحديث الرابط -->
     <a class="circle-btn support-btn"
        href="https://t.me/Palm_Treasure"
-       target="_blank"
-       @mousedown="startDrag"
-       @touchstart="startDrag">
+       target="_blank">
       <i class="fas fa-headset"></i>
     </a>
 
     <!-- زر انستغرام - تم تحديث الرابط -->
     <a class="circle-btn instagram-btn"
        href="https://www.instagram.com/palm__treasure?igsh=OXR1emp3N2k2d2Yz"
-       target="_blank"
-       @mousedown="startDrag"
-       @touchstart="startDrag">
+       target="_blank">
       <i class="fab fa-instagram"></i>
     </a>
 
     <!-- زر عرض خاص جديد مع إشعار أحمر -->
-    <div class="circle-btn offer-btn" @click.stop="toggleOfferMessage" @mousedown="startDrag" @touchstart="startDrag">
+    <div class="circle-btn offer-btn" @click="toggleOfferMessage" @mousedown="startDrag" @touchstart="startDrag">
       <i class="fas fa-gift"></i>
       <div class="notification-badge" v-if="hasNewOffer">3</div>
     </div>
@@ -41,7 +37,7 @@
               <div class="bubble-time">عرض خاص</div>
             </div>
           </div>
-          <button class="bubble-close-btn" @click.stop="closeOfferMessage">
+          <button class="bubble-close-btn" @click="closeOfferMessage">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
@@ -98,7 +94,7 @@
         </div>
         
         <div class="bubble-chat-footer">
-          <button class="bubble-action-btn" @click.stop="closeOfferMessage">
+          <button class="bubble-action-btn" @click="closeOfferMessage">
             فهمت وشكرًا! 🎯
           </button>
         </div>
@@ -107,7 +103,7 @@
 
     <!-- قائمة اللغات -->
     <transition name="fade">
-      <div v-if="showLangMenu" class="lang-menu" @click.stop>
+      <div v-if="showLangMenu" class="lang-menu">
         <div class="lang-menu-header">
           <i class="fas fa-language"></i>
           <span>اختر اللغة</span>
@@ -116,7 +112,7 @@
           class="lang-item" 
           v-for="l in languages" 
           :key="l.code"
-          @click.stop="setLanguage(l)"
+          @click="setLanguage(l)"
           :class="{ active: currentLang === l.code }"
         >
           <span class="lang-name">{{ l.name }}</span>
@@ -134,7 +130,7 @@
     <div class="bottom-nav" v-if="authLoaded && showBottomNav">
       <div 
         class="nav-item" 
-        @click.stop="navigateTo('/home')"
+        @click="navigateTo('/home')"
         :class="{ active: isActive('/home') }"
       >
         <i class="fas fa-home"></i>
@@ -143,7 +139,7 @@
 
       <div 
         class="nav-item" 
-        @click.stop="navigateTo('/vip')"
+        @click="navigateTo('/vip')"
         :class="{ active: isActive('/vip') }"
       >
         <i class="fas fa-crown"></i>
@@ -152,7 +148,7 @@
 
       <div 
         class="nav-item" 
-        @click.stop="navigateTo('/tasks')"
+        @click="navigateTo('/tasks')"
         :class="{ active: isActive('/tasks') }"
       >
         <i class="fas fa-tasks"></i>
@@ -161,7 +157,7 @@
 
       <div 
         class="nav-item" 
-        @click.stop="navigateTo('/team')"
+        @click="navigateTo('/team')"
         :class="{ active: isActive('/team') }"
       >
         <i class="fas fa-users"></i>
@@ -170,7 +166,7 @@
 
       <div 
         class="nav-item" 
-        @click.stop="navigateTo('/profile')"
+        @click="navigateTo('/profile')"
         :class="{ active: isActive('/profile') }"
       >
         <i class="fas fa-user"></i>
@@ -181,14 +177,14 @@
     <!-- إعلان Popup فاخر -->
     <transition name="fade">
       <div id="companyAd" class="ad-overlay" v-if="showAd" @click.self="closeAd">
-        <div class="ad-box" @click.stop>
+        <div class="ad-box">
           <div class="ad-header">
             <h2>
               <i class="fas fa-crown"></i>
               Palm Treasure 🌴
               <i class="fas fa-crown"></i>
             </h2>
-            <button class="ad-close-btn" @click.stop="closeAd">
+            <button class="ad-close-btn" @click="closeAd">
               <i class="fas fa-times"></i>
             </button>
           </div>
@@ -270,7 +266,7 @@
             </div>
           </div>
 
-          <button class="ad-btn" @click.stop="closeAd">
+          <button class="ad-btn" @click="closeAd">
             <i class="fas fa-check-circle"></i>
             أنا أعرف
           </button>
@@ -437,10 +433,12 @@ export default {
     },
 
     startDrag(event) {
-      // منع السلوك الافتراضي فقط للأزرار القابلة للسحب
-      if (!event.target.closest('a')) {
-        event.preventDefault();
+      // فقط للأزرار وليس للروابط
+      if (event.target.closest('a')) {
+        return;
       }
+      
+      event.preventDefault();
       
       const button = event.currentTarget;
       this.currentButton = button;
@@ -607,17 +605,6 @@ body {
 
 .circle-btn:active {
   cursor: grabbing;
-}
-
-.circle-btn a {
-  text-decoration: none;
-  color: inherit;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
 }
 
 .lang-code {
