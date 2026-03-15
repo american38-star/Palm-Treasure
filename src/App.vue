@@ -62,29 +62,89 @@
               <br><br>
               <div style="background: #1A1F2A; border-radius: 10px; padding: 10px; margin: 10px 0;">
                 <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #D4AF37; padding: 5px 0;">
-                  <span style="color: #D4AF37; font-weight: bold;">💰 قيمة الراتب</span>
-                  <span style="color: #D4AF37; font-weight: bold;">👥 عدد الأشخاص</span>
+                  <span style="color: #D4AF37; font-weight: bold; width: 50%; text-align: center;">👥 عدد الأشخاص</span>
+                  <span style="color: #D4AF37; font-weight: bold; width: 50%; text-align: center;">💰 قيمة الراتب</span>
                 </div>
-                <div style="display: flex; justify-content: space-between; padding: 5px 0;">50$                  10</div>
-                <div style="display: flex; justify-content: space-between; padding: 5px 0;">100$                 20</div>
-                <div style="display: flex; justify-content: space-between; padding: 5px 0;">150$                 30</div>
-                <div style="display: flex; justify-content: space-between; padding: 5px 0;">200$                 40</div>
-                <div style="display: flex; justify-content: space-between; padding: 5px 0;">250$                 50</div>
-                <div style="display: flex; justify-content: space-between; padding: 5px 0;">300$                 60</div>
-                <div style="display: flex; justify-content: space-between; padding: 5px 0;">350$                 70</div>
-                <div style="display: flex; justify-content: space-between; padding: 5px 0;">400$                 80</div>
-                <div style="display: flex; justify-content: space-between; padding: 5px 0;">450$                 90</div>
-                <div style="display: flex; justify-content: space-between; padding: 5px 0;">500$                100</div>
-                <div style="display: flex; justify-content: space-between; padding: 5px 0;">550$                120</div>
-                <div style="display: flex; justify-content: space-between; padding: 5px 0;">600$                140</div>
-                <div style="display: flex; justify-content: space-between; padding: 5px 0;">650$                160</div>
-                <div style="display: flex; justify-content: space-between; padding: 5px 0;">700$                180</div>
-                <div style="display: flex; justify-content: space-between; padding: 5px 0;">750$                200</div>
-                <div style="display: flex; justify-content: space-between; padding: 5px 0;">800$                220</div>
-                <div style="display: flex; justify-content: space-between; padding: 5px 0;">850$                240</div>
-                <div style="display: flex; justify-content: space-between; padding: 5px 0;">900$                260</div>
-                <div style="display: flex; justify-content: space-between; padding: 5px 0;">950$                280</div>
-                <div style="display: flex; justify-content: space-between; padding: 5px 0;">1000$               300</div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                  <span style="width: 50%; text-align: center;">10</span>
+                  <span style="width: 50%; text-align: center;">50$</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                  <span style="width: 50%; text-align: center;">20</span>
+                  <span style="width: 50%; text-align: center;">100$</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                  <span style="width: 50%; text-align: center;">30</span>
+                  <span style="width: 50%; text-align: center;">150$</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                  <span style="width: 50%; text-align: center;">40</span>
+                  <span style="width: 50%; text-align: center;">200$</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                  <span style="width: 50%; text-align: center;">50</span>
+                  <span style="width: 50%; text-align: center;">250$</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                  <span style="width: 50%; text-align: center;">60</span>
+                  <span style="width: 50%; text-align: center;">300$</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                  <span style="width: 50%; text-align: center;">70</span>
+                  <span style="width: 50%; text-align: center;">350$</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                  <span style="width: 50%; text-align: center;">80</span>
+                  <span style="width: 50%; text-align: center;">400$</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                  <span style="width: 50%; text-align: center;">90</span>
+                  <span style="width: 50%; text-align: center;">450$</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                  <span style="width: 50%; text-align: center;">100</span>
+                  <span style="width: 50%; text-align: center;">500$</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                  <span style="width: 50%; text-align: center;">120</span>
+                  <span style="width: 50%; text-align: center;">550$</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                  <span style="width: 50%; text-align: center;">140</span>
+                  <span style="width: 50%; text-align: center;">600$</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                  <span style="width: 50%; text-align: center;">160</span>
+                  <span style="width: 50%; text-align: center;">650$</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                  <span style="width: 50%; text-align: center;">180</span>
+                  <span style="width: 50%; text-align: center;">700$</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                  <span style="width: 50%; text-align: center;">200</span>
+                  <span style="width: 50%; text-align: center;">750$</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                  <span style="width: 50%; text-align: center;">220</span>
+                  <span style="width: 50%; text-align: center;">800$</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                  <span style="width: 50%; text-align: center;">240</span>
+                  <span style="width: 50%; text-align: center;">850$</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                  <span style="width: 50%; text-align: center;">260</span>
+                  <span style="width: 50%; text-align: center;">900$</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                  <span style="width: 50%; text-align: center;">280</span>
+                  <span style="width: 50%; text-align: center;">950$</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                  <span style="width: 50%; text-align: center;">300</span>
+                  <span style="width: 50%; text-align: center;">1000$</span>
+                </div>
               </div>
               📈 كلما ازداد عدد الأعضاء في فريقك، زادت قيمة المكافأة التي تحصل عليها. هذه فرصة ممتازة لبناء شبكة قوية من الأشخاص الطموحين والعمل معًا لتحقيق دخل إضافي ونمو مستمر.
               <br><br>
