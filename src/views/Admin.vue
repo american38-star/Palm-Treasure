@@ -157,7 +157,7 @@
               <button class="btn gold" type="button" @click="promptRecharge(u)">تعبئة رصيد</button>
               <button class="btn red" type="button" @click="promptDeduct(u)">سحب رصيد</button>
               <button class="btn details-btn" type="button" @click="viewUserDetails(u)">تفاصيل</button>
-              <!-- زر تغيير كلمة المرور المباشر (معدل) -->
+              <!-- زر تغيير كلمة المرور المباشر -->
               <button class="btn purple" type="button" @click="openDirectPasswordModal(u)">
                 <i class="fas fa-key"></i> تغيير كلمة المرور
               </button>
@@ -393,7 +393,7 @@
       </div>
     </div>
 
-    <!-- Modal تغيير كلمة المرور المباشر (جديد) -->
+    <!-- Modal تغيير كلمة المرور المباشر -->
     <div v-if="showDirectPasswordModal" class="modal-backdrop" @click.self="closeDirectPasswordModal">
       <div class="modal">
         <h3><i class="fas fa-key"></i> تغيير كلمة مرور المستخدم</h3>
@@ -444,6 +444,7 @@
 <script>
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { getFunctions, httpsCallable } from "firebase/functions";
+import { getApp } from "firebase/app";
 import {
   collection,
   getDocs,
@@ -723,8 +724,9 @@ export default {
       this.directPasswordSuccess = "";
       
       try {
-        // استدعاء Cloud Function
-        const functions = getFunctions();
+        // استدعاء Cloud Function مع getApp()
+        const app = getApp();
+        const functions = getFunctions(app);
         const adminChangePassword = httpsCallable(functions, 'adminChangePassword');
         
         const result = await adminChangePassword({
