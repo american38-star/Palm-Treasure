@@ -41,7 +41,7 @@
               <div class="bubble-time">عرض خاص</div>
             </div>
           </div>
-          <button class="bubble-close-btn" @click="closeOfferMessage">
+          <button class="bubble-close-btn" @click.stop="closeOfferMessage">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
@@ -98,7 +98,7 @@
         </div>
         
         <div class="bubble-chat-footer">
-          <button class="bubble-action-btn" @click="closeOfferMessage">
+          <button class="bubble-action-btn" @click.stop="closeOfferMessage">
             فهمت وشكرًا! 🎯
           </button>
         </div>
@@ -107,7 +107,7 @@
 
     <!-- قائمة اللغات -->
     <transition name="fade">
-      <div v-if="showLangMenu" class="lang-menu">
+      <div v-if="showLangMenu" class="lang-menu" @click.stop>
         <div class="lang-menu-header">
           <i class="fas fa-language"></i>
           <span>اختر اللغة</span>
@@ -181,14 +181,14 @@
     <!-- إعلان Popup فاخر -->
     <transition name="fade">
       <div id="companyAd" class="ad-overlay" v-if="showAd" @click.self="closeAd">
-        <div class="ad-box">
+        <div class="ad-box" @click.stop>
           <div class="ad-header">
             <h2>
               <i class="fas fa-crown"></i>
               Palm Treasure 🌴
               <i class="fas fa-crown"></i>
             </h2>
-            <button class="ad-close-btn" @click="closeAd">
+            <button class="ad-close-btn" @click.stop="closeAd">
               <i class="fas fa-times"></i>
             </button>
           </div>
@@ -270,7 +270,7 @@
             </div>
           </div>
 
-          <button class="ad-btn" @click="closeAd">
+          <button class="ad-btn" @click.stop="closeAd">
             <i class="fas fa-check-circle"></i>
             أنا أعرف
           </button>
@@ -338,6 +338,8 @@ export default {
       startY: 0,
       initialLeft: 0,
       initialBottom: 0,
+      clickThreshold: 5,
+      hasDragged: false
     };
   },
 
@@ -389,7 +391,11 @@ export default {
   },
 
   methods: {
-    toggleLanguageMenu() {
+    toggleLanguageMenu(event) {
+      if (this.hasDragged) {
+        this.hasDragged = false;
+        return;
+      }
       this.showLangMenu = !this.showLangMenu;
     },
 
@@ -414,7 +420,11 @@ export default {
       this.showAd = false;
     },
 
-    toggleOfferMessage() {
+    toggleOfferMessage(event) {
+      if (this.hasDragged) {
+        this.hasDragged = false;
+        return;
+      }
       this.showOfferMessage = !this.showOfferMessage;
       if (this.showOfferMessage) {
         this.hasNewOffer = false;
@@ -437,12 +447,7 @@ export default {
     },
 
     startDrag(event) {
-      // فقط للأزرار التي ليست روابط
-      if (event.target.closest('a')) {
-        return;
-      }
-      
-      event.preventDefault();
+      this.hasDragged = false;
       
       const button = event.currentTarget;
       this.currentButton = button;
@@ -479,11 +484,15 @@ export default {
         return;
       }
       
-      const deltaX = currentX - this.startX;
-      const deltaY = currentY - this.startY;
+      const deltaX = Math.abs(currentX - this.startX);
+      const deltaY = Math.abs(currentY - this.startY);
       
-      const newRight = Math.max(5, Math.min(window.innerWidth - 50, this.initialLeft - deltaX));
-      const newBottom = Math.max(10, Math.min(window.innerHeight - 150, this.initialBottom - deltaY));
+      if (deltaX > this.clickThreshold || deltaY > this.clickThreshold) {
+        this.hasDragged = true;
+      }
+      
+      const newRight = Math.max(5, Math.min(window.innerWidth - 50, this.initialLeft - (currentX - this.startX)));
+      const newBottom = Math.max(10, Math.min(window.innerHeight - 150, this.initialBottom - (currentY - this.startY)));
       
       this.currentButton.style.right = newRight + 'px';
       this.currentButton.style.bottom = newBottom + 'px';
