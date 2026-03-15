@@ -59,7 +59,7 @@
         <div class="icon-box gold-glow">
           <i class="fas fa-scroll"></i>
         </div>
-        <p>📜 الشروط والأحكام</p>
+        <p>الشروط والأحكام</p>
       </div>
     </div>
 
