@@ -151,17 +151,20 @@ export default {
       isSpinning: false,
       betAmount: null,
       
-      // أجزاء العجلة (8 أجزاء) - المضاعفات المطلوبة فقط 0, 0.5, 1, 1.5
+      // أجزاء العجلة (8 أجزاء) - جميع المضاعفات موجودة للعرض
       wheelSegments: [
-        { value: 1.5 },   // قطاع 0 - 0-45° (ربح)
-        { value: 0.5 },   // قطاع 1 - 45-90° (خسارة نصف)
-        { value: 1 },     // قطاع 2 - 90-135° (تعادل)
-        { value: 0 },     // قطاع 3 - 135-180° (خسارة)
-        { value: 1.5 },   // قطاع 4 - 180-225° (ربح)
-        { value: 0.5 },   // قطاع 5 - 225-270° (خسارة نصف)
-        { value: 1 },     // قطاع 6 - 270-315° (تعادل)
-        { value: 0 }      // قطاع 7 - 315-360° (خسارة)
+        { value: 2 },     // قطاع 0 - أخضر (ربح) - 0-45°
+        { value: 0.5 },   // قطاع 1 - برتقالي (خسارة نصف) - 45-90°
+        { value: 1 },     // قطاع 2 - برتقالي (تعادل) - 90-135°
+        { value: 1.5 },   // قطاع 3 - أخضر (ربح) - 135-180°
+        { value: 0 },     // قطاع 4 - أحمر (خسارة) - 180-225°
+        { value: 3 },     // قطاع 5 - أخضر (ربح) - 225-270°
+        { value: 5 },     // قطاع 6 - أخضر (ربح) - 270-315°
+        { value: 10 }     // قطاع 7 - ذهبي (ربح كبير) - 315-360°
       ],
+      
+      // القيم المسموح بها فقط (التي يمكن للعجلة أن تقف عليها)
+      allowedValues: [0, 0.5, 1, 1.5],
       
       lastResult: null,
       
@@ -234,15 +237,15 @@ export default {
     
     getSegmentColor(value) {
       if (value === 0) return '#d32f2f' // أحمر (خسارة)
-      if (value === 0.5) return '#fb8c00' // برتقالي (خسارة نصف)
-      if (value === 1) return '#ffd700' // ذهبي (تعادل - استرجاع الرهان)
-      if (value === 1.5) return '#388e3c' // أخضر (ربح)
+      if (value === 0.5 || value === 1) return '#fb8c00' // برتقالي
+      if (value >= 1.5 && value <= 5) return '#388e3c' // أخضر
+      if (value === 10) return '#ffd700' // ذهبي
       return '#388e3c'
     },
     
     getTextColor(value) {
-      if (value === 0 || value === 0.5) return 'white'
-      if (value === 1) return '#222'
+      if (value === 0 || value === 0.5 || value === 1) return 'white'
+      if (value === 10) return '#222'
       return 'white'
     },
     
@@ -318,6 +321,14 @@ export default {
       this.gameError = ''
     },
     
+    // دالة لفلترة المؤشرات المسموحة فقط
+    getAllowedIndices() {
+      return this.wheelSegments
+        .map((segment, index) => ({ index, value: segment.value }))
+        .filter(item => this.allowedValues.includes(item.value))
+        .map(item => item.index)
+    },
+    
     async spinWheel() {
       if (!this.canSpin) return
       
@@ -337,8 +348,12 @@ export default {
       // تشغيل صوت الدوران
       this.playSound(this.spinSound)
       
-      // نختار قطاع عشوائي من القطاعات المسموحة (0, 1, 2, 3, 4, 5, 6, 7) - كلها قيمها 0, 0.5, 1, 1.5
-      const winningIndex = Math.floor(Math.random() * this.wheelSegments.length)
+      // الحصول على المؤشرات المسموحة فقط (التي قيمتها 0, 0.5, 1, 1.5)
+      const allowedIndices = this.getAllowedIndices()
+      
+      // اختيار مؤشر عشوائي من المؤشرات المسموحة
+      const randomIndex = Math.floor(Math.random() * allowedIndices.length)
+      const winningIndex = allowedIndices[randomIndex]
       const winningSegment = this.wheelSegments[winningIndex]
       
       // منتصف القطاع الفائز
@@ -419,7 +434,16 @@ export default {
         // ربح
         this.balance += winAmount
         await this.updateBalance(this.balance)
-        message = `🎉 ربحت ${winAmount.toFixed(2)} USDT (${multiplier}x)`
+        message = `🎉 ربحت ${winAmount.toFixed(2)} USDT (1.5x)`
+        this.playSound(this.winSound)
+        isWin = true
+      }
+      else {
+        // أي قيمة أخرى (2, 3, 5, 10) - لن تحدث أبداً لأننا نختار فقط من القيم المسموحة
+        // ولكن نضعها كحالة افتراضية للأمان
+        this.balance += this.betAmount // استرجاع الرهان
+        await this.updateBalance(this.balance)
+        message = `🔄 قيمة غير متوقعة! استرجعت ${this.betAmount.toFixed(2)} USDT`
         this.playSound(this.winSound)
         isWin = true
       }
