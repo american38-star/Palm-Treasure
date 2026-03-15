@@ -157,9 +157,8 @@
               <button class="btn gold" type="button" @click="promptRecharge(u)">تعبئة رصيد</button>
               <button class="btn red" type="button" @click="promptDeduct(u)">سحب رصيد</button>
               <button class="btn details-btn" type="button" @click="viewUserDetails(u)">تفاصيل</button>
-              <button class="btn blue" type="button" @click="sendResetPassword(u.email)" :disabled="!u.email">إعادة تعيين كلمة السر</button>
-              <!-- زر تغيير كلمة المرور الجديد -->
-              <button class="btn purple" type="button" @click="openChangePasswordModal(u)">
+              <!-- زر تغيير كلمة المرور المباشر (معدل) -->
+              <button class="btn purple" type="button" @click="openDirectPasswordModal(u)">
                 <i class="fas fa-key"></i> تغيير كلمة المرور
               </button>
               <button class="btn black" type="button" @click="toggleBlockUser(u)">
@@ -394,20 +393,20 @@
       </div>
     </div>
 
-    <!-- Modal تغيير كلمة المرور (جديد) -->
-    <div v-if="showChangePasswordModal" class="modal-backdrop" @click.self="closeChangePasswordModal">
+    <!-- Modal تغيير كلمة المرور المباشر (جديد) -->
+    <div v-if="showDirectPasswordModal" class="modal-backdrop" @click.self="closeDirectPasswordModal">
       <div class="modal">
         <h3><i class="fas fa-key"></i> تغيير كلمة مرور المستخدم</h3>
         
         <div class="user-info" style="background: #1A1F2A; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
-          <p><strong>المستخدم:</strong> <span class="gold-text">{{ changePasswordTargetUser?.email || changePasswordTargetUser?.phoneNumber || changePasswordTargetUser?.id }}</span></p>
+          <p><strong>المستخدم:</strong> <span class="gold-text">{{ directPasswordTargetUser?.email || directPasswordTargetUser?.phoneNumber || directPasswordTargetUser?.id }}</span></p>
         </div>
         
         <div class="input-box" style="margin-bottom: 15px;">
           <label>كلمة المرور الجديدة</label>
           <input 
             type="password" 
-            v-model="newPassword" 
+            v-model="directNewPassword" 
             placeholder="أدخل كلمة المرور الجديدة"
             style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #D4AF37; background: #1A1F2A; color: white;"
           />
@@ -417,25 +416,25 @@
           <label>تأكيد كلمة المرور الجديدة</label>
           <input 
             type="password" 
-            v-model="confirmNewPassword" 
+            v-model="directConfirmPassword" 
             placeholder="أعد إدخال كلمة المرور الجديدة"
             style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #D4AF37; background: #1A1F2A; color: white;"
           />
         </div>
         
-        <div v-if="passwordError" style="color: #ff6b6b; font-size: 12px; margin-bottom: 10px;">
-          {{ passwordError }}
+        <div v-if="directPasswordError" style="color: #ff6b6b; font-size: 12px; margin-bottom: 10px;">
+          {{ directPasswordError }}
         </div>
         
-        <div v-if="passwordSuccess" style="color: #4CAF50; font-size: 12px; margin-bottom: 10px;">
-          {{ passwordSuccess }}
+        <div v-if="directPasswordSuccess" style="color: #4CAF50; font-size: 12px; margin-bottom: 10px;">
+          {{ directPasswordSuccess }}
         </div>
         
         <div class="modal-actions">
-          <button class="btn gold" type="button" @click="changeUserPassword" :disabled="passwordLoading">
-            {{ passwordLoading ? 'جاري التغيير...' : 'تغيير كلمة المرور' }}
+          <button class="btn gold" type="button" @click="changeDirectPassword" :disabled="directPasswordLoading">
+            {{ directPasswordLoading ? 'جاري التغيير...' : 'تغيير كلمة المرور' }}
           </button>
-          <button class="btn gold-outline" type="button" @click="closeChangePasswordModal">إلغاء</button>
+          <button class="btn gold-outline" type="button" @click="closeDirectPasswordModal">إلغاء</button>
         </div>
       </div>
     </div>
@@ -443,14 +442,8 @@
 </template>
 
 <script>
-import {
-  getAuth,
-  sendPasswordResetEmail,
-  onAuthStateChanged,
-  updatePassword,
-  EmailAuthProvider,
-  reauthenticateWithCredential
-} from "firebase/auth";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import {
   collection,
   getDocs,
@@ -463,8 +456,7 @@ import {
   onSnapshot,
   query,
   orderBy,
-  where,
-  limit
+  where
 } from "firebase/firestore";
 import { db } from "../firebase";
 
@@ -472,7 +464,7 @@ export default {
   name: "Admin",
   data() {
     return {
-      activeTab: "withdraws",
+      activeTab: "users",
       users: [],
       loadingUsers: true,
       userFilter: "",
@@ -502,11 +494,6 @@ export default {
       modalData: {},
       modalType: "withdraw",
       authChecked: false,
-      adminEmails: [
-        "azad.333388@gmail.com",
-        "admin2@gmail.com",
-        "owner@gmail.com",
-      ],
       currentUser: null,
       processingId: null,
 
@@ -531,14 +518,14 @@ export default {
         referredUsers: []
       },
       
-      // متغيرات تغيير كلمة المرور الجديدة
-      showChangePasswordModal: false,
-      changePasswordTargetUser: null,
-      newPassword: "",
-      confirmNewPassword: "",
-      passwordError: "",
-      passwordSuccess: "",
-      passwordLoading: false,
+      // متغيرات تغيير كلمة المرور المباشر
+      showDirectPasswordModal: false,
+      directPasswordTargetUser: null,
+      directNewPassword: "",
+      directConfirmPassword: "",
+      directPasswordError: "",
+      directPasswordSuccess: "",
+      directPasswordLoading: false,
     };
   },
   computed: {
@@ -668,20 +655,13 @@ export default {
       this.authChecked = true;
       this.currentUser = user || null;
       if (!user) return this.$router.replace("/login");
-      try {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        const userData = userDoc.exists() ? userDoc.data() : null;
-        const isRoleAdmin =
-          userData &&
-          (userData.role === "admin" || userData.isAdmin === true);
-        if (!isRoleAdmin && !this.adminEmails.includes(user.email)) {
-          alert("غير مسموح بالدخول");
-          return this.$router.replace("/403");
-        }
-      } catch (e) {
-        console.error("admin check", e);
-        return this.$router.replace("/403");
+      
+      // التحقق من أن المستخدم هو الأدمن المطلوب
+      if (user.email !== "azad.333388@gmail.com") {
+        alert("غير مسموح بالدخول");
+        return this.$router.replace("/");
       }
+      
       await Promise.all([
         this.loadWithdrawRequests(),
         this.loadUsers(),
@@ -697,85 +677,75 @@ export default {
     }
   },
   methods: {
-    // دوال تغيير كلمة المرور الجديدة
-    openChangePasswordModal(user) {
-      this.changePasswordTargetUser = user;
-      this.newPassword = "";
-      this.confirmNewPassword = "";
-      this.passwordError = "";
-      this.passwordSuccess = "";
-      this.showChangePasswordModal = true;
+    // ====================== دوال تغيير كلمة المرور المباشر ======================
+    openDirectPasswordModal(user) {
+      this.directPasswordTargetUser = user;
+      this.directNewPassword = "";
+      this.directConfirmPassword = "";
+      this.directPasswordError = "";
+      this.directPasswordSuccess = "";
+      this.showDirectPasswordModal = true;
     },
     
-    closeChangePasswordModal() {
-      this.showChangePasswordModal = false;
-      this.changePasswordTargetUser = null;
-      this.newPassword = "";
-      this.confirmNewPassword = "";
-      this.passwordError = "";
-      this.passwordSuccess = "";
+    closeDirectPasswordModal() {
+      this.showDirectPasswordModal = false;
+      this.directPasswordTargetUser = null;
+      this.directNewPassword = "";
+      this.directConfirmPassword = "";
+      this.directPasswordError = "";
+      this.directPasswordSuccess = "";
     },
     
-    async changeUserPassword() {
+    async changeDirectPassword() {
       // التحقق من المدخلات
-      if (!this.newPassword || !this.confirmNewPassword) {
-        this.passwordError = "جميع الحقول مطلوبة";
+      if (!this.directNewPassword || !this.directConfirmPassword) {
+        this.directPasswordError = "جميع الحقول مطلوبة";
         return;
       }
       
-      if (this.newPassword.length < 6) {
-        this.passwordError = "كلمة المرور يجب أن تكون 6 أحرف على الأقل";
+      if (this.directNewPassword.length < 6) {
+        this.directPasswordError = "كلمة المرور يجب أن تكون 6 أحرف على الأقل";
         return;
       }
       
-      if (this.newPassword !== this.confirmNewPassword) {
-        this.passwordError = "كلمة المرور غير متطابقة";
+      if (this.directNewPassword !== this.directConfirmPassword) {
+        this.directPasswordError = "كلمة المرور غير متطابقة";
         return;
       }
       
-      if (!this.changePasswordTargetUser || !this.changePasswordTargetUser.email) {
-        this.passwordError = "لا يمكن تغيير كلمة المرور لهذا المستخدم (لا يوجد بريد إلكتروني)";
+      if (!this.directPasswordTargetUser || !this.directPasswordTargetUser.id) {
+        this.directPasswordError = "لم يتم تحديد المستخدم";
         return;
       }
       
-      this.passwordLoading = true;
-      this.passwordError = "";
+      this.directPasswordLoading = true;
+      this.directPasswordError = "";
+      this.directPasswordSuccess = "";
       
       try {
-        // استخدام Firebase Admin SDK غير متاح في الواجهة الأمامية
-        // لذلك سنستخدم طريقة إرسال رابط إعادة تعيين كلمة المرور
-        const auth = getAuth();
-        await sendPasswordResetEmail(auth, this.changePasswordTargetUser.email);
+        // استدعاء Cloud Function
+        const functions = getFunctions();
+        const adminChangePassword = httpsCallable(functions, 'adminChangePassword');
         
-        // تسجيل العملية في logs
-        await addDoc(collection(db, "password_change_logs"), {
-          adminId: this.currentUser?.uid,
-          adminEmail: this.currentUser?.email,
-          userId: this.changePasswordTargetUser.id,
-          userEmail: this.changePasswordTargetUser.email,
-          userPhone: this.changePasswordTargetUser.phoneNumber,
-          method: "password_reset_email",
-          createdAt: serverTimestamp()
+        const result = await adminChangePassword({
+          userId: this.directPasswordTargetUser.id,
+          newPassword: this.directNewPassword
         });
         
-        this.passwordSuccess = "تم إرسال رابط إعادة تعيين كلمة المرور إلى البريد الإلكتروني للمستخدم";
-        
-        setTimeout(() => {
-          this.closeChangePasswordModal();
-        }, 3000);
+        if (result.data.success) {
+          this.directPasswordSuccess = "✅ تم تغيير كلمة المرور بنجاح";
+          
+          // إغلاق النافذة بعد 2 ثانية
+          setTimeout(() => {
+            this.closeDirectPasswordModal();
+          }, 2000);
+        }
         
       } catch (error) {
-        console.error("Error changing password:", error);
-        
-        if (error.code === 'auth/user-not-found') {
-          this.passwordError = "المستخدم غير موجود في نظام المصادقة";
-        } else if (error.code === 'auth/invalid-email') {
-          this.passwordError = "البريد الإلكتروني غير صالح";
-        } else {
-          this.passwordError = "حدث خطأ في تغيير كلمة المرور: " + error.message;
-        }
+        console.error("❌ خطأ في تغيير كلمة المرور:", error);
+        this.directPasswordError = "❌ حدث خطأ: " + (error.message || "غير معروف");
       } finally {
-        this.passwordLoading = false;
+        this.directPasswordLoading = false;
       }
     },
     
@@ -831,8 +801,6 @@ export default {
 
         this.userDetails.referralCount = directReferralUsers.length;
         this.userDetails.referredUsers = directReferralUsers;
-
-        console.log("تفاصيل المستخدم (المستوى 1 فقط):", this.userDetails);
 
       } catch (error) {
         console.error("خطأ في جلب تفاصيل المستخدم:", error);
@@ -1010,16 +978,6 @@ export default {
       }
     },
     
-    async sendResetPassword(email) {
-      try {
-        const auth = getAuth();
-        await sendPasswordResetEmail(auth, email);
-        alert("تم إرسال رابط إعادة التعيين");
-      } catch (e) {
-        alert("خطأ أثناء إرسال الرابط");
-      }
-    },
-    
     async toggleBlockUser(user) {
       try {
         await updateDoc(doc(db, "users", user.id), {
@@ -1083,36 +1041,6 @@ export default {
       this.modalType = "withdraw";
     },
     
-    async ensureAdmin() {
-      try {
-        const auth = getAuth();
-        const user = auth.currentUser || this.currentUser;
-        if (!user) return false;
-        const d = await getDoc(doc(db, "users", user.uid));
-        const u = d.exists() ? d.data() : null;
-        if (u && (u.role === "admin" || u.isAdmin === true)) return true;
-        if (this.adminEmails.includes(user.email)) return true;
-        return false;
-      } catch (e) {
-        return false;
-      }
-    },
-    
-    async updateTransactionDirectly(transactionId, updateData) {
-      try {
-        const transactionRef = doc(db, "transactions", transactionId);
-        await updateDoc(transactionRef, {
-          ...updateData,
-          updatedAt: serverTimestamp()
-        });
-        console.log("✅ تم تحديث المعاملة:", transactionId);
-        return true;
-      } catch (error) {
-        console.error("❌ خطأ في تحديث المعاملة:", error);
-        return false;
-      }
-    },
-
     async createTransactionForUser(userId, email, phoneNumber, type, amount, status, reason = "", adminMessage = "", network = "", wallet = "", vipLevel = "", withdrawDay = "") {
       try {
         const transactionData = {
@@ -1155,8 +1083,6 @@ export default {
 
     async approveWithdrawWithMessage(req, message = "") {
       if (!req || !req.id) return;
-      const allowed = await this.ensureAdmin();
-      if (!allowed) return alert("غير مصرح لك");
       if (!confirm(`تأكيد الموافقة على ${req.amount} USDT؟`)) return;
       this.processingId = req.id;
       try {
@@ -1226,8 +1152,6 @@ export default {
     
     async approveRechargeWithMessage(r, message = "") {
       if (!r || !r.id) return;
-      const allowed = await this.ensureAdmin();
-      if (!allowed) return alert("غير مصرح لك");
       if (!confirm(`تأكيد الموافقة على تعبئة ${r.amount} USDT للمستخدم ${r.userEmail || r.email || r.userId || ''}?`)) return;
       this.processingId = r.id;
       try {
@@ -1239,7 +1163,6 @@ export default {
         });
 
         if (r.userId) {
-          // البحث عن رقم الهاتف من بيانات المستخدم إذا لم يكن موجوداً في الطلب
           let userPhone = r.userPhone || r.phoneNumber;
           if (!userPhone) {
             try {
@@ -1324,8 +1247,6 @@ export default {
         return;
       }
       
-      const allowed = await this.ensureAdmin();
-      if (!allowed) return alert("غير مصرح");
       if (!confirm(`تأكيد رفض سحب ${req.amount}؟`)) return;
       this.processingId = req.id;
       try {
@@ -1805,8 +1726,6 @@ export default {
         return;
       }
       
-      const allowed = await this.ensureAdmin();
-      if (!allowed) return alert("غير مصرح لك");
       if (!confirm(`تأكيد رفض طلب التعبئة ${r.amount} USDT للمستخدم ${r.userEmail || r.email || r.userId || ''}?`)) return;
       this.processingId = r.id;
       try {
@@ -1814,7 +1733,6 @@ export default {
         await updateDoc(pRef, { status: "rejected", processedAt: serverTimestamp() });
 
         if (r.userId) {
-          // البحث عن رقم الهاتف من بيانات المستخدم إذا لم يكن موجوداً في الطلب
           let userPhone = r.userPhone || r.phoneNumber;
           if (!userPhone) {
             try {
@@ -1877,8 +1795,6 @@ export default {
     
     async deleteRecharge(r) {
       if (!r || !r.id) return;
-      const allowed = await this.ensureAdmin();
-      if (!allowed) return alert("غير مصرح لك");
       if (!confirm("هل أنت متأكد أنك تريد حذف هذا الطلب نهائياً؟")) return;
       this.processingId = r.id;
       try {
@@ -1907,10 +1823,6 @@ export default {
         try { this.rechargeUnsubscribe(); } catch (e) {}
         this.rechargeUnsubscribe = null;
       }
-    },
-    
-    async markAllRechargeNotificationsReadServerSide() {
-      alert("ميزة وضع الإشعارات كمقروءة تحتاج تنفيذ على حسب تصميم قاعدة البيانات.");
     },
   },
 };
