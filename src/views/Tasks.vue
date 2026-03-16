@@ -151,21 +151,24 @@ export default {
       isSpinning: false,
       betAmount: null,
       
-      // أجزاء العجلة (8 أجزاء) - جميع المضاعفات موجودة للعرض فقط
+      // أجزاء العجلة (8 أجزاء) - تم تبديل أماكن الأرقام فقط
+      // 10 مكان 1.5
+      // 2 مكان 0
+      // 5 مكان 1
+      // 3 مكان 0.5
       wheelSegments: [
-        { value: 2 },     // قطاع 0 - 0-45° (للعرض فقط - لا يقف عليه السهم أبداً)
-        { value: 0.5 },   // قطاع 1 - 45-90° (مسموح)
-        { value: 1 },     // قطاع 2 - 90-135° (مسموح)
-        { value: 1.5 },   // قطاع 3 - 135-180° (مسموح)
-        { value: 0 },     // قطاع 4 - 180-225° (مسموح)
-        { value: 3 },     // قطاع 5 - 225-270° (للعرض فقط - لا يقف عليه السهم أبداً)
-        { value: 5 },     // قطاع 6 - 270-315° (للعرض فقط - لا يقف عليه السهم أبداً)
-        { value: 10 }     // قطاع 7 - 315-360° (للعرض فقط - لا يقف عليه السهم أبداً)
+        { value: 10 },    // قطاع 0 - كان 2 (غير مسموح) والآن 10 (جائزة كبرى)
+        { value: 3 },     // قطاع 1 - كان 0.5 (مسموح) والآن 3 (ربح)
+        { value: 5 },     // قطاع 2 - كان 1 (مسموح) والآن 5 (ربح)
+        { value: 2 },     // قطاع 3 - كان 1.5 (مسموح) والآن 2 (ربح)
+        { value: 1.5 },   // قطاع 4 - كان 0 (مسموح) والآن 1.5 (ربح)
+        { value: 0.5 },   // قطاع 5 - كان 3 (غير مسموح) والآن 0.5 (خسارة نصف)
+        { value: 1 },     // قطاع 6 - كان 5 (غير مسموح) والآن 1 (تعادل)
+        { value: 0 }      // قطاع 7 - كان 10 (غير مسموح) والآن 0 (خسارة)
       ],
       
-      // المؤشرات المسموح بها فقط (التي يمكن للعجلة أن تقف عليها)
-      // 0, 0.5, 1, 1.5 فقط
-      allowedIndices: [1, 2, 3, 4], // المؤشرات التي تحتوي على القيم: 0.5, 1, 1.5, 0
+      // المؤشرات المسموح بها فقط - جميع المؤشرات مسموحة الآن
+      allowedIndices: [0, 1, 2, 3, 4, 5, 6, 7],
         
       lastResult: null,
       
@@ -239,8 +242,7 @@ export default {
     getSegmentColor(value) {
       if (value === 0) return '#d32f2f' // أحمر (خسارة)
       if (value === 0.5 || value === 1) return '#fb8c00' // برتقالي
-      if (value === 1.5) return '#388e3c' // أخضر
-      if (value === 2 || value === 3 || value === 5) return '#9c27b0' // بنفسجي (للجاذبية فقط)
+      if (value === 1.5 || value === 2 || value === 3 || value === 5) return '#388e3c' // أخضر
       if (value === 10) return '#ffd700' // ذهبي
       return '#388e3c'
     },
@@ -289,7 +291,6 @@ export default {
       if (rotation < 0) rotation += 360
       
       // السهم في الأعلى (زاوية 90 درجة)
-      // القطاع الذي يشير إليه السهم هو القطاع الذي تكون زاويته 90 درجة في الاتجاه المعاكس للدوران
       const pointerAngle = 90
       
       // الزاوية الفعلية للقطاع تحت السهم
@@ -365,27 +366,26 @@ export default {
       // تشغيل صوت الدوران
       this.playSound(this.spinSound)
       
-      // اختيار قطاع عشوائي من المؤشرات المسموحة فقط (0.5, 1, 1.5, 0)
+      // اختيار قطاع عشوائي من جميع المؤشرات
       const randomAllowedIndex = Math.floor(Math.random() * this.allowedIndices.length)
       const winningIndex = this.allowedIndices[randomAllowedIndex]
       const winningSegment = this.wheelSegments[winningIndex]
       
-      console.log(`السيتوقف على: قطاع ${winningIndex} بقيمة ${winningSegment.value}x (مسموح)`)
+      console.log(`سيتوقف على: قطاع ${winningIndex} بقيمة ${winningSegment.value}x`)
       
       // منتصف القطاع الفائز
       const segmentMiddle = (winningIndex * this.segmentAngle) + (this.segmentAngle / 2)
       
-      // السهم في الأعلى (زاوية 90 درجة في نظام SVG)
-      // الزاوية المطلوبة لجعل منتصف القطاع تحت السهم = 90 - منتصف القطاع
+      // السهم في الأعلى (زاوية 90 درجة)
       let requiredAngle = 90 - segmentMiddle
       
-      // تصحيح الزاوية لتكون ضمن 0-360
+      // تصحيح الزاوية
       if (requiredAngle < 0) requiredAngle += 360
       
-      // عدد دورات عشوائي (15-25 دورة) لتبدو طبيعية
+      // عدد دورات عشوائي
       const spins = 15 + Math.floor(Math.random() * 10)
       
-      // الزاوية المستهدفة: (360 * عدد الدورات) + الزاوية المطلوبة
+      // الزاوية المستهدفة
       const targetRotation = (360 * spins) + requiredAngle
       
       const start = this.wheelRotation
@@ -396,7 +396,7 @@ export default {
         const elapsed = time - startTime
         const progress = Math.min(elapsed / duration, 1)
         
-        // منحنى التباطؤ الطبيعي (يبدأ سريعًا ثم يبطئ)
+        // منحنى التباطؤ
         const easeOut = 1 - Math.pow(1 - progress, 3)
         
         this.wheelRotation = start + ((targetRotation - start) * easeOut)
@@ -404,19 +404,14 @@ export default {
         if (progress < 1) {
           requestAnimationFrame(animate)
         } else {
-          // التأكد من الزاوية النهائية مضبوطة
           this.wheelRotation = targetRotation
           
-          // ننتظر قليلاً ثم نحدد القطاع الفعلي بناءً على زاوية التوقف
           setTimeout(() => {
-            // تحديد القطاع الذي يقف عنده السهم بدقة
             const actualSegmentIndex = this.getCurrentSegmentIndex()
             const actualSegment = this.wheelSegments[actualSegmentIndex]
             
             console.log(`الفعلي بعد التوقف: قطاع ${actualSegmentIndex} بقيمة ${actualSegment.value}x`)
             
-            // التأكد أن القطاع الفعلي هو نفسه القطاع المخطط له
-            // (يجب أن يكون متطابقاً لأننا حسبنا الزاوية بدقة)
             this.finishSpin(actualSegmentIndex, actualSegment)
           }, 200)
         }
@@ -433,7 +428,7 @@ export default {
       let message = ''
       let isWin = false
       
-      // حساب النتيجة بدقة حسب قيمة المضاعف الفعلية
+      // حساب النتيجة حسب القيم
       if (multiplier === 0) {
         // خسارة كاملة
         message = `😢 خسرت ${this.betAmount.toFixed(2)} USDT`
@@ -441,7 +436,7 @@ export default {
         isWin = false
       } 
       else if (multiplier === 0.5) {
-        // خسارة نصف الرهان (يسترجع نصف المبلغ)
+        // خسارة نصف
         this.balance += winAmount
         await this.updateBalance(this.balance)
         message = `😐 خسرت نصف الرهان! استرجعت ${winAmount.toFixed(2)} USDT`
@@ -449,7 +444,7 @@ export default {
         isWin = false
       }
       else if (multiplier === 1) {
-        // تعادل - استرجاع الرهان كاملاً
+        // تعادل
         this.balance += this.betAmount
         await this.updateBalance(this.balance)
         message = `🤝 تعادل! استرجعت ${this.betAmount.toFixed(2)} USDT`
@@ -460,17 +455,39 @@ export default {
         // ربح 1.5x
         this.balance += winAmount
         await this.updateBalance(this.balance)
-        message = `🎉 ربحت ${winAmount.toFixed(2)} USDT`
+        message = `🎉 ربحت ${winAmount.toFixed(2)} USDT (1.5x)`
         this.playSound(this.winSound)
         isWin = true
       }
-      else {
-        // هذا لا يجب أن يحدث أبداً لأننا نختار فقط من القيم المسموحة
-        // ولكن للاحتياط نسترجع الرهان
-        console.error('قيمة غير مسموحة!', multiplier)
-        this.balance += this.betAmount
+      else if (multiplier === 2) {
+        // ربح 2x
+        this.balance += winAmount
         await this.updateBalance(this.balance)
-        message = `🔄 خطأ! استرجعت ${this.betAmount.toFixed(2)} USDT`
+        message = `🎉 ربحت ${winAmount.toFixed(2)} USDT (2x)`
+        this.playSound(this.winSound)
+        isWin = true
+      }
+      else if (multiplier === 3) {
+        // ربح 3x
+        this.balance += winAmount
+        await this.updateBalance(this.balance)
+        message = `🎉 ربحت ${winAmount.toFixed(2)} USDT (3x)`
+        this.playSound(this.winSound)
+        isWin = true
+      }
+      else if (multiplier === 5) {
+        // ربح 5x
+        this.balance += winAmount
+        await this.updateBalance(this.balance)
+        message = `🎉 ربحت ${winAmount.toFixed(2)} USDT (5x)`
+        this.playSound(this.winSound)
+        isWin = true
+      }
+      else if (multiplier === 10) {
+        // ربح 10x
+        this.balance += winAmount
+        await this.updateBalance(this.balance)
+        message = `🏆 الجائزة الكبرى! ربحت ${winAmount.toFixed(2)} USDT (10x)`
         this.playSound(this.winSound)
         isWin = true
       }
