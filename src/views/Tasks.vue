@@ -366,7 +366,7 @@ export default {
           // إنهاء الدورة وإظهار النتيجة
           setTimeout(() => {
             this.finishSpin(winningIndex, winningSegment, betValue)
-          }, 200)
+          }, 500)
         }
       }
       
