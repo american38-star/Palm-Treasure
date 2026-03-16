@@ -146,29 +146,29 @@ export default {
       isSpinning: false,
       betAmount: null,
       
-      // قطاعات العجزة (8 قطاعات)
+      // قطاعات العجلة - تم تعديل ترتيب الأرقام فقط كما هو مطلوب
       wheelSegments: [
-        { value: 2 },     // قطاع 0 - 0-45°
-        { value: 0.5 },   // قطاع 1 - 45-90°
-        { value: 1 },     // قطاع 2 - 90-135°
-        { value: 1.5 },   // قطاع 3 - 135-180°
-        { value: 0 },     // قطاع 4 - 180-225°
-        { value: 3 },     // قطاع 5 - 225-270°
-        { value: 5 },     // قطاع 6 - 270-315°
-        { value: 10 }     // قطاع 7 - 315-360°
+        { value: 0 },     // قطاع 0 - مكان 2x سابقاً (الآن 0x)
+        { value: 3 },     // قطاع 1 - مكان 0.5x سابقاً (الآن 3x)
+        { value: 5 },     // قطاع 2 - مكان 1x سابقاً (الآن 5x)
+        { value: 10 },    // قطاع 3 - مكان 1.5x سابقاً (الآن 10x)
+        { value: 2 },     // قطاع 4 - مكان 0x سابقاً (الآن 2x)
+        { value: 0.5 },   // قطاع 5 - مكان 3x سابقاً (الآن 0.5x)
+        { value: 1 },     // قطاع 6 - مكان 5x سابقاً (الآن 1x)
+        { value: 1.5 }    // قطاع 7 - مكان 10x سابقاً (الآن 1.5x)
       ],
       
-      // القطاعات المسموح التوقف عليها
+      // القطاعات المسموح التوقف عليها (لم يتم تغييرها)
       allowedSegments: {
         // 0x (خسارة)
-        loss: { index: 4, value: 0 },
+        loss: { index: 0, value: 0 }, // الآن 0x في index 0
         // ربح صغير (0.5x, 1x)
         smallWin: [
-          { index: 1, value: 0.5 },
-          { index: 2, value: 1 }
+          { index: 5, value: 0.5 },   // 0.5x في index 5
+          { index: 6, value: 1 }      // 1x في index 6
         ],
         // ربح كبير (1.5x)
-        bigWin: { index: 3, value: 1.5 }
+        bigWin: { index: 7, value: 1.5 } // 1.5x في index 7
       },
       
       lastResult: null
@@ -242,7 +242,7 @@ export default {
       return centerY + radius * Math.sin(angle)
     },
     
-    // تحديد القطاع الفائز بناءً على الاحتمالات
+    // تحديد القطاع الفائز بناءً على الاحتمالات (لم يتم تغييرها)
     getWinningSegment() {
       const random = Math.random() * 100 // رقم عشوائي من 0 إلى 100
       
@@ -405,6 +405,14 @@ export default {
         this.showResult(`😊 استعدت رهانك ${winAmount.toFixed(2)} USDT`, true)
       } else if (multiplier === 1.5) {
         this.showResult(`🎉 ربح كبير! ${winAmount.toFixed(2)} USDT`, true)
+      } else if (multiplier === 2) {
+        this.showResult(`🎉 ربحت ${winAmount.toFixed(2)} USDT (ضعف الرهان)`, true)
+      } else if (multiplier === 3) {
+        this.showResult(`🎉 ربحت ${winAmount.toFixed(2)} USDT (ثلاثة أضعاف)`, true)
+      } else if (multiplier === 5) {
+        this.showResult(`🎉 ربحت ${winAmount.toFixed(2)} USDT (خمسة أضعاف)`, true)
+      } else if (multiplier === 10) {
+        this.showResult(`🏆 جائزة كبرى! ${winAmount.toFixed(2)} USDT`, true)
       }
       
       // حفظ النتيجة
