@@ -146,29 +146,29 @@ export default {
       isSpinning: false,
       betAmount: null,
       
-      // قطاعات العجلة (8 قطاعات) - تم تعديل ترتيب الأرقام فقط
+      // قطاعات العجلة (8 قطاعات) - تم تغيير الأرقام فقط مع بقاء نفس الترتيب
       wheelSegments: [
-        { value: 0 },     // قطاع 0 - كان 2x سابقاً، أصبح 0x
-        { value: 3 },     // قطاع 1 - كان 0.5x سابقاً، أصبح 3x
-        { value: 5 },     // قطاع 2 - كان 1x سابقاً، أصبح 5x
-        { value: 10 },    // قطاع 3 - كان 1.5x سابقاً، أصبح 10x
-        { value: 2 },     // قطاع 4 - كان 0x سابقاً، أصبح 2x
-        { value: 0.5 },   // قطاع 5 - كان 3x سابقاً، أصبح 0.5x
-        { value: 1 },     // قطاع 6 - كان 5x سابقاً، أصبح 1x
-        { value: 1.5 }    // قطاع 7 - كان 10x سابقاً، أصبح 1.5x
+        { value: 0 },     // قطاع 0 - كان 2x سابقاً، أصبح 0x (نفس الموقع)
+        { value: 3 },     // قطاع 1 - كان 0.5x سابقاً، أصبح 3x (نفس الموقع)
+        { value: 5 },     // قطاع 2 - كان 1x سابقاً، أصبح 5x (نفس الموقع)
+        { value: 10 },    // قطاع 3 - كان 1.5x سابقاً، أصبح 10x (نفس الموقع)
+        { value: 2 },     // قطاع 4 - كان 0x سابقاً، أصبح 2x (نفس الموقع)
+        { value: 0.5 },   // قطاع 5 - كان 3x سابقاً، أصبح 0.5x (نفس الموقع)
+        { value: 1 },     // قطاع 6 - كان 5x سابقاً، أصبح 1x (نفس الموقع)
+        { value: 1.5 }    // قطاع 7 - كان 10x سابقاً، أصبح 1.5x (نفس الموقع)
       ],
       
-      // القطاعات المسموح التوقف عليها (تم تعديل المؤشرات فقط لتتناسب مع الترتيب الجديد)
+      // القطاعات المسموح التوقف عليها (نفس المواقع ولكن مع تحديث القيم)
       allowedSegments: {
-        // 0x (خسارة)
-        loss: { index: 0, value: 0 },     // 0x الآن في القطاع 0
-        // ربح صغير (0.5x, 1x)
+        // 0x (خسارة) - الآن القيمة 2x في نفس الموقع
+        loss: { index: 4, value: 2 },
+        // ربح صغير (0.5x, 1x) - نفس المواقع
         smallWin: [
-          { index: 5, value: 0.5 },       // 0.5x الآن في القطاع 5
-          { index: 6, value: 1 }          // 1x الآن في القطاع 6
+          { index: 5, value: 0.5 },
+          { index: 6, value: 1 }
         ],
-        // ربح كبير (1.5x)
-        bigWin: { index: 7, value: 1.5 }  // 1.5x الآن في القطاع 7
+        // ربح كبير (1.5x) - نفس الموقع
+        bigWin: { index: 7, value: 1.5 }
       },
       
       lastResult: null
@@ -242,12 +242,12 @@ export default {
       return centerY + radius * Math.sin(angle)
     },
     
-    // تحديد القطاع الفائز بناءً على الاحتمالات (لم يتغير)
+    // تحديد القطاع الفائز بناءً على الاحتمالات (نفس المنطق القديم)
     getWinningSegment() {
       const random = Math.random() * 100
       
       if (random < 70) {
-        // 70% خسارة - 0x
+        // 70% خسارة - الآن 2x (كانت 0x سابقاً)
         return {
           index: this.allowedSegments.loss.index,
           value: this.allowedSegments.loss.value,
@@ -377,7 +377,7 @@ export default {
         await this.updateBalance(this.balance)
       }
       
-      if (multiplier === 0) {
+      if (multiplier === 2) {
         this.showResult(`😢 خسرت ${this.betAmount.toFixed(2)} USDT`, false)
       } else if (multiplier === 0.5) {
         this.showResult(`😐 ربحت ${winAmount.toFixed(2)} USDT (نصف الرهان)`, true)
@@ -385,8 +385,6 @@ export default {
         this.showResult(`😊 استعدت رهانك ${winAmount.toFixed(2)} USDT`, true)
       } else if (multiplier === 1.5) {
         this.showResult(`🎉 ربح كبير! ${winAmount.toFixed(2)} USDT`, true)
-      } else if (multiplier === 2) {
-        this.showResult(`🎉 ربحت ${winAmount.toFixed(2)} USDT (ضعف الرهان)`, true)
       } else if (multiplier === 3) {
         this.showResult(`🎉 ربحت ${winAmount.toFixed(2)} USDT (ثلاثة أضعاف)`, true)
       } else if (multiplier === 5) {
