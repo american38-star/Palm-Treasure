@@ -151,24 +151,21 @@ export default {
       isSpinning: false,
       betAmount: null,
       
-      // أجزاء العجلة (8 أجزاء) - تم استبدال الأرقام فقط مع بقاء كل شيء كما هو
-      // 10 بدلاً من 1.5
-      // 2 بدلاً من 0
-      // 5 بدلاً من 1
-      // 3 بدلاً من 0.5
+      // أجزاء العجلة (8 أجزاء) - تم تبديل أماكن الأرقام فقط
+      // التبديل: 10 مكان 1.5، 2 مكان 0، 5 مكان 1، 3 مكان 0.5
       wheelSegments: [
-        { value: 2 },     // قطاع 0 - كان 0 (خسارة) والآن 2 (ربح)
-        { value: 3 },     // قطاع 1 - كان 0.5 (خسارة نصف) والآن 3 (ربح)
-        { value: 5 },     // قطاع 2 - كان 1 (تعادل) والآن 5 (ربح)
-        { value: 10 },    // قطاع 3 - كان 1.5 (ربح) والآن 10 (ربح كبير)
-        { value: 2 },     // قطاع 4 - كان 2 (ربح) والآن 2 (ربح)
-        { value: 3 },     // قطاع 5 - كان 3 (ربح) والآن 3 (ربح)
-        { value: 5 },     // قطاع 6 - كان 5 (ربح) والآن 5 (ربح)
-        { value: 10 }     // قطاع 7 - كان 10 (ربح كبير) والآن 10 (ربح كبير)
+        { value: 3 },     // قطاع 0 - كان 2 (ربح) والآن 3 (ربح)
+        { value: 5 },     // قطاع 1 - كان 0.5 (خسارة نصف) والآن 5 (ربح)
+        { value: 10 },    // قطاع 2 - كان 1 (تعادل) والآن 10 (ربح كبير)
+        { value: 2 },     // قطاع 3 - كان 1.5 (ربح) والآن 2 (ربح)
+        { value: 0.5 },   // قطاع 4 - كان 0 (خسارة) والآن 0.5 (خسارة نصف)
+        { value: 1 },     // قطاع 5 - كان 3 (ربح) والآن 1 (تعادل)
+        { value: 1.5 },   // قطاع 6 - كان 5 (ربح) والآن 1.5 (ربح)
+        { value: 0 }      // قطاع 7 - كان 10 (ربح كبير) والآن 0 (خسارة)
       ],
       
-      // المؤشرات المسموح بها فقط - نفس المؤشرات السابقة لكن مع القيم الجديدة
-      allowedIndices: [0, 1, 2, 3, 4, 5, 6, 7], // جميع المؤشرات مسموحة الآن
+      // المؤشرات المسموح بها - جميعها مسموحة
+      allowedIndices: [0, 1, 2, 3, 4, 5, 6, 7],
         
       lastResult: null,
       
@@ -240,15 +237,15 @@ export default {
     },
     
     getSegmentColor(value) {
-      if (value === 2) return '#d32f2f' // أحمر (كان 0 والآن 2)
-      if (value === 3) return '#fb8c00' // برتقالي (كان 0.5 والآن 3)
-      if (value === 5) return '#388e3c' // أخضر (كان 1 والآن 5)
-      if (value === 10) return '#ffd700' // ذهبي (كان 1.5 والآن 10)
+      if (value === 0) return '#d32f2f' // أحمر (خسارة)
+      if (value === 0.5 || value === 1) return '#fb8c00' // برتقالي
+      if (value === 1.5 || value === 2 || value === 3 || value === 5) return '#388e3c' // أخضر
+      if (value === 10) return '#ffd700' // ذهبي
       return '#388e3c'
     },
     
     getTextColor(value) {
-      if (value === 2 || value === 3 || value === 5) return 'white'
+      if (value === 0 || value === 0.5 || value === 1 || value === 2 || value === 3 || value === 5) return 'white'
       if (value === 10) return '#222'
       return 'white'
     },
@@ -291,7 +288,6 @@ export default {
       if (rotation < 0) rotation += 360
       
       // السهم في الأعلى (زاوية 90 درجة)
-      // القطاع الذي يشير إليه السهم هو القطاع الذي تكون زاويته 90 درجة في الاتجاه المعاكس للدوران
       const pointerAngle = 90
       
       // الزاوية الفعلية للقطاع تحت السهم
@@ -367,7 +363,7 @@ export default {
       // تشغيل صوت الدوران
       this.playSound(this.spinSound)
       
-      // اختيار قطاع عشوائي من جميع المؤشرات (كلها مسموحة الآن)
+      // اختيار قطاع عشوائي
       const winningIndex = Math.floor(Math.random() * this.wheelSegments.length)
       const winningSegment = this.wheelSegments[winningIndex]
       
@@ -376,17 +372,12 @@ export default {
       // منتصف القطاع الفائز
       const segmentMiddle = (winningIndex * this.segmentAngle) + (this.segmentAngle / 2)
       
-      // السهم في الأعلى (زاوية 90 درجة في نظام SVG)
-      // الزاوية المطلوبة لجعل منتصف القطاع تحت السهم = 90 - منتصف القطاع
+      // السهم في الأعلى (زاوية 90 درجة)
       let requiredAngle = 90 - segmentMiddle
-      
-      // تصحيح الزاوية لتكون ضمن 0-360
       if (requiredAngle < 0) requiredAngle += 360
       
-      // عدد دورات عشوائي (15-25 دورة) لتبدو طبيعية
+      // عدد دورات عشوائي
       const spins = 15 + Math.floor(Math.random() * 10)
-      
-      // الزاوية المستهدفة: (360 * عدد الدورات) + الزاوية المطلوبة
       const targetRotation = (360 * spins) + requiredAngle
       
       const start = this.wheelRotation
@@ -396,8 +387,6 @@ export default {
       const animate = (time) => {
         const elapsed = time - startTime
         const progress = Math.min(elapsed / duration, 1)
-        
-        // منحنى التباطؤ الطبيعي (يبدأ سريعًا ثم يبطئ)
         const easeOut = 1 - Math.pow(1 - progress, 3)
         
         this.wheelRotation = start + ((targetRotation - start) * easeOut)
@@ -405,12 +394,9 @@ export default {
         if (progress < 1) {
           requestAnimationFrame(animate)
         } else {
-          // التأكد من الزاوية النهائية مضبوطة
           this.wheelRotation = targetRotation
           
-          // ننتظر قليلاً ثم نحدد القطاع الفعلي بناءً على زاوية التوقف
           setTimeout(() => {
-            // تحديد القطاع الذي يقف عنده السهم بدقة
             const actualSegmentIndex = this.getCurrentSegmentIndex()
             const actualSegment = this.wheelSegments[actualSegmentIndex]
             
@@ -432,52 +418,72 @@ export default {
       let message = ''
       let isWin = false
       
-      // حساب النتيجة حسب القيم الجديدة
-      if (multiplier === 2) {
-        // ربح 2x (كانت خسارة كاملة)
+      // نفس المنطق الأصلي للفوز والخسارة
+      if (multiplier === 0) {
+        // خسارة كاملة
+        message = `😢 خسرت ${this.betAmount.toFixed(2)} USDT`
+        this.playSound(this.loseSound)
+        isWin = false
+      } 
+      else if (multiplier === 0.5) {
+        // خسارة نصف
         this.balance += winAmount
         await this.updateBalance(this.balance)
-        message = `🎉 ربحت ${winAmount.toFixed(2)} USDT (2x)`
+        message = `😐 خسرت نصف الرهان! استرجعت ${winAmount.toFixed(2)} USDT`
+        this.playSound(this.loseSound)
+        isWin = false
+      }
+      else if (multiplier === 1) {
+        // تعادل
+        this.balance += this.betAmount
+        await this.updateBalance(this.balance)
+        message = `🤝 تعادل! استرجعت ${this.betAmount.toFixed(2)} USDT`
         this.playSound(this.winSound)
         isWin = true
-      } 
-      else if (multiplier === 3) {
-        // ربح 3x (كانت خسارة نصف)
+      }
+      else if (multiplier === 1.5) {
+        // ربح 1.5x
         this.balance += winAmount
         await this.updateBalance(this.balance)
-        message = `🎉 ربحت ${winAmount.toFixed(2)} USDT (3x)`
+        message = `🎉 ربحت ${winAmount.toFixed(2)} USDT`
+        this.playSound(this.winSound)
+        isWin = true
+      }
+      else if (multiplier === 2) {
+        // ربح 2x
+        this.balance += winAmount
+        await this.updateBalance(this.balance)
+        message = `🎉 ربحت ${winAmount.toFixed(2)} USDT`
+        this.playSound(this.winSound)
+        isWin = true
+      }
+      else if (multiplier === 3) {
+        // ربح 3x
+        this.balance += winAmount
+        await this.updateBalance(this.balance)
+        message = `🎉 ربحت ${winAmount.toFixed(2)} USDT`
         this.playSound(this.winSound)
         isWin = true
       }
       else if (multiplier === 5) {
-        // ربح 5x (كانت تعادل)
+        // ربح 5x
         this.balance += winAmount
         await this.updateBalance(this.balance)
-        message = `🎉 ربحت ${winAmount.toFixed(2)} USDT (5x)`
+        message = `🎉 ربحت ${winAmount.toFixed(2)} USDT`
         this.playSound(this.winSound)
         isWin = true
       }
       else if (multiplier === 10) {
-        // ربح 10x (كانت 1.5x)
+        // ربح 10x
         this.balance += winAmount
         await this.updateBalance(this.balance)
-        message = `🏆 الجائزة الكبرى! ربحت ${winAmount.toFixed(2)} USDT (10x)`
-        this.playSound(this.winSound)
-        isWin = true
-      }
-      else {
-        // أي قيمة أخرى (للأمان)
-        this.balance += this.betAmount
-        await this.updateBalance(this.balance)
-        message = `🔄 قيمة غير متوقعة! استرجعت ${this.betAmount.toFixed(2)} USDT`
+        message = `🏆 الجائزة الكبرى! ربحت ${winAmount.toFixed(2)} USDT`
         this.playSound(this.winSound)
         isWin = true
       }
       
-      // عرض رسالة النتيجة بعد توقف العجلة
       this.showResult(message, isWin)
       
-      // حفظ النتيجة الأخيرة
       this.lastResult = {
         segmentIndex: winningIndex,
         multiplier: multiplier,
@@ -491,7 +497,7 @@ export default {
 </script>
 
 <style scoped>
-/* ===== التصميم العام ===== */
+/* نفس التصميم السابق */
 .game-page {
   background: linear-gradient(135deg, #0a0f1e 0%, #1a1f2f 100%);
   min-height: 100vh;
@@ -504,7 +510,6 @@ export default {
   overflow-x: hidden;
 }
 
-/* ===== الشريط العلوي ===== */
 .top-bar {
   display: flex;
   justify-content: center;
@@ -538,7 +543,6 @@ export default {
   text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
 }
 
-/* ===== رسالة النتيجة ===== */
 .result-message {
   position: fixed;
   top: 80px;
@@ -596,7 +600,6 @@ export default {
   opacity: 0;
 }
 
-/* ===== زر الرجوع ===== */
 .back-button-container {
   margin-bottom: 20px;
   text-align: right;
@@ -625,7 +628,6 @@ export default {
   box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
 }
 
-/* ===== التبويبات ===== */
 .tabs {
   display: flex;
   flex-wrap: wrap;
@@ -639,8 +641,6 @@ export default {
   backdrop-filter: blur(10px);
   border-radius: 20px;
   border: 1px solid rgba(255, 215, 0, 0.2);
-  scrollbar-width: thin;
-  scrollbar-color: #ffd700 #1e2333;
 }
 
 .tabs button {
@@ -672,7 +672,6 @@ export default {
   box-shadow: 0 5px 25px rgba(255, 215, 0, 0.5);
 }
 
-/* ===== وضع ملء الشاشة ===== */
 .game-fullscreen {
   min-height: calc(100vh - 150px);
   display: flex;
@@ -682,7 +681,6 @@ export default {
   padding: 10px 0;
 }
 
-/* ===== بطاقة عجلة الحظ ===== */
 .wheel-card {
   background: rgba(20, 25, 40, 0.95);
   backdrop-filter: blur(10px);
@@ -726,7 +724,6 @@ export default {
   z-index: 0;
 }
 
-/* ===== العجلة ===== */
 .wheel-wrapper {
   position: relative;
   width: 300px;
@@ -771,7 +768,6 @@ export default {
   filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.3));
 }
 
-/* ===== قسم الرهان ===== */
 .bet-section {
   display: flex;
   flex-direction: column;
@@ -870,7 +866,6 @@ export default {
   text-align: center;
 }
 
-/* ===== تحسينات الجوال ===== */
 @media (max-width: 480px) {
   .game-page {
     padding: 10px;
