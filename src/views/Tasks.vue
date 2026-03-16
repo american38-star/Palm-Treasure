@@ -363,10 +363,10 @@ export default {
           // التأكد من الزاوية النهائية مضبوطة
           this.wheelRotation = targetRotation % 360
           
-          // إنهاء الدورة وإظهار النتيجة
+          // إنهاء الدورة وإظهار النتيجة بعد تأخير ثانية واحدة
           setTimeout(() => {
             this.finishSpin(winningIndex, winningSegment, betValue)
-          }, 500)
+          }, 1000) // ثانية واحدة
         }
       }
       
