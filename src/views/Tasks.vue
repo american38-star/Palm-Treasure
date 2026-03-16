@@ -146,29 +146,29 @@ export default {
       isSpinning: false,
       betAmount: null,
       
-      // قطاعات العجلة - تم تعديل ترتيب الأرقام فقط كما هو مطلوب
+      // قطاعات العجلة (8 قطاعات) - تم تعديل ترتيب الأرقام فقط
       wheelSegments: [
-        { value: 0 },     // قطاع 0 - مكان 2x سابقاً (الآن 0x)
-        { value: 3 },     // قطاع 1 - مكان 0.5x سابقاً (الآن 3x)
-        { value: 5 },     // قطاع 2 - مكان 1x سابقاً (الآن 5x)
-        { value: 10 },    // قطاع 3 - مكان 1.5x سابقاً (الآن 10x)
-        { value: 2 },     // قطاع 4 - مكان 0x سابقاً (الآن 2x)
-        { value: 0.5 },   // قطاع 5 - مكان 3x سابقاً (الآن 0.5x)
-        { value: 1 },     // قطاع 6 - مكان 5x سابقاً (الآن 1x)
-        { value: 1.5 }    // قطاع 7 - مكان 10x سابقاً (الآن 1.5x)
+        { value: 0 },     // قطاع 0 - كان 2x سابقاً، أصبح 0x
+        { value: 3 },     // قطاع 1 - كان 0.5x سابقاً، أصبح 3x
+        { value: 5 },     // قطاع 2 - كان 1x سابقاً، أصبح 5x
+        { value: 10 },    // قطاع 3 - كان 1.5x سابقاً، أصبح 10x
+        { value: 2 },     // قطاع 4 - كان 0x سابقاً، أصبح 2x
+        { value: 0.5 },   // قطاع 5 - كان 3x سابقاً، أصبح 0.5x
+        { value: 1 },     // قطاع 6 - كان 5x سابقاً، أصبح 1x
+        { value: 1.5 }    // قطاع 7 - كان 10x سابقاً، أصبح 1.5x
       ],
       
-      // القطاعات المسموح التوقف عليها (لم يتم تغييرها)
+      // القطاعات المسموح التوقف عليها (تم تعديل المؤشرات فقط لتتناسب مع الترتيب الجديد)
       allowedSegments: {
         // 0x (خسارة)
-        loss: { index: 0, value: 0 }, // الآن 0x في index 0
+        loss: { index: 0, value: 0 },     // 0x الآن في القطاع 0
         // ربح صغير (0.5x, 1x)
         smallWin: [
-          { index: 5, value: 0.5 },   // 0.5x في index 5
-          { index: 6, value: 1 }      // 1x في index 6
+          { index: 5, value: 0.5 },       // 0.5x الآن في القطاع 5
+          { index: 6, value: 1 }          // 1x الآن في القطاع 6
         ],
         // ربح كبير (1.5x)
-        bigWin: { index: 7, value: 1.5 } // 1.5x في index 7
+        bigWin: { index: 7, value: 1.5 }  // 1.5x الآن في القطاع 7
       },
       
       lastResult: null
@@ -242,9 +242,9 @@ export default {
       return centerY + radius * Math.sin(angle)
     },
     
-    // تحديد القطاع الفائز بناءً على الاحتمالات (لم يتم تغييرها)
+    // تحديد القطاع الفائز بناءً على الاحتمالات (لم يتغير)
     getWinningSegment() {
-      const random = Math.random() * 100 // رقم عشوائي من 0 إلى 100
+      const random = Math.random() * 100
       
       if (random < 70) {
         // 70% خسارة - 0x
@@ -276,22 +276,10 @@ export default {
     
     // حساب زاوية الدوران المطلوبة للوصول إلى منتصف القطاع المطلوب
     calculateTargetRotation(winningIndex) {
-      // السهم في الأعلى (زاوية 90 درجة في نظام SVG)
-      // منتصف القطاع = (index * 45) + 22.5
       const segmentMiddle = (winningIndex * 45) + 22.5
-      
-      // الزاوية المطلوبة لجعل منتصف القطاع تحت السهم
-      // السهم عند 90 درجة، نحتاج لتدوير العجلة بحيث يصبح منتصف القطاع عند 90
-      // 90 - منتصف القطاع = مقدار الدوران المطلوب
       let requiredAngle = 90 - segmentMiddle
-      
-      // تصحيح الزاوية لتكون ضمن 0-360
       requiredAngle = ((requiredAngle % 360) + 360) % 360
-      
-      // عدد الدورات العشوائي (5-8 دورات كاملة)
       const spins = 5 + Math.floor(Math.random() * 4)
-      
-      // الزاوية النهائية = (360 * عدد الدورات) + الزاوية المطلوبة
       return (360 * spins) + requiredAngle
     },
     
@@ -354,26 +342,20 @@ export default {
       const targetRotation = this.calculateTargetRotation(winningSegment.index)
       
       const start = this.wheelRotation % 360
-      const duration = 3000 // 3 ثواني
+      const duration = 3000
       const startTime = performance.now()
       
       const animate = (time) => {
         const elapsed = time - startTime
         const progress = Math.min(elapsed / duration, 1)
-        
-        // منحنى التباطؤ
         const easeOut = 1 - Math.pow(1 - progress, 4)
-        
-        // حساب الزاوية الحالية مع مراعاة الاتجاه الأقصر
         let currentRotation = start + ((targetRotation - start) * easeOut)
         this.wheelRotation = currentRotation
         
         if (progress < 1) {
           requestAnimationFrame(animate)
         } else {
-          // التأكد من الزاوية النهائية
           this.wheelRotation = targetRotation
-          
           setTimeout(() => {
             this.finishSpin(winningSegment)
           }, 200)
@@ -390,13 +372,11 @@ export default {
       const winAmount = this.betAmount * multiplier
       const isWin = multiplier > 0
       
-      // تحديث الرصيد إذا ربح
       if (isWin) {
         this.balance += winAmount
         await this.updateBalance(this.balance)
       }
       
-      // عرض رسالة النتيجة
       if (multiplier === 0) {
         this.showResult(`😢 خسرت ${this.betAmount.toFixed(2)} USDT`, false)
       } else if (multiplier === 0.5) {
@@ -415,7 +395,6 @@ export default {
         this.showResult(`🏆 جائزة كبرى! ${winAmount.toFixed(2)} USDT`, true)
       }
       
-      // حفظ النتيجة
       this.lastResult = {
         ...winningSegment,
         winAmount,
