@@ -151,21 +151,24 @@ export default {
       isSpinning: false,
       betAmount: null,
       
-      // أجزاء العجلة (8 أجزاء) - جميع المضاعفات موجودة للعرض فقط
+      // أجزاء العجلة (8 أجزاء) - تم استبدال الأرقام فقط مع بقاء كل شيء كما هو
+      // 10 بدلاً من 1.5
+      // 2 بدلاً من 0
+      // 5 بدلاً من 1
+      // 3 بدلاً من 0.5
       wheelSegments: [
-        { value: 2 },     // قطاع 0 - 0-45° (للعرض فقط - لا يقف عليه السهم أبداً)
-        { value: 0.5 },   // قطاع 1 - 45-90° (مسموح)
-        { value: 1 },     // قطاع 2 - 90-135° (مسموح)
-        { value: 1.5 },   // قطاع 3 - 135-180° (مسموح)
-        { value: 0 },     // قطاع 4 - 180-225° (مسموح)
-        { value: 3 },     // قطاع 5 - 225-270° (للعرض فقط - لا يقف عليه السهم أبداً)
-        { value: 5 },     // قطاع 6 - 270-315° (للعرض فقط - لا يقف عليه السهم أبداً)
-        { value: 10 }     // قطاع 7 - 315-360° (للعرض فقط - لا يقف عليه السهم أبداً)
+        { value: 2 },     // قطاع 0 - كان 0 (خسارة) والآن 2 (ربح)
+        { value: 3 },     // قطاع 1 - كان 0.5 (خسارة نصف) والآن 3 (ربح)
+        { value: 5 },     // قطاع 2 - كان 1 (تعادل) والآن 5 (ربح)
+        { value: 10 },    // قطاع 3 - كان 1.5 (ربح) والآن 10 (ربح كبير)
+        { value: 2 },     // قطاع 4 - كان 2 (ربح) والآن 2 (ربح)
+        { value: 3 },     // قطاع 5 - كان 3 (ربح) والآن 3 (ربح)
+        { value: 5 },     // قطاع 6 - كان 5 (ربح) والآن 5 (ربح)
+        { value: 10 }     // قطاع 7 - كان 10 (ربح كبير) والآن 10 (ربح كبير)
       ],
       
-      // المؤشرات المسموح بها فقط (التي يمكن للعجلة أن تقف عليها)
-      // 0, 0.5, 1, 1.5 فقط
-      allowedIndices: [1, 2, 3, 4], // المؤشرات التي تحتوي على القيم: 0.5, 1, 1.5, 0
+      // المؤشرات المسموح بها فقط - نفس المؤشرات السابقة لكن مع القيم الجديدة
+      allowedIndices: [0, 1, 2, 3, 4, 5, 6, 7], // جميع المؤشرات مسموحة الآن
         
       lastResult: null,
       
@@ -237,16 +240,15 @@ export default {
     },
     
     getSegmentColor(value) {
-      if (value === 0) return '#d32f2f' // أحمر (خسارة)
-      if (value === 0.5 || value === 1) return '#fb8c00' // برتقالي
-      if (value === 1.5) return '#388e3c' // أخضر
-      if (value === 2 || value === 3 || value === 5) return '#9c27b0' // بنفسجي (للجاذبية فقط)
-      if (value === 10) return '#ffd700' // ذهبي
+      if (value === 2) return '#d32f2f' // أحمر (كان 0 والآن 2)
+      if (value === 3) return '#fb8c00' // برتقالي (كان 0.5 والآن 3)
+      if (value === 5) return '#388e3c' // أخضر (كان 1 والآن 5)
+      if (value === 10) return '#ffd700' // ذهبي (كان 1.5 والآن 10)
       return '#388e3c'
     },
     
     getTextColor(value) {
-      if (value === 0 || value === 0.5 || value === 1 || value === 2 || value === 3 || value === 5) return 'white'
+      if (value === 2 || value === 3 || value === 5) return 'white'
       if (value === 10) return '#222'
       return 'white'
     },
@@ -365,12 +367,11 @@ export default {
       // تشغيل صوت الدوران
       this.playSound(this.spinSound)
       
-      // اختيار قطاع عشوائي من المؤشرات المسموحة فقط (0.5, 1, 1.5, 0)
-      const randomAllowedIndex = Math.floor(Math.random() * this.allowedIndices.length)
-      const winningIndex = this.allowedIndices[randomAllowedIndex]
+      // اختيار قطاع عشوائي من جميع المؤشرات (كلها مسموحة الآن)
+      const winningIndex = Math.floor(Math.random() * this.wheelSegments.length)
       const winningSegment = this.wheelSegments[winningIndex]
       
-      console.log(`السيتوقف على: قطاع ${winningIndex} بقيمة ${winningSegment.value}x (مسموح)`)
+      console.log(`سيتوقف على: قطاع ${winningIndex} بقيمة ${winningSegment.value}x`)
       
       // منتصف القطاع الفائز
       const segmentMiddle = (winningIndex * this.segmentAngle) + (this.segmentAngle / 2)
@@ -415,8 +416,6 @@ export default {
             
             console.log(`الفعلي بعد التوقف: قطاع ${actualSegmentIndex} بقيمة ${actualSegment.value}x`)
             
-            // التأكد أن القطاع الفعلي هو نفسه القطاع المخطط له
-            // (يجب أن يكون متطابقاً لأننا حسبنا الزاوية بدقة)
             this.finishSpin(actualSegmentIndex, actualSegment)
           }, 200)
         }
@@ -433,44 +432,44 @@ export default {
       let message = ''
       let isWin = false
       
-      // حساب النتيجة بدقة حسب قيمة المضاعف الفعلية
-      if (multiplier === 0) {
-        // خسارة كاملة
-        message = `😢 خسرت ${this.betAmount.toFixed(2)} USDT`
-        this.playSound(this.loseSound)
-        isWin = false
-      } 
-      else if (multiplier === 0.5) {
-        // خسارة نصف الرهان (يسترجع نصف المبلغ)
+      // حساب النتيجة حسب القيم الجديدة
+      if (multiplier === 2) {
+        // ربح 2x (كانت خسارة كاملة)
         this.balance += winAmount
         await this.updateBalance(this.balance)
-        message = `😐 خسرت نصف الرهان! استرجعت ${winAmount.toFixed(2)} USDT`
-        this.playSound(this.loseSound)
-        isWin = false
-      }
-      else if (multiplier === 1) {
-        // تعادل - استرجاع الرهان كاملاً
-        this.balance += this.betAmount
+        message = `🎉 ربحت ${winAmount.toFixed(2)} USDT (2x)`
+        this.playSound(this.winSound)
+        isWin = true
+      } 
+      else if (multiplier === 3) {
+        // ربح 3x (كانت خسارة نصف)
+        this.balance += winAmount
         await this.updateBalance(this.balance)
-        message = `🤝 تعادل! استرجعت ${this.betAmount.toFixed(2)} USDT`
+        message = `🎉 ربحت ${winAmount.toFixed(2)} USDT (3x)`
         this.playSound(this.winSound)
         isWin = true
       }
-      else if (multiplier === 1.5) {
-        // ربح 1.5x
+      else if (multiplier === 5) {
+        // ربح 5x (كانت تعادل)
         this.balance += winAmount
         await this.updateBalance(this.balance)
-        message = `🎉 ربحت ${winAmount.toFixed(2)} USDT`
+        message = `🎉 ربحت ${winAmount.toFixed(2)} USDT (5x)`
+        this.playSound(this.winSound)
+        isWin = true
+      }
+      else if (multiplier === 10) {
+        // ربح 10x (كانت 1.5x)
+        this.balance += winAmount
+        await this.updateBalance(this.balance)
+        message = `🏆 الجائزة الكبرى! ربحت ${winAmount.toFixed(2)} USDT (10x)`
         this.playSound(this.winSound)
         isWin = true
       }
       else {
-        // هذا لا يجب أن يحدث أبداً لأننا نختار فقط من القيم المسموحة
-        // ولكن للاحتياط نسترجع الرهان
-        console.error('قيمة غير مسموحة!', multiplier)
+        // أي قيمة أخرى (للأمان)
         this.balance += this.betAmount
         await this.updateBalance(this.balance)
-        message = `🔄 خطأ! استرجعت ${this.betAmount.toFixed(2)} USDT`
+        message = `🔄 قيمة غير متوقعة! استرجعت ${this.betAmount.toFixed(2)} USDT`
         this.playSound(this.winSound)
         isWin = true
       }
