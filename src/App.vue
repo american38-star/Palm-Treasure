@@ -6,14 +6,36 @@
       <span class="lang-code">{{ currentLang }}</span>
     </div>
 
-    <!-- زر الدعم - تم تحديث الرابط -->
-    <a class="circle-btn support-btn"
-       href="https://t.me/Palm_Treasure"
-       target="_blank"
-       @mousedown="startDrag"
-       @touchstart="startDrag">
-      <i class="fas fa-headset"></i>
-    </a>
+    <!-- زر واتساب ذهبي جديد - بدلاً من تليجرام -->
+    <div class="circle-btn whatsapp-btn" @click="toggleWhatsAppMenu" @mousedown="startDrag" @touchstart="startDrag">
+      <i class="fab fa-whatsapp"></i>
+    </div>
+
+    <!-- قائمة واتساب -->
+    <transition name="fade">
+      <div v-if="showWhatsAppMenu" class="whatsapp-menu" @click.stop>
+        <div class="whatsapp-menu-header">
+          <i class="fab fa-whatsapp"></i>
+          <span>تواصل معنا عبر واتساب</span>
+        </div>
+        <div 
+          class="whatsapp-item" 
+          @click="openWhatsApp('finance')"
+        >
+          <i class="fas fa-coins"></i>
+          <span class="whatsapp-name">قسم المالية</span>
+          <span class="whatsapp-arrow"><i class="fas fa-arrow-left"></i></span>
+        </div>
+        <div 
+          class="whatsapp-item" 
+          @click="openWhatsApp('support')"
+        >
+          <i class="fas fa-headset"></i>
+          <span class="whatsapp-name">الدعم الفني</span>
+          <span class="whatsapp-arrow"><i class="fas fa-arrow-left"></i></span>
+        </div>
+      </div>
+    </transition>
 
     <!-- زر انستغرام - تم تحديث الرابط -->
     <a class="circle-btn instagram-btn"
@@ -354,9 +376,21 @@ export default {
       showLangMenu: false,
       currentLang: "AR",
 
+      showWhatsAppMenu: false,
       showAd: false,
       showOfferMessage: false,
       hasNewOffer: true,
+
+      whatsappNumbers: {
+        finance: {
+          number: "447348577110",
+          message: "مرحباً، أود التواصل مع قسم المالية بخصوص استفسار"
+        },
+        support: {
+          number: "447348577110",
+          message: "مرحباً، أحتاج مساعدة من الدعم الفني"
+        }
+      },
 
       vipPlans: [
         { level: 'VIP 1', recharge: '0', daily: '0.3', monthly: '9', yearly: '109.5', tasks: '1', status: 'مفعل الآن' },
@@ -457,6 +491,30 @@ export default {
         return;
       }
       this.showLangMenu = !this.showLangMenu;
+      if (this.showLangMenu) {
+        this.showWhatsAppMenu = false;
+      }
+    },
+
+    toggleWhatsAppMenu(event) {
+      if (this.hasDragged) {
+        this.hasDragged = false;
+        return;
+      }
+      this.showWhatsAppMenu = !this.showWhatsAppMenu;
+      if (this.showWhatsAppMenu) {
+        this.showLangMenu = false;
+      }
+    },
+
+    openWhatsApp(department) {
+      const dept = this.whatsappNumbers[department];
+      if (dept) {
+        const message = encodeURIComponent(dept.message);
+        const whatsappUrl = `https://wa.me/${dept.number}?text=${message}`;
+        window.open(whatsappUrl, '_blank');
+      }
+      this.showWhatsAppMenu = false;
     },
 
     setLanguage(lang) {
@@ -739,9 +797,90 @@ body {
   background: linear-gradient(135deg, #11151C, #1A1F2A);
 }
 
-.support-btn {
+.whatsapp-btn {
   right: 70px;
   bottom: 100px;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
+  border-color: #D4AF37;
+}
+
+.whatsapp-btn i {
+  color: #0A0C10;
+  font-size: 22px;
+}
+
+.whatsapp-btn:hover i {
+  color: #D4AF37;
+}
+
+.whatsapp-menu {
+  position: fixed;
+  bottom: 160px;
+  right: 70px;
+  width: 240px;
+  background: #11151C;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 2px #D4AF37;
+  z-index: 9999;
+  overflow: hidden;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.whatsapp-menu-header {
+  padding: 15px;
+  background: linear-gradient(135deg, #25D366, #128C7E);
+  color: white;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.whatsapp-menu-header i {
+  font-size: 18px;
+}
+
+.whatsapp-item {
+  padding: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #ffffff;
+  transition: all 0.2s;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+}
+
+.whatsapp-item:last-child {
+  border-bottom: none;
+}
+
+.whatsapp-item:hover {
+  background: #1A1F2A;
+}
+
+.whatsapp-item:hover .whatsapp-name {
+  color: #D4AF37;
+}
+
+.whatsapp-item i:first-child {
+  color: #D4AF37;
+  font-size: 18px;
+  width: 24px;
+}
+
+.whatsapp-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.whatsapp-arrow {
+  color: #D4AF37;
+  font-size: 14px;
+  opacity: 0.7;
 }
 
 .instagram-btn {
@@ -1344,7 +1483,8 @@ body {
   }
   
   .lang-btn { right: 10px; bottom: 90px; }
-  .support-btn { right: 60px; bottom: 90px; }
+  .whatsapp-btn { right: 60px; bottom: 90px; }
+  .whatsapp-menu { right: 60px; bottom: 150px; width: 220px; }
   .instagram-btn { right: 110px; bottom: 90px; }
   .offer-btn { right: 160px; bottom: 90px; }
   
@@ -1390,7 +1530,8 @@ body {
 
 @media (max-width: 480px) {
   .lang-btn { right: 5px; bottom: 85px; }
-  .support-btn { right: 50px; bottom: 85px; }
+  .whatsapp-btn { right: 50px; bottom: 85px; }
+  .whatsapp-menu { right: 50px; bottom: 140px; width: 200px; }
   .instagram-btn { right: 95px; bottom: 85px; }
   .offer-btn { right: 140px; bottom: 85px; }
   
