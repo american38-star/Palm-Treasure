@@ -8,6 +8,9 @@
 
   <!-- أيقونة الموقع (favicon) - رمز النخلة 🌴 -->
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  
+  <!-- ربط ملف manifest.json -->
+  <link rel="manifest" href="/manifest.json">
 
   <!-- ============================= -->
   <!--  FontAwesome لإظهار الأيقونات -->
@@ -31,7 +34,7 @@
     body {
       margin: 0;
       padding: 0;
-      background: #000000 !important;
+      background: #000000;
       font-family: "Tajawal", sans-serif;
       direction: rtl;
       min-height: 100vh;
@@ -49,13 +52,7 @@
 <body>
 
   <!-- جذر التطبيق -->
-  <div id="app">
-    <!-- محتوى تجريبي ليظهر أن الخلفية سوداء -->
-    <div style="padding: 20px; text-align: center;">
-      <h1 style="color: #ffffff;">مرحباً بك في Palm Treasure</h1>
-      <p style="color: #cccccc;">الخلفية سوداء الآن</p>
-    </div>
-  </div>
+  <div id="app"></div>
 
   <!-- تحميل تطبيق Vue -->
   <script type="module" src="/src/main.js"></script>
