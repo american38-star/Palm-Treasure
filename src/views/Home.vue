@@ -1,260 +1,275 @@
 <template>
-  <div class="home-container">
-
-    <!-- الشريط العلوي -->
-    <div class="top-bar">
-      <div class="top-left">
-        <i class="fas fa-headset icon"></i>
-        <i class="fas fa-envelope icon"></i>
-      </div>
-
-      <div class="user-box">
-        <div class="welcome">مرحباً، {{ username }}</div>
-        <div class="balance">الرصيد: <strong>{{ balance }} USDT</strong></div>
-      </div>
-    </div>
-
-    <!-- شريط الأزرار -->
-    <div class="quick-buttons">
-      <button class="quick-btn">
-        <span class="btn-icon">⏱</span>
-        وفر الوقت
-      </button>
-      <button class="quick-btn">
-        <span class="btn-icon">💰</span>
-        وفر المال
-      </button>
-    </div>
-
-    <!-- شريط الإعلان -->
-    <div class="notice-bar">
-      <span class="notice-icon">🌴</span>
-      شراكة عالمية مع Amazon, eBay, TikTok, Aliexpress, Alibaba, Shopee
-    </div>
-
-    <!-- القائمة الرئيسية -->
-    <div class="grid-menu">
-      <div
-        class="item"
-        v-for="item in menu"
-        :key="item.title"
-        @click="go(item.route)"
+  <div class="home">
+    <!-- فيديو Intro -->
+    <div v-if="showVideo" class="video-container">
+      <video
+        autoplay
+        muted
+        playsinline
+        @ended="hideVideo"
+        class="intro-video"
       >
-        <div class="icon-box">
-          <i :class="item.icon"></i>
-        </div>
-        <p>{{ item.title }}</p>
-      </div>
-
-      <!-- زر الشركة لعرض الإعلان -->
-      <div class="item company-item" @click="showCompanyAd">
-        <div class="icon-box gold-glow">
-          <i class="fas fa-building"></i>
-        </div>
-        <p>الشركة</p>
-      </div>
-
-      <!-- زر الشروط والأحكام الجديد -->
-      <div class="item terms-item" @click="showTermsAd">
-        <div class="icon-box gold-glow">
-          <i class="fas fa-scroll"></i>
-        </div>
-        <p>الشروط والأحكام</p>
-      </div>
+        <source src="/intro.mp4" type="video/mp4">
+        متصفحك لا يدعم تشغيل الفيديو.
+      </video>
     </div>
 
-    <!-- إعلان Popup فاخر للشركة -->
-    <div id="companyAd" class="ad-overlay" v-if="showAd" @click.self="closeAd">
-      <div class="ad-box">
-        <div class="ad-header">
-          <h2>🌴 Palm Treasure</h2>
-          <button class="close-btn" @click="closeAd">×</button>
+    <!-- محتوى الصفحة الرئيسية (يظهر بعد إخفاء الفيديو) -->
+    <div v-else class="home-container">
+      <!-- الشريط العلوي -->
+      <div class="top-bar">
+        <div class="top-left">
+          <i class="fas fa-headset icon"></i>
+          <i class="fas fa-envelope icon"></i>
         </div>
 
-        <div class="ad-content">
-          <div class="company-message">
-            <p>
-              مرحباً بالجميع 🌟<br><br>
-              يسرّنا أن نعرّفكم بشركة Palm Treasure التي تأسست في إنجلترا بتاريخ 5 فبراير 2026، وهي شركة استثمارية متخصصة في مجال التجارة الإلكترونية. تمتلك الشركة فريقاً تقنياً محترفاً وخبرة مالية قوية، ويقع مقرها الرئيسي حالياً في منطقة الأعمال المركزية في إنجلترا.<br><br>
-              وانطلاقاً من رؤيتنا للتوسع وبناء شبكة تعاون واسعة، قمنا بإنشاء فروع ووكالات في عدد من الدول العربية مثل لبنان، الجزائر، ليبيا، والعراق، ونسعى خلال المرحلة القادمة إلى توسيع نشاطنا وانتشارنا في مختلف دول الشرق الأوسط.<br><br>
-              لقد جاء تأسيس هذه الشركة بعد دراسة عميقة لما حدث خلال عامي 2024 و2025، حيث ظهرت العديد من المنصات الوهمية التي خدعت الكثير من الناس ولم تستمر طويلاً. ومن هنا كان هدفنا واضحاً: تحويل هذا المجال إلى منصة حقيقية وموثوقة يستفيد منها الأعضاء كما تستفيد منها الشركة، ضمن نظام عادل وشفاف.<br><br>
-              وقد تحقق هذا المشروع بجهود كبيرة من الفريق التقني تحت إشراف المهندس أليكس ديروب، الذي لعب دوراً أساسياً في تطوير النظام التقني للشركة. وتقديراً لجهوده المميزة ومساهمته في نجاح هذا المشروع، تمت ترقيته إلى منصب نائب المدير.<br><br>
-              نحن في Palm Treasure نؤمن بأن النجاح الحقيقي يجب أن يكون متاحاً للجميع، لذلك تم تصميم هذا المشروع ليكون فرصة متاحة لكل الناس، وخاصة للطبقة المتوسطة وذوي الدخل المحدود، حتى يتمكنوا من تحسين أوضاعهم والمشاركة في فرص الاقتصاد الرقمي.<br><br>
-              ولهذا السبب تم وضع نظام واضح وقوانين عادلة تضمن حماية حقوق الموظفين والأعضاء قبل حقوق المستثمرين، مع مراعاة الظروف الاقتصادية والاجتماعية في المجتمعات العربية.<br><br>
-              وسيتم تطبيق هذا النظام المبرمج في معظم الدول العربية ابتداءً من 1 مارس 2026 وحتى نهاية عام 2028، وخلال هذه الفترة سيتم تقييم الأداء والنتائج. وبعد ذلك قد يتم تطوير النظام وإجراء بعض التعديلات بناءً على كفاءة الأعضاء وجهودهم وإخلاصهم في العمل.<br><br>
-              كما نعمل منذ الآن على التخطيط لمجموعة من الفرص المستقبلية والمشاريع الجديدة التي ستوفر مزيداً من الإمكانيات لأعضاء الشركة في السنوات القادمة.<br><br>
-              نتمنى للجميع التوفيق، ونسعد بانضمامكم إلى مجتمع Palm Treasure 🌴
-            </p>
-          </div>
-          
-          <div class="vip-section">
-            <h3>📊 خطط العضوية والأرباح</h3>
-            
-            <div class="vip-grid">
-              <div class="vip-card" v-for="vip in vipPlans" :key="vip.level">
-                <div class="vip-header" :class="getVipClass(vip.level)">
-                  <span class="vip-level-badge">{{ vip.level }}</span>
-                </div>
-                <div class="vip-details">
-                  <div class="vip-detail-item">
-                    <span class="detail-label">💰 الاشتراك:</span>
-                    <span class="detail-value">{{ vip.recharge }} USDT</span>
-                  </div>
-                  <div class="vip-detail-item">
-                    <span class="detail-label">📈 الربح اليومي:</span>
-                    <span class="detail-value">{{ vip.daily }} USDT</span>
-                  </div>
-                  <div class="vip-detail-item">
-                    <span class="detail-label">📅 الربح الشهري:</span>
-                    <span class="detail-value">{{ vip.monthly }} USDT</span>
-                  </div>
-                  <div v-if="vip.yearly" class="vip-detail-item">
-                    <span class="detail-label">📊 الإجمالي السنوي:</span>
-                    <span class="detail-value">{{ vip.yearly }} USDT</span>
-                  </div>
-                  <div v-if="vip.percentage" class="vip-detail-item">
-                    <span class="detail-label">📊 نسبة الربح:</span>
-                    <span class="detail-value highlight">{{ vip.percentage }}</span>
-                  </div>
-                  <div v-if="vip.tasks" class="vip-detail-item">
-                    <span class="detail-label">📝 مهمة يومية:</span>
-                    <span class="detail-value">{{ vip.tasks }}</span>
-                  </div>
-                  <div v-if="vip.status" class="vip-detail-item">
-                    <span class="detail-label">✅ الحالة:</span>
-                    <span class="detail-value status-active">{{ vip.status }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="commission-section">
-            <h3>🤝 نظام العمولات</h3>
-            <div class="commission-levels">
-              <div class="commission-level">المستوى 1: 6%</div>
-              <div class="commission-level">المستوى 2: 2%</div>
-              <div class="commission-level">المستوى 3: 1%</div>
-            </div>
-          </div>
-
-          <div class="partners-section">
-            <h3>🌐 شراكات عالمية</h3>
-            <p>Amazon, eBay, TikTok, Aliexpress, Alibaba, Shopee</p>
-          </div>
-
-          <div class="cta-message">
-            <p>🚀 اختر المستوى المناسب لك وابدأ اليوم، فكل خطوة صغيرة قد تكون بداية لنجاح كبير مع Palm Treasure 🌴</p>
-          </div>
+        <div class="user-box">
+          <div class="welcome">مرحباً، {{ username }}</div>
+          <div class="balance">الرصيد: <strong>{{ balance }} USDT</strong></div>
         </div>
-
-        <button class="ad-btn" @click="closeAd">أنا أعرف</button>
       </div>
-    </div>
 
-    <!-- إعلان Popup جديد للشروط والأحكام -->
-    <div id="termsAd" class="ad-overlay" v-if="showTerms" @click.self="closeTerms">
-      <div class="ad-box">
-        <div class="ad-header">
-          <h2>📜 الشروط والأحكام</h2>
-          <button class="close-btn" @click="closeTerms">×</button>
+      <!-- شريط الأزرار -->
+      <div class="quick-buttons">
+        <button class="quick-btn">
+          <span class="btn-icon">⏱</span>
+          وفر الوقت
+        </button>
+        <button class="quick-btn">
+          <span class="btn-icon">💰</span>
+          وفر المال
+        </button>
+      </div>
+
+      <!-- شريط الإعلان -->
+      <div class="notice-bar">
+        <span class="notice-icon">🌴</span>
+        شراكة عالمية مع Amazon, eBay, TikTok, Aliexpress, Alibaba, Shopee
+      </div>
+
+      <!-- القائمة الرئيسية -->
+      <div class="grid-menu">
+        <div
+          class="item"
+          v-for="item in menu"
+          :key="item.title"
+          @click="go(item.route)"
+        >
+          <div class="icon-box">
+            <i :class="item.icon"></i>
+          </div>
+          <p>{{ item.title }}</p>
         </div>
 
-        <div class="ad-content">
-          <div class="terms-message">
-            <h3>📊 عقود رجال الأعمال</h3>
-            <p>
-              في عالم الأعمال الحديث، لا يُقاس النجاح فقط بما يحققه الشخص لنفسه، بل بقدرته على بناء فريق قوي وفعّال يقوده نحو التقدم والازدهار. ومن هذا المنطلق، تعتمد الشركة نظاماً مميزاً لتقدير القادة وتحفيزهم على تطوير فرقهم وتحقيق نتائج أفضل.<br><br>
-              عندما تتمكن من بناء فريق قوي وزيادة عدد الأعضاء النشطين، فإن الشركة تقوم بتقدير جهودك ومنحك مزايا إضافية تعكس مكانتك القيادية داخل الفريق.
-            </p>
-            
-            <h4>📌 عقود رجال الأعمال</h4>
-            <p>
-              عند وصول عدد أعضاء فريقك إلى 70 عضواً نشطاً أو أكثر، تقوم الشركة بإبرام عقد رسمي معك، وذلك لضمان حقوقك وتقديراً لجهودك في بناء فريق ناجح وإدارته بكفاءة. ويعد هذا العقد دليلاً على ثقة الشركة بك كقائد قادر على تحقيق النجاح والتطوير المستمر.
-            </p>
-            
-            <p>💼 إضافة إلى التقدير المعنوي، تمنحك الشركة راتباً شهرياً ثابتاً يتناسب مع حجم فريقك ونشاطه، وفق سلم الترقيات القيادية التالي:</p>
-            
-            <div class="promotion-table">
-              <div class="promotion-row">
-                <div class="promotion-cell">🔹 70 عضواً نشطاً</div>
-                <div class="promotion-cell">رتبة مساعد فريق</div>
-                <div class="promotion-cell highlight">💰 راتب شهري: 200 دولار</div>
-              </div>
-              <div class="promotion-row">
-                <div class="promotion-cell">🔹 140 عضواً نشطاً</div>
-                <div class="promotion-cell">رتبة مشرف فريق</div>
-                <div class="promotion-cell highlight">💰 راتب شهري: 350 دولاراً</div>
-              </div>
-              <div class="promotion-row">
-                <div class="promotion-cell">🔹 300 عضو نشط</div>
-                <div class="promotion-cell">رتبة مدير فريق</div>
-                <div class="promotion-cell highlight">💰 راتب شهري: 500 دولار</div>
-              </div>
+        <!-- زر الشركة لعرض الإعلان -->
+        <div class="item company-item" @click="showCompanyAd">
+          <div class="icon-box gold-glow">
+            <i class="fas fa-building"></i>
+          </div>
+          <p>الشركة</p>
+        </div>
+
+        <!-- زر الشروط والأحكام الجديد -->
+        <div class="item terms-item" @click="showTermsAd">
+          <div class="icon-box gold-glow">
+            <i class="fas fa-scroll"></i>
+          </div>
+          <p>الشروط والأحكام</p>
+        </div>
+      </div>
+
+      <!-- إعلان Popup فاخر للشركة -->
+      <div id="companyAd" class="ad-overlay" v-if="showAd" @click.self="closeAd">
+        <div class="ad-box">
+          <div class="ad-header">
+            <h2>🌴 Palm Treasure</h2>
+            <button class="close-btn" @click="closeAd">×</button>
+          </div>
+
+          <div class="ad-content">
+            <div class="company-message">
+              <p>
+                مرحباً بالجميع 🌟<br><br>
+                يسرّنا أن نعرّفكم بشركة Palm Treasure التي تأسست في إنجلترا بتاريخ 5 فبراير 2026، وهي شركة استثمارية متخصصة في مجال التجارة الإلكترونية. تمتلك الشركة فريقاً تقنياً محترفاً وخبرة مالية قوية، ويقع مقرها الرئيسي حالياً في منطقة الأعمال المركزية في إنجلترا.<br><br>
+                وانطلاقاً من رؤيتنا للتوسع وبناء شبكة تعاون واسعة، قمنا بإنشاء فروع ووكالات في عدد من الدول العربية مثل لبنان، الجزائر، ليبيا، والعراق، ونسعى خلال المرحلة القادمة إلى توسيع نشاطنا وانتشارنا في مختلف دول الشرق الأوسط.<br><br>
+                لقد جاء تأسيس هذه الشركة بعد دراسة عميقة لما حدث خلال عامي 2024 و2025، حيث ظهرت العديد من المنصات الوهمية التي خدعت الكثير من الناس ولم تستمر طويلاً. ومن هنا كان هدفنا واضحاً: تحويل هذا المجال إلى منصة حقيقية وموثوقة يستفيد منها الأعضاء كما تستفيد منها الشركة، ضمن نظام عادل وشفاف.<br><br>
+                وقد تحقق هذا المشروع بجهود كبيرة من الفريق التقني تحت إشراف المهندس أليكس ديروب، الذي لعب دوراً أساسياً في تطوير النظام التقني للشركة. وتقديراً لجهوده المميزة ومساهمته في نجاح هذا المشروع، تمت ترقيته إلى منصب نائب المدير.<br><br>
+                نحن في Palm Treasure نؤمن بأن النجاح الحقيقي يجب أن يكون متاحاً للجميع، لذلك تم تصميم هذا المشروع ليكون فرصة متاحة لكل الناس، وخاصة للطبقة المتوسطة وذوي الدخل المحدود، حتى يتمكنوا من تحسين أوضاعهم والمشاركة في فرص الاقتصاد الرقمي.<br><br>
+                ولهذا السبب تم وضع نظام واضح وقوانين عادلة تضمن حماية حقوق الموظفين والأعضاء قبل حقوق المستثمرين، مع مراعاة الظروف الاقتصادية والاجتماعية في المجتمعات العربية.<br><br>
+                وسيتم تطبيق هذا النظام المبرمج في معظم الدول العربية ابتداءً من 1 مارس 2026 وحتى نهاية عام 2028، وخلال هذه الفترة سيتم تقييم الأداء والنتائج. وبعد ذلك قد يتم تطوير النظام وإجراء بعض التعديلات بناءً على كفاءة الأعضاء وجهودهم وإخلاصهم في العمل.<br><br>
+                كما نعمل منذ الآن على التخطيط لمجموعة من الفرص المستقبلية والمشاريع الجديدة التي ستوفر مزيداً من الإمكانيات لأعضاء الشركة في السنوات القادمة.<br><br>
+                نتمنى للجميع التوفيق، ونسعد بانضمامكم إلى مجتمع Palm Treasure 🌴
+              </p>
             </div>
             
-            <p>
-              ⭐ يعكس هذا النظام التحفيزي رؤية الشركة في تشجيع روح القيادة والعمل الجماعي، حيث يتم مكافأة كل من يعمل بجد على توسيع فريقه وتطويره.
-            </p>
-            
-            <p>
-              🚀 إن بناء فريق قوي ليس مجرد مهمة عادية، بل هو طريق حقيقي نحو النجاح في عالم ريادة الأعمال، حيث يتحول العمل الجاد والطموح إلى إنجازات حقيقية تعود بالنفع على القائد وفريقه والشركة معاً.
-            </p>
-            
-            <h4>📢 مواعيد سحب الرواتب الخاصة بحسابات VIP</h4>
-            <p>
-              حرصًا منا على تنظيم عملية السحب وضمان سلاسة الإجراءات لجميع الأعضاء، تم اعتماد جدول أسبوعي ثابت لمواعيد سحب الرواتب الخاصة بحسابات VIP.<br><br>
-              يرجى من جميع الأعضاء الالتزام باليوم المخصص لكل مستوى، حيث يتم تنفيذ عمليات السحب فقط في اليوم المحدد لكل فئة.
-            </p>
-            
-            <h4>📅 جدول السحب الأسبوعي:</h4>
-            
-            <div class="withdraw-schedule">
-              <div class="schedule-day">
-                <div class="day-header">🔹 يوم السبت من كل أسبوع:</div>
-                <div class="vip-levels">VIP1 💸 VIP2 </div>
-              </div>
-              <div class="schedule-day">
-                <div class="day-header">🔹 يوم الأحد من كل أسبوع:</div>
-                <div class="vip-levels">VIP3 💸 VIP4 </div>
-              </div>
-              <div class="schedule-day">
-                <div class="day-header">🔹 يوم الاثنين من كل أسبوع:</div>
-                <div class="vip-levels">VIP5 💸 VIP6 </div>
-              </div>
-              <div class="schedule-day">
-                <div class="day-header">🔹 يوم الثلاثاء من كل أسبوع:</div>
-                <div class="vip-levels">VIP7 💸 VIP8 </div>
-              </div>
-              <div class="schedule-day">
-                <div class="day-header">🔹 يوم الأربعاء من كل أسبوع:</div>
-                <div class="vip-levels">VIP9 💸 VIP10 </div>
-              </div>
-              <div class="schedule-day">
-                <div class="day-header">🔹 يوم الخميس من كل أسبوع:</div>
-                <div class="vip-levels">VIP11 💸 VIP12 </div>
-              </div>
-              <div class="schedule-day">
-                <div class="day-header">🔹 يوم الجمعة من كل أسبوع:</div>
-                <div class="vip-levels">VIP13 💸 VIP14 </div>
+            <div class="vip-section">
+              <h3>📊 خطط العضوية والأرباح</h3>
+              
+              <div class="vip-grid">
+                <div class="vip-card" v-for="vip in vipPlans" :key="vip.level">
+                  <div class="vip-header" :class="getVipClass(vip.level)">
+                    <span class="vip-level-badge">{{ vip.level }}</span>
+                  </div>
+                  <div class="vip-details">
+                    <div class="vip-detail-item">
+                      <span class="detail-label">💰 الاشتراك:</span>
+                      <span class="detail-value">{{ vip.recharge }} USDT</span>
+                    </div>
+                    <div class="vip-detail-item">
+                      <span class="detail-label">📈 الربح اليومي:</span>
+                      <span class="detail-value">{{ vip.daily }} USDT</span>
+                    </div>
+                    <div class="vip-detail-item">
+                      <span class="detail-label">📅 الربح الشهري:</span>
+                      <span class="detail-value">{{ vip.monthly }} USDT</span>
+                    </div>
+                    <div v-if="vip.yearly" class="vip-detail-item">
+                      <span class="detail-label">📊 الإجمالي السنوي:</span>
+                      <span class="detail-value">{{ vip.yearly }} USDT</span>
+                    </div>
+                    <div v-if="vip.percentage" class="vip-detail-item">
+                      <span class="detail-label">📊 نسبة الربح:</span>
+                      <span class="detail-value highlight">{{ vip.percentage }}</span>
+                    </div>
+                    <div v-if="vip.tasks" class="vip-detail-item">
+                      <span class="detail-label">📝 مهمة يومية:</span>
+                      <span class="detail-value">{{ vip.tasks }}</span>
+                    </div>
+                    <div v-if="vip.status" class="vip-detail-item">
+                      <span class="detail-label">✅ الحالة:</span>
+                      <span class="detail-value status-active">{{ vip.status }}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            
-            <div class="important-note">
-              <p>⚠️ ملاحظة مهمة:<br>
-              يرجى من جميع أعضاء VIP الالتزام باليوم المحدد لمستواهم لضمان تنفيذ عمليات السحب بسرعة وتنظيم، وتجنب أي تأخير في معالجة الطلبات.</p>
+
+            <div class="commission-section">
+              <h3>🤝 نظام العمولات</h3>
+              <div class="commission-levels">
+                <div class="commission-level">المستوى 1: 6%</div>
+                <div class="commission-level">المستوى 2: 2%</div>
+                <div class="commission-level">المستوى 3: 1%</div>
+              </div>
             </div>
-            
+
+            <div class="partners-section">
+              <h3>🌐 شراكات عالمية</h3>
+              <p>Amazon, eBay, TikTok, Aliexpress, Alibaba, Shopee</p>
+            </div>
+
             <div class="cta-message">
-              <p>✨ نتمنى لكم تجربة مالية ناجحة ومليئة بالأرباح ونتمنى لكم دوام النجاح معنا.</p>
+              <p>🚀 اختر المستوى المناسب لك وابدأ اليوم، فكل خطوة صغيرة قد تكون بداية لنجاح كبير مع Palm Treasure 🌴</p>
             </div>
           </div>
-        </div>
 
-        <button class="ad-btn" @click="closeTerms">موافق</button>
+          <button class="ad-btn" @click="closeAd">أنا أعرف</button>
+        </div>
+      </div>
+
+      <!-- إعلان Popup جديد للشروط والأحكام -->
+      <div id="termsAd" class="ad-overlay" v-if="showTerms" @click.self="closeTerms">
+        <div class="ad-box">
+          <div class="ad-header">
+            <h2>📜 الشروط والأحكام</h2>
+            <button class="close-btn" @click="closeTerms">×</button>
+          </div>
+
+          <div class="ad-content">
+            <div class="terms-message">
+              <h3>📊 عقود رجال الأعمال</h3>
+              <p>
+                في عالم الأعمال الحديث، لا يُقاس النجاح فقط بما يحققه الشخص لنفسه، بل بقدرته على بناء فريق قوي وفعّال يقوده نحو التقدم والازدهار. ومن هذا المنطلق، تعتمد الشركة نظاماً مميزاً لتقدير القادة وتحفيزهم على تطوير فرقهم وتحقيق نتائج أفضل.<br><br>
+                عندما تتمكن من بناء فريق قوي وزيادة عدد الأعضاء النشطين، فإن الشركة تقوم بتقدير جهودك ومنحك مزايا إضافية تعكس مكانتك القيادية داخل الفريق.
+              </p>
+              
+              <h4>📌 عقود رجال الأعمال</h4>
+              <p>
+                عند وصول عدد أعضاء فريقك إلى 70 عضواً نشطاً أو أكثر، تقوم الشركة بإبرام عقد رسمي معك، وذلك لضمان حقوقك وتقديراً لجهودك في بناء فريق ناجح وإدارته بكفاءة. ويعد هذا العقد دليلاً على ثقة الشركة بك كقائد قادر على تحقيق النجاح والتطوير المستمر.
+              </p>
+              
+              <p>💼 إضافة إلى التقدير المعنوي، تمنحك الشركة راتباً شهرياً ثابتاً يتناسب مع حجم فريقك ونشاطه، وفق سلم الترقيات القيادية التالي:</p>
+              
+              <div class="promotion-table">
+                <div class="promotion-row">
+                  <div class="promotion-cell">🔹 70 عضواً نشطاً</div>
+                  <div class="promotion-cell">رتبة مساعد فريق</div>
+                  <div class="promotion-cell highlight">💰 راتب شهري: 200 دولار</div>
+                </div>
+                <div class="promotion-row">
+                  <div class="promotion-cell">🔹 140 عضواً نشطاً</div>
+                  <div class="promotion-cell">رتبة مشرف فريق</div>
+                  <div class="promotion-cell highlight">💰 راتب شهري: 350 دولاراً</div>
+                </div>
+                <div class="promotion-row">
+                  <div class="promotion-cell">🔹 300 عضو نشط</div>
+                  <div class="promotion-cell">رتبة مدير فريق</div>
+                  <div class="promotion-cell highlight">💰 راتب شهري: 500 دولار</div>
+                </div>
+              </div>
+              
+              <p>
+                ⭐ يعكس هذا النظام التحفيزي رؤية الشركة في تشجيع روح القيادة والعمل الجماعي، حيث يتم مكافأة كل من يعمل بجد على توسيع فريقه وتطويره.
+              </p>
+              
+              <p>
+                🚀 إن بناء فريق قوي ليس مجرد مهمة عادية، بل هو طريق حقيقي نحو النجاح في عالم ريادة الأعمال، حيث يتحول العمل الجاد والطموح إلى إنجازات حقيقية تعود بالنفع على القائد وفريقه والشركة معاً.
+              </p>
+              
+              <h4>📢 مواعيد سحب الرواتب الخاصة بحسابات VIP</h4>
+              <p>
+                حرصًا منا على تنظيم عملية السحب وضمان سلاسة الإجراءات لجميع الأعضاء، تم اعتماد جدول أسبوعي ثابت لمواعيد سحب الرواتب الخاصة بحسابات VIP.<br><br>
+                يرجى من جميع الأعضاء الالتزام باليوم المخصص لكل مستوى، حيث يتم تنفيذ عمليات السحب فقط في اليوم المحدد لكل فئة.
+              </p>
+              
+              <h4>📅 جدول السحب الأسبوعي:</h4>
+              
+              <div class="withdraw-schedule">
+                <div class="schedule-day">
+                  <div class="day-header">🔹 يوم السبت من كل أسبوع:</div>
+                  <div class="vip-levels">VIP1 💸 VIP2</div>
+                </div>
+                <div class="schedule-day">
+                  <div class="day-header">🔹 يوم الأحد من كل أسبوع:</div>
+                  <div class="vip-levels">VIP3 💸 VIP4</div>
+                </div>
+                <div class="schedule-day">
+                  <div class="day-header">🔹 يوم الاثنين من كل أسبوع:</div>
+                  <div class="vip-levels">VIP5 💸 VIP6</div>
+                </div>
+                <div class="schedule-day">
+                  <div class="day-header">🔹 يوم الثلاثاء من كل أسبوع:</div>
+                  <div class="vip-levels">VIP7 💸 VIP8</div>
+                </div>
+                <div class="schedule-day">
+                  <div class="day-header">🔹 يوم الأربعاء من كل أسبوع:</div>
+                  <div class="vip-levels">VIP9 💸 VIP10</div>
+                </div>
+                <div class="schedule-day">
+                  <div class="day-header">🔹 يوم الخميس من كل أسبوع:</div>
+                  <div class="vip-levels">VIP11 💸 VIP12</div>
+                </div>
+                <div class="schedule-day">
+                  <div class="day-header">🔹 يوم الجمعة من كل أسبوع:</div>
+                  <div class="vip-levels">VIP13 💸 VIP14</div>
+                </div>
+              </div>
+              
+              <div class="important-note">
+                <p>⚠️ ملاحظة مهمة:<br>
+                يرجى من جميع أعضاء VIP الالتزام باليوم المحدد لمستواهم لضمان تنفيذ عمليات السحب بسرعة وتنظيم، وتجنب أي تأخير في معالجة الطلبات.</p>
+              </div>
+              
+              <div class="cta-message">
+                <p>✨ نتمنى لكم تجربة مالية ناجحة ومليئة بالأرباح ونتمنى لكم دوام النجاح معنا.</p>
+              </div>
+            </div>
+          </div>
+
+          <button class="ad-btn" @click="closeTerms">موافق</button>
+        </div>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -268,6 +283,7 @@ export default {
 
   data() {
     return {
+      showVideo: true, // التحكم في إظهار/إخفاء فيديو Intro
       username: "جاري التحميل...",
       balance: 0,
       showAd: false,
@@ -303,6 +319,11 @@ export default {
 
   created() {
     this.watchUser();
+    
+    // إخفاء الفيديو بعد 4.5 ثواني إذا لم ينتهِ تلقائياً
+    setTimeout(() => {
+      this.hideVideo();
+    }, 4500);
   },
 
   methods: {
@@ -346,6 +367,10 @@ export default {
       }
     },
 
+    hideVideo() {
+      this.showVideo = false;
+    },
+
     getVipClass(level) {
       if (level.includes('VIP 1')) return 'vip-bronze';
       if (level.includes('VIP 2') || level.includes('VIP 3')) return 'vip-silver';
@@ -387,6 +412,26 @@ export default {
 </script>
 
 <style scoped>
+/* ===== فيديو Intro ===== */
+.video-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 99999;
+  background: #000;
+}
+
+.intro-video {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 /* الخلفية الرئيسية - أسود فاخر */
 .home-container {
   direction: rtl;
