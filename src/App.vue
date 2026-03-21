@@ -6,7 +6,13 @@
       <span class="lang-code">{{ currentLang }}</span>
     </div>
 
-    <!-- زر دعم موحد (واتساب + تيليجرام) - بدلاً من زر الواتساب المنفرد -->
+    <!-- زر عرض خاص جديد مع إشعار أحمر - تم نقله إلى مكان زر الدعم السابق -->
+    <div class="circle-btn offer-btn" @click="toggleOfferMessage" @mousedown="startDrag" @touchstart="startDrag">
+      <i class="fas fa-gift"></i>
+      <div class="notification-badge" v-if="hasNewOffer">3</div>
+    </div>
+
+    <!-- زر دعم موحد (واتساب + تيليجرام) - تم نقله إلى مكان زر العرض الخاص السابق -->
     <div class="circle-btn support-btn" @click="toggleSupportMenu" @mousedown="startDrag" @touchstart="startDrag">
       <i class="fas fa-headset"></i>
     </div>
@@ -50,12 +56,6 @@
        @touchstart="startDrag">
       <i class="fab fa-instagram"></i>
     </a>
-
-    <!-- زر عرض خاص جديد مع إشعار أحمر -->
-    <div class="circle-btn offer-btn" @click="toggleOfferMessage" @mousedown="startDrag" @touchstart="startDrag">
-      <i class="fas fa-gift"></i>
-      <div class="notification-badge" v-if="hasNewOffer">3</div>
-    </div>
 
     <!-- نافذة العرض الخاص -->
     <div v-if="showOfferMessage" class="bubble-chat-overlay" @click="closeOfferMessage">
@@ -815,8 +815,24 @@ body {
   background: linear-gradient(135deg, #11151C, #1A1F2A);
 }
 
-.support-btn {
+/* زر العرض الخاص - في مكان زر الدعم السابق (الموضع الأقرب لليمين بعد زر اللغة) */
+.offer-btn {
   right: 70px;
+  bottom: 100px;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
+}
+
+.offer-btn i {
+  color: #0A0C10;
+}
+
+.offer-btn:hover i {
+  color: #D4AF37;
+}
+
+/* زر الدعم الموحد - في مكان زر العرض الخاص السابق (الموضع الأبعد عن زر اللغة) */
+.support-btn {
+  right: 180px;
   bottom: 100px;
   background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
   border-color: #D4AF37;
@@ -926,12 +942,6 @@ body {
   bottom: 100px;
 }
 
-.offer-btn {
-  right: 180px;
-  bottom: 100px;
-  background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
-}
-
 .instagram-btn i {
   font-size: 22px;
   color: #D4AF37;
@@ -939,14 +949,6 @@ body {
 
 .instagram-btn:hover i {
   color: #0A0C10;
-}
-
-.offer-btn i {
-  color: #0A0C10;
-}
-
-.offer-btn:hover i {
-  color: #D4AF37;
 }
 
 .bubble-chat-overlay {
@@ -1521,10 +1523,11 @@ body {
   }
   
   .lang-btn { right: 10px; bottom: 90px; }
-  .support-btn { right: 60px; bottom: 90px; }
+  /* تبديل المواضع في الشاشات المتوسطة */
+  .offer-btn { right: 60px; bottom: 90px; }
+  .support-btn { right: 160px; bottom: 90px; }
   .support-menu { right: 60px; bottom: 150px; width: 220px; }
   .instagram-btn { right: 110px; bottom: 90px; }
-  .offer-btn { right: 160px; bottom: 90px; }
   
   .lang-menu {
     bottom: 150px;
@@ -1568,10 +1571,11 @@ body {
 
 @media (max-width: 480px) {
   .lang-btn { right: 5px; bottom: 85px; }
-  .support-btn { right: 50px; bottom: 85px; }
+  /* تبديل المواضع في الشاشات الصغيرة */
+  .offer-btn { right: 50px; bottom: 85px; }
+  .support-btn { right: 140px; bottom: 85px; }
   .support-menu { right: 50px; bottom: 140px; width: 200px; }
   .instagram-btn { right: 95px; bottom: 85px; }
-  .offer-btn { right: 140px; bottom: 85px; }
   
   .circle-btn {
     width: 38px;
