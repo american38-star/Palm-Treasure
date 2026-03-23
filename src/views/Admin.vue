@@ -158,9 +158,9 @@
               <button class="btn red" type="button" @click="promptDeduct(u)">سحب رصيد</button>
               <button class="btn details-btn" type="button" @click="viewUserDetails(u)">تفاصيل</button>
               <button class="btn blue" type="button" @click="sendResetPassword(u.email)" :disabled="!u.email">إعادة تعيين كلمة السر</button>
-              <!-- زر تغيير كلمة المرور الجديد -->
-              <button class="btn purple" type="button" @click="openChangePasswordModal(u)">
-                <i class="fas fa-key"></i> تغيير كلمة المرور
+              <!-- زر تفاصيل الحساب (معدل) -->
+              <button class="btn purple" type="button" @click="openAccountDetailsModal(u)">
+                <i class="fas fa-user-circle"></i> تفاصيل الحساب
               </button>
               <button class="btn black" type="button" @click="toggleBlockUser(u)">
                 {{ u.blocked ? 'إلغاء الحظر' : 'حظر' }}
@@ -394,48 +394,67 @@
       </div>
     </div>
 
-    <!-- Modal تغيير كلمة المرور (جديد) -->
-    <div v-if="showChangePasswordModal" class="modal-backdrop" @click.self="closeChangePasswordModal">
+    <!-- Modal تفاصيل الحساب (بريد إلكتروني، كلمة المرور، VIP) -->
+    <div v-if="showAccountDetailsModal" class="modal-backdrop" @click.self="closeAccountDetailsModal">
       <div class="modal">
-        <h3><i class="fas fa-key"></i> تغيير كلمة مرور المستخدم</h3>
+        <h3><i class="fas fa-user-circle"></i> تفاصيل الحساب</h3>
         
-        <div class="user-info" style="background: #1A1F2A; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
-          <p><strong>المستخدم:</strong> <span class="gold-text">{{ changePasswordTargetUser?.email || changePasswordTargetUser?.phoneNumber || changePasswordTargetUser?.id }}</span></p>
-        </div>
-        
-        <div class="input-box" style="margin-bottom: 15px;">
-          <label>كلمة المرور الجديدة</label>
-          <input 
-            type="password" 
-            v-model="newPassword" 
-            placeholder="أدخل كلمة المرور الجديدة"
-            style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #D4AF37; background: #1A1F2A; color: white;"
-          />
-        </div>
-        
-        <div class="input-box" style="margin-bottom: 15px;">
-          <label>تأكيد كلمة المرور الجديدة</label>
-          <input 
-            type="password" 
-            v-model="confirmNewPassword" 
-            placeholder="أعد إدخال كلمة المرور الجديدة"
-            style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #D4AF37; background: #1A1F2A; color: white;"
-          />
-        </div>
-        
-        <div v-if="passwordError" style="color: #ff6b6b; font-size: 12px; margin-bottom: 10px;">
-          {{ passwordError }}
-        </div>
-        
-        <div v-if="passwordSuccess" style="color: #4CAF50; font-size: 12px; margin-bottom: 10px;">
-          {{ passwordSuccess }}
+        <div class="account-details">
+          <div class="detail-item">
+            <label>البريد الإلكتروني:</label>
+            <div class="detail-value gold-text">{{ accountDetails.email || '—' }}</div>
+          </div>
+          
+          <div class="detail-item">
+            <label>رقم الهاتف:</label>
+            <div class="detail-value gold-text">{{ accountDetails.phoneNumber || '—' }}</div>
+          </div>
+          
+          <div class="detail-item">
+            <label>كلمة المرور:</label>
+            <div class="detail-value password-value">
+              <span class="gold-text">••••••••</span>
+              <button class="btn-small" @click="togglePasswordVisibility" type="button">
+                {{ showPassword ? 'إخفاء' : 'إظهار' }}
+              </button>
+            </div>
+            <div v-if="showPassword" class="detail-value password-reveal">
+              <span class="gold-text">{{ accountDetails.password || 'لا يمكن عرض كلمة المرور (مشفرة)' }}</span>
+              <span class="muted">(كلمة المرور مخزنة بشكل مشفر)</span>
+            </div>
+          </div>
+          
+          <div class="detail-item">
+            <label>مستوى VIP:</label>
+            <div class="detail-value">
+              <span :class="getVipClass(accountDetails.vipLevel)" class="vip-badge">
+                {{ getVipText(accountDetails.vipLevel) }}
+              </span>
+            </div>
+          </div>
+          
+          <div class="detail-item">
+            <label>تاريخ التسجيل:</label>
+            <div class="detail-value">{{ formatDate(accountDetails.createdAt) }}</div>
+          </div>
+          
+          <div class="detail-item">
+            <label>الرصيد الحالي:</label>
+            <div class="detail-value gold-text">{{ accountDetails.balance || 0 }} USDT</div>
+          </div>
+          
+          <div class="detail-item">
+            <label>حالة الحساب:</label>
+            <div class="detail-value">
+              <span :class="accountDetails.blocked ? 'status-rejected' : 'status-approved'">
+                {{ accountDetails.blocked ? 'محظور' : 'فعال' }}
+              </span>
+            </div>
+          </div>
         </div>
         
         <div class="modal-actions">
-          <button class="btn gold" type="button" @click="changeUserPassword" :disabled="passwordLoading">
-            {{ passwordLoading ? 'جاري التغيير...' : 'تغيير كلمة المرور' }}
-          </button>
-          <button class="btn gold-outline" type="button" @click="closeChangePasswordModal">إلغاء</button>
+          <button class="btn gold-outline" type="button" @click="closeAccountDetailsModal">إغلاق</button>
         </div>
       </div>
     </div>
@@ -446,10 +465,7 @@
 import {
   getAuth,
   sendPasswordResetEmail,
-  onAuthStateChanged,
-  updatePassword,
-  EmailAuthProvider,
-  reauthenticateWithCredential
+  onAuthStateChanged
 } from "firebase/auth";
 import {
   collection,
@@ -464,7 +480,7 @@ import {
   query,
   orderBy,
   where,
-  limit
+  increment
 } from "firebase/firestore";
 import { db } from "../firebase";
 
@@ -531,14 +547,20 @@ export default {
         referredUsers: []
       },
       
-      // متغيرات تغيير كلمة المرور الجديدة
-      showChangePasswordModal: false,
-      changePasswordTargetUser: null,
-      newPassword: "",
-      confirmNewPassword: "",
-      passwordError: "",
-      passwordSuccess: "",
-      passwordLoading: false,
+      // متغيرات تفاصيل الحساب الجديدة
+      showAccountDetailsModal: false,
+      accountDetails: {
+        email: "",
+        phoneNumber: "",
+        password: "",
+        vipLevel: "",
+        vipLevelName: "",
+        vipExpiryDate: null,
+        createdAt: null,
+        balance: 0,
+        blocked: false
+      },
+      showPassword: false
     };
   },
   computed: {
@@ -697,86 +719,104 @@ export default {
     }
   },
   methods: {
-    // دوال تغيير كلمة المرور الجديدة
-    openChangePasswordModal(user) {
-      this.changePasswordTargetUser = user;
-      this.newPassword = "";
-      this.confirmNewPassword = "";
-      this.passwordError = "";
-      this.passwordSuccess = "";
-      this.showChangePasswordModal = true;
-    },
-    
-    closeChangePasswordModal() {
-      this.showChangePasswordModal = false;
-      this.changePasswordTargetUser = null;
-      this.newPassword = "";
-      this.confirmNewPassword = "";
-      this.passwordError = "";
-      this.passwordSuccess = "";
-    },
-    
-    async changeUserPassword() {
-      // التحقق من المدخلات
-      if (!this.newPassword || !this.confirmNewPassword) {
-        this.passwordError = "جميع الحقول مطلوبة";
-        return;
-      }
-      
-      if (this.newPassword.length < 6) {
-        this.passwordError = "كلمة المرور يجب أن تكون 6 أحرف على الأقل";
-        return;
-      }
-      
-      if (this.newPassword !== this.confirmNewPassword) {
-        this.passwordError = "كلمة المرور غير متطابقة";
-        return;
-      }
-      
-      if (!this.changePasswordTargetUser || !this.changePasswordTargetUser.email) {
-        this.passwordError = "لا يمكن تغيير كلمة المرور لهذا المستخدم (لا يوجد بريد إلكتروني)";
-        return;
-      }
-      
-      this.passwordLoading = true;
-      this.passwordError = "";
-      
+    // دالة عرض تفاصيل الحساب
+    async openAccountDetailsModal(user) {
       try {
-        // استخدام Firebase Admin SDK غير متاح في الواجهة الأمامية
-        // لذلك سنستخدم طريقة إرسال رابط إعادة تعيين كلمة المرور
-        const auth = getAuth();
-        await sendPasswordResetEmail(auth, this.changePasswordTargetUser.email);
+        this.showAccountDetailsModal = true;
         
-        // تسجيل العملية في logs
-        await addDoc(collection(db, "password_change_logs"), {
-          adminId: this.currentUser?.uid,
-          adminEmail: this.currentUser?.email,
-          userId: this.changePasswordTargetUser.id,
-          userEmail: this.changePasswordTargetUser.email,
-          userPhone: this.changePasswordTargetUser.phoneNumber,
-          method: "password_reset_email",
-          createdAt: serverTimestamp()
-        });
+        // جلب بيانات VIP للمستخدم
+        let vipLevel = "عادي";
+        let vipLevelName = "عادي";
+        let vipExpiryDate = null;
         
-        this.passwordSuccess = "تم إرسال رابط إعادة تعيين كلمة المرور إلى البريد الإلكتروني للمستخدم";
+        try {
+          const vipPurchasesQuery = query(
+            collection(db, "vip_purchases"),
+            where("userId", "==", user.id),
+            where("status", "==", "active"),
+            orderBy("expiryDate", "desc"),
+            limit(1)
+          );
+          const vipSnap = await getDocs(vipPurchasesQuery);
+          
+          if (!vipSnap.empty) {
+            const vipData = vipSnap.docs[0].data();
+            vipLevel = vipData.vipLevel || "عادي";
+            vipLevelName = this.getVipText(vipLevel);
+            vipExpiryDate = vipData.expiryDate;
+          }
+        } catch (err) {
+          console.warn("Failed to fetch VIP data:", err);
+        }
         
-        setTimeout(() => {
-          this.closeChangePasswordModal();
-        }, 3000);
+        this.accountDetails = {
+          email: user.email || "—",
+          phoneNumber: user.phoneNumber || "—",
+          password: "لا يمكن عرضها (مشفرة)", // كلمة المرور مخزنة بشكل مشفر
+          vipLevel: vipLevel,
+          vipLevelName: vipLevelName,
+          vipExpiryDate: vipExpiryDate,
+          createdAt: user.createdAt || null,
+          balance: user.balance || 0,
+          blocked: user.blocked || false
+        };
         
       } catch (error) {
-        console.error("Error changing password:", error);
-        
-        if (error.code === 'auth/user-not-found') {
-          this.passwordError = "المستخدم غير موجود في نظام المصادقة";
-        } else if (error.code === 'auth/invalid-email') {
-          this.passwordError = "البريد الإلكتروني غير صالح";
-        } else {
-          this.passwordError = "حدث خطأ في تغيير كلمة المرور: " + error.message;
-        }
-      } finally {
-        this.passwordLoading = false;
+        console.error("خطأ في جلب تفاصيل الحساب:", error);
+        alert("حدث خطأ في جلب تفاصيل الحساب");
       }
+    },
+    
+    closeAccountDetailsModal() {
+      this.showAccountDetailsModal = false;
+      this.accountDetails = {
+        email: "",
+        phoneNumber: "",
+        password: "",
+        vipLevel: "",
+        vipLevelName: "",
+        vipExpiryDate: null,
+        createdAt: null,
+        balance: 0,
+        blocked: false
+      };
+      this.showPassword = false;
+    },
+    
+    togglePasswordVisibility() {
+      this.showPassword = !this.showPassword;
+    },
+    
+    getVipText(vipLevel) {
+      if (!vipLevel || vipLevel === "عادي" || vipLevel === "normal") {
+        return "عادي";
+      }
+      const vipMap = {
+        "bronze": "برونزي",
+        "silver": "فضي",
+        "gold": "ذهبي",
+        "platinum": "بلاتيني",
+        "diamond": "ألماس",
+        "vip1": "VIP 1",
+        "vip2": "VIP 2",
+        "vip3": "VIP 3",
+        "vip4": "VIP 4",
+        "vip5": "VIP 5"
+      };
+      return vipMap[vipLevel.toLowerCase()] || vipLevel;
+    },
+    
+    getVipClass(vipLevel) {
+      if (!vipLevel || vipLevel === "عادي" || vipLevel === "normal") {
+        return "vip-normal";
+      }
+      const lowerLevel = vipLevel.toLowerCase();
+      if (lowerLevel === "bronze" || lowerLevel === "vip1") return "vip-bronze";
+      if (lowerLevel === "silver" || lowerLevel === "vip2") return "vip-silver";
+      if (lowerLevel === "gold" || lowerLevel === "vip3") return "vip-gold";
+      if (lowerLevel === "platinum" || lowerLevel === "vip4") return "vip-platinum";
+      if (lowerLevel === "diamond" || lowerLevel === "vip5") return "vip-diamond";
+      return "vip-normal";
     },
     
     async viewUserDetails(user) {
@@ -963,6 +1003,7 @@ export default {
             blocked: data.blocked ?? false,
             notificationsCount: data.notificationsCount ?? 0,
             registrationMethod: data.registrationMethod || (data.phoneNumber ? 'phone' : 'email'),
+            createdAt: data.createdAt || data.registeredAt || null
           };
         });
       } catch (e) {
@@ -1239,7 +1280,6 @@ export default {
         });
 
         if (r.userId) {
-          // البحث عن رقم الهاتف من بيانات المستخدم إذا لم يكن موجوداً في الطلب
           let userPhone = r.userPhone || r.phoneNumber;
           if (!userPhone) {
             try {
@@ -1346,12 +1386,15 @@ export default {
           );
         }
 
-        if (req.userId && typeof req.oldBalance === "number") {
+        if (req.userId && req.amount) {
           try {
             await updateDoc(doc(db, "users", req.userId), {
-              balance: req.oldBalance,
+              balance: increment(req.amount)
             });
-          } catch { }
+            console.log(`✅ تم إرجاع ${req.amount} USDT للمستخدم ${req.userId}`);
+          } catch (err) {
+            console.error("❌ خطأ في إرجاع الرصيد:", err);
+          }
         }
 
         await addDoc(collection(db, "withdraw_logs"), {
@@ -1384,7 +1427,7 @@ export default {
         const ex = await getDoc(r);
         if (ex.exists()) await deleteDoc(r);
         
-        alert("❌ تم الرفض");
+        alert("❌ تم الرفض وإرجاع الرصيد");
         await this.loadWithdrawRequests();
         await this.loadWithdrawLogs();
       } catch (e) {
@@ -1814,7 +1857,6 @@ export default {
         await updateDoc(pRef, { status: "rejected", processedAt: serverTimestamp() });
 
         if (r.userId) {
-          // البحث عن رقم الهاتف من بيانات المستخدم إذا لم يكن موجوداً في الطلب
           let userPhone = r.userPhone || r.phoneNumber;
           if (!userPhone) {
             try {
@@ -2122,6 +2164,17 @@ export default {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
+.btn-small {
+  background: #D4AF37;
+  color: #0A0C10;
+  border: none;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 10px;
+  cursor: pointer;
+  margin-right: 8px;
+}
+
 .details-btn {
   background: #6c757d;
 }
@@ -2220,6 +2273,84 @@ export default {
   gap: 8px;
   margin-top: 10px;
   justify-content: flex-end;
+}
+
+.account-details {
+  margin-top: 15px;
+}
+
+.detail-item {
+  margin-bottom: 12px;
+  padding: 8px;
+  background: #1A1F2A;
+  border-radius: 6px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.detail-item label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 4px;
+  display: block;
+}
+
+.detail-value {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.password-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.password-reveal {
+  margin-top: 6px;
+  font-size: 12px;
+  background: #0A0C10;
+  padding: 6px;
+  border-radius: 4px;
+  word-break: break-all;
+}
+
+.vip-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.vip-normal {
+  background: #6c757d;
+  color: white;
+}
+
+.vip-bronze {
+  background: #cd7f32;
+  color: white;
+}
+
+.vip-silver {
+  background: #c0c0c0;
+  color: #333;
+}
+
+.vip-gold {
+  background: linear-gradient(135deg, #D4AF37, #F6E27A);
+  color: #0A0C10;
+}
+
+.vip-platinum {
+  background: #e5e4e2;
+  color: #333;
+}
+
+.vip-diamond {
+  background: linear-gradient(135deg, #b9f2ff, #4ecdc4);
+  color: #0A0C10;
 }
 
 .status-approved {
