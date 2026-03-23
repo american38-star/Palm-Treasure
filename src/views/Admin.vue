@@ -158,7 +158,7 @@
               <button class="btn red" type="button" @click="promptDeduct(u)">سحب رصيد</button>
               <button class="btn details-btn" type="button" @click="viewUserDetails(u)">تفاصيل</button>
               <button class="btn blue" type="button" @click="sendResetPassword(u.email)" :disabled="!u.email">إعادة تعيين كلمة السر</button>
-              <!-- زر تفاصيل الحساب (معدل) -->
+              <!-- زر تفاصيل الحساب -->
               <button class="btn purple" type="button" @click="openAccountDetailsModal(u)">
                 <i class="fas fa-user-circle"></i> تفاصيل الحساب
               </button>
@@ -394,9 +394,9 @@
       </div>
     </div>
 
-    <!-- Modal تفاصيل الحساب (بريد إلكتروني، كلمة المرور، VIP) -->
+    <!-- Modal تفاصيل الحساب (مع سجل السحب والتعبئة) -->
     <div v-if="showAccountDetailsModal" class="modal-backdrop" @click.self="closeAccountDetailsModal">
-      <div class="modal">
+      <div class="modal account-details-modal">
         <h3><i class="fas fa-user-circle"></i> تفاصيل الحساب</h3>
         
         <div class="account-details">
@@ -411,24 +411,13 @@
           </div>
           
           <div class="detail-item">
-            <label>كلمة المرور:</label>
-            <div class="detail-value password-value">
-              <span class="gold-text">••••••••</span>
-              <button class="btn-small" @click="togglePasswordVisibility" type="button">
-                {{ showPassword ? 'إخفاء' : 'إظهار' }}
-              </button>
-            </div>
-            <div v-if="showPassword" class="detail-value password-reveal">
-              <span class="gold-text">{{ accountDetails.password || 'لا يمكن عرض كلمة المرور (مشفرة)' }}</span>
-              <span class="muted">(كلمة المرور مخزنة بشكل مشفر)</span>
-            </div>
-          </div>
-          
-          <div class="detail-item">
             <label>مستوى VIP:</label>
             <div class="detail-value">
               <span :class="getVipClass(accountDetails.vipLevel)" class="vip-badge">
                 {{ getVipText(accountDetails.vipLevel) }}
+              </span>
+              <span v-if="accountDetails.vipExpiryDate" class="vip-expiry">
+                (ينتهي: {{ formatDate(accountDetails.vipExpiryDate) }})
               </span>
             </div>
           </div>
@@ -440,7 +429,7 @@
           
           <div class="detail-item">
             <label>الرصيد الحالي:</label>
-            <div class="detail-value gold-text">{{ accountDetails.balance || 0 }} USDT</div>
+            <div class="detail-value gold-text">{{ formatBalance(accountDetails.balance) }} USDT</div>
           </div>
           
           <div class="detail-item">
@@ -449,6 +438,62 @@
               <span :class="accountDetails.blocked ? 'status-rejected' : 'status-approved'">
                 {{ accountDetails.blocked ? 'محظور' : 'فعال' }}
               </span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- أزرار سجل السحب وسجل التعبئة -->
+        <div class="account-buttons">
+          <button class="btn gold" @click="showUserWithdrawHistory" type="button">
+            📤 سجل السحوبات ({{ accountWithdrawHistory.length }})
+          </button>
+          <button class="btn gold" @click="showUserRechargeHistory" type="button">
+            📥 سجل التعبئة ({{ accountRechargeHistory.length }})
+          </button>
+        </div>
+        
+        <!-- عرض سجل السحوبات -->
+        <div v-if="showWithdrawHistory" class="history-section">
+          <h4>سجل السحوبات</h4>
+          <div v-if="accountWithdrawHistory.length === 0" class="empty-text">لا توجد سحوبات</div>
+          <div v-else class="history-list">
+            <div v-for="item in accountWithdrawHistory" :key="item.id" class="history-item">
+              <p><strong>المبلغ:</strong> <span class="gold-text">{{ item.amount }} USDT</span></p>
+              <p><strong>الشبكة:</strong> {{ item.network || '—' }}</p>
+              <p><strong>المحفظة:</strong> {{ item.wallet || item.walletAddress || '—' }}</p>
+              <p><strong>الحالة:</strong> 
+                <span :class="item.type === 'approved' ? 'status-approved' : 'status-rejected'">
+                  {{ item.type === 'approved' ? 'موافق' : item.type === 'rejected' ? 'مرفوض' : item.type }}
+                </span>
+              </p>
+              <p v-if="item.reason"><strong>السبب:</strong> {{ item.reason }}</p>
+              <p v-if="item.adminMessage"><strong>رسالة الأدمن:</strong> {{ item.adminMessage }}</p>
+              <p class="muted">التاريخ: {{ formatDate(item.createdAt) }}</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- عرض سجل التعبئة -->
+        <div v-if="showRechargeHistory" class="history-section">
+          <h4>سجل التعبئة</h4>
+          <div v-if="accountRechargeHistory.length === 0" class="empty-text">لا توجد تعبئات</div>
+          <div v-else class="history-list">
+            <div v-for="item in accountRechargeHistory" :key="item.id" class="history-item">
+              <p><strong>المبلغ:</strong> <span class="gold-text">{{ item.amount }} USDT</span></p>
+              <p><strong>الشبكة:</strong> {{ item.network || '—' }}</p>
+              <p v-if="item.txid"><strong>TxID:</strong> <span class="gold-text">{{ item.txid }}</span></p>
+              <p><strong>الحالة:</strong> 
+                <span :class="{
+                  'status-approved': item.type === 'approved' || item.status === 'approved',
+                  'status-rejected': item.type === 'rejected' || item.status === 'rejected',
+                  'status-pending': item.type === 'pending' || item.status === 'pending'
+                }">
+                  {{ item.type === 'approved' ? 'موافق' : item.type === 'rejected' ? 'مرفوض' : item.type || item.status || 'قيد المراجعة' }}
+                </span>
+              </p>
+              <p v-if="item.reason"><strong>سبب الرفض:</strong> {{ item.reason }}</p>
+              <p v-if="item.adminMessage"><strong>رسالة الأدمن:</strong> {{ item.adminMessage }}</p>
+              <p class="muted">التاريخ: {{ formatDate(item.createdAt) }}</p>
             </div>
           </div>
         </div>
@@ -480,7 +525,8 @@ import {
   query,
   orderBy,
   where,
-  increment
+  increment,
+  limit
 } from "firebase/firestore";
 import { db } from "../firebase";
 
@@ -552,15 +598,18 @@ export default {
       accountDetails: {
         email: "",
         phoneNumber: "",
-        password: "",
-        vipLevel: "",
+        vipLevel: "عادي",
         vipLevelName: "",
         vipExpiryDate: null,
         createdAt: null,
         balance: 0,
-        blocked: false
+        blocked: false,
+        userId: null
       },
-      showPassword: false
+      accountWithdrawHistory: [],
+      accountRechargeHistory: [],
+      showWithdrawHistory: false,
+      showRechargeHistory: false
     };
   },
   computed: {
@@ -723,6 +772,8 @@ export default {
     async openAccountDetailsModal(user) {
       try {
         this.showAccountDetailsModal = true;
+        this.showWithdrawHistory = false;
+        this.showRechargeHistory = false;
         
         // جلب بيانات VIP للمستخدم
         let vipLevel = "عادي";
@@ -744,22 +795,36 @@ export default {
             vipLevel = vipData.vipLevel || "عادي";
             vipLevelName = this.getVipText(vipLevel);
             vipExpiryDate = vipData.expiryDate;
+          } else if (user.vipLevel && user.vipLevel !== "عادي") {
+            vipLevel = user.vipLevel;
+            vipLevelName = this.getVipText(vipLevel);
+            vipExpiryDate = user.vipExpiryDate || null;
           }
         } catch (err) {
           console.warn("Failed to fetch VIP data:", err);
+          if (user.vipLevel) {
+            vipLevel = user.vipLevel;
+            vipLevelName = this.getVipText(vipLevel);
+          }
         }
         
         this.accountDetails = {
           email: user.email || "—",
           phoneNumber: user.phoneNumber || "—",
-          password: "لا يمكن عرضها (مشفرة)", // كلمة المرور مخزنة بشكل مشفر
           vipLevel: vipLevel,
           vipLevelName: vipLevelName,
           vipExpiryDate: vipExpiryDate,
           createdAt: user.createdAt || null,
           balance: user.balance || 0,
-          blocked: user.blocked || false
+          blocked: user.blocked || false,
+          userId: user.id
         };
+        
+        // جلب سجل السحوبات للمستخدم
+        await this.loadUserWithdrawHistory(user.id);
+        
+        // جلب سجل التعبئة للمستخدم
+        await this.loadUserRechargeHistory(user.id);
         
       } catch (error) {
         console.error("خطأ في جلب تفاصيل الحساب:", error);
@@ -767,24 +832,88 @@ export default {
       }
     },
     
+    async loadUserWithdrawHistory(userId) {
+      try {
+        const withdrawLogsQuery = query(
+          collection(db, "withdraw_logs"),
+          where("userId", "==", userId),
+          orderBy("createdAt", "desc")
+        );
+        const snap = await getDocs(withdrawLogsQuery);
+        this.accountWithdrawHistory = snap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+      } catch (error) {
+        console.error("خطأ في جلب سجل السحوبات:", error);
+        this.accountWithdrawHistory = [];
+      }
+    },
+    
+    async loadUserRechargeHistory(userId) {
+      try {
+        const rechargeLogsQuery = query(
+          collection(db, "recharge_logs"),
+          where("userId", "==", userId),
+          orderBy("createdAt", "desc")
+        );
+        const snap = await getDocs(rechargeLogsQuery);
+        this.accountRechargeHistory = snap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        
+        if (this.accountRechargeHistory.length === 0) {
+          const transactionsQuery = query(
+            collection(db, "transactions"),
+            where("userId", "==", userId),
+            where("type", "==", "recharge"),
+            orderBy("createdAt", "desc")
+          );
+          const transSnap = await getDocs(transactionsQuery);
+          this.accountRechargeHistory = transSnap.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+        }
+      } catch (error) {
+        console.error("خطأ في جلب سجل التعبئة:", error);
+        this.accountRechargeHistory = [];
+      }
+    },
+    
+    showUserWithdrawHistory() {
+      this.showWithdrawHistory = !this.showWithdrawHistory;
+      this.showRechargeHistory = false;
+    },
+    
+    showUserRechargeHistory() {
+      this.showRechargeHistory = !this.showRechargeHistory;
+      this.showWithdrawHistory = false;
+    },
+    
     closeAccountDetailsModal() {
       this.showAccountDetailsModal = false;
       this.accountDetails = {
         email: "",
         phoneNumber: "",
-        password: "",
-        vipLevel: "",
+        vipLevel: "عادي",
         vipLevelName: "",
         vipExpiryDate: null,
         createdAt: null,
         balance: 0,
-        blocked: false
+        blocked: false,
+        userId: null
       };
-      this.showPassword = false;
+      this.accountWithdrawHistory = [];
+      this.accountRechargeHistory = [];
+      this.showWithdrawHistory = false;
+      this.showRechargeHistory = false;
     },
     
-    togglePasswordVisibility() {
-      this.showPassword = !this.showPassword;
+    formatBalance(balance) {
+      if (!balance && balance !== 0) return "0";
+      return parseFloat(balance).toFixed(2);
     },
     
     getVipText(vipLevel) {
@@ -871,8 +1000,6 @@ export default {
 
         this.userDetails.referralCount = directReferralUsers.length;
         this.userDetails.referredUsers = directReferralUsers;
-
-        console.log("تفاصيل المستخدم (المستوى 1 فقط):", this.userDetails);
 
       } catch (error) {
         console.error("خطأ في جلب تفاصيل المستخدم:", error);
@@ -1003,7 +1130,9 @@ export default {
             blocked: data.blocked ?? false,
             notificationsCount: data.notificationsCount ?? 0,
             registrationMethod: data.registrationMethod || (data.phoneNumber ? 'phone' : 'email'),
-            createdAt: data.createdAt || data.registeredAt || null
+            createdAt: data.createdAt || data.registeredAt || null,
+            vipLevel: data.vipLevel || "عادي",
+            vipExpiryDate: data.vipExpiryDate || null
           };
         });
       } catch (e) {
@@ -2164,17 +2293,6 @@ export default {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.btn-small {
-  background: #D4AF37;
-  color: #0A0C10;
-  border: none;
-  border-radius: 4px;
-  padding: 2px 8px;
-  font-size: 10px;
-  cursor: pointer;
-  margin-right: 8px;
-}
-
 .details-btn {
   background: #6c757d;
 }
@@ -2248,6 +2366,10 @@ export default {
   border: 1px solid rgba(212, 175, 55, 0.3);
 }
 
+.account-details-modal {
+  max-width: 500px;
+}
+
 .modal h3 {
   font-size: 14px;
   margin: 0 0 10px 0;
@@ -2299,20 +2421,54 @@ export default {
   font-weight: 500;
 }
 
-.password-value {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+.vip-expiry {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 4px;
+  display: block;
 }
 
-.password-reveal {
-  margin-top: 6px;
+.account-buttons {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0;
+  justify-content: center;
+}
+
+.account-buttons .btn {
+  flex: 1;
+  min-width: auto;
+}
+
+.history-section {
+  margin-top: 15px;
+  border-top: 1px solid rgba(212, 175, 55, 0.3);
+  padding-top: 10px;
+}
+
+.history-section h4 {
   font-size: 12px;
-  background: #0A0C10;
-  padding: 6px;
-  border-radius: 4px;
-  word-break: break-all;
+  color: #D4AF37;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.history-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.history-item {
+  background: #1A1F2A;
+  padding: 8px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.history-item p {
+  margin: 3px 0;
+  font-size: 10px;
 }
 
 .vip-badge {
@@ -2459,6 +2615,10 @@ export default {
   .btn {
     flex: 1;
     min-width: auto;
+  }
+  
+  .account-buttons {
+    flex-direction: column;
   }
 }
 </style>
