@@ -158,7 +158,6 @@
               <button class="btn red" type="button" @click="promptDeduct(u)">سحب رصيد</button>
               <button class="btn details-btn" type="button" @click="viewUserDetails(u)">تفاصيل</button>
               <button class="btn blue" type="button" @click="sendResetPassword(u.email)" :disabled="!u.email">إعادة تعيين كلمة السر</button>
-              <!-- زر تفاصيل الحساب -->
               <button class="btn purple" type="button" @click="openAccountDetailsModal(u)">
                 <i class="fas fa-user-circle"></i> تفاصيل الحساب
               </button>
@@ -394,7 +393,7 @@
       </div>
     </div>
 
-    <!-- Modal تفاصيل الحساب (مع سجل السحب والتعبئة) -->
+    <!-- Modal تفاصيل الحساب -->
     <div v-if="showAccountDetailsModal" class="modal-backdrop" @click.self="closeAccountDetailsModal">
       <div class="modal account-details-modal">
         <h3><i class="fas fa-user-circle"></i> تفاصيل الحساب</h3>
@@ -442,7 +441,6 @@
           </div>
         </div>
         
-        <!-- أزرار سجل السحب وسجل التعبئة -->
         <div class="account-buttons">
           <button class="btn gold" @click="showUserWithdrawHistory" type="button">
             📤 سجل السحوبات ({{ accountWithdrawHistory.length }})
@@ -452,7 +450,6 @@
           </button>
         </div>
         
-        <!-- عرض سجل السحوبات -->
         <div v-if="showWithdrawHistory" class="history-section">
           <h4>سجل السحوبات</h4>
           <div v-if="accountWithdrawHistory.length === 0" class="empty-text">لا توجد سحوبات</div>
@@ -473,7 +470,6 @@
           </div>
         </div>
         
-        <!-- عرض سجل التعبئة -->
         <div v-if="showRechargeHistory" class="history-section">
           <h4>سجل التعبئة</h4>
           <div v-if="accountRechargeHistory.length === 0" class="empty-text">لا توجد تعبئات</div>
@@ -593,13 +589,11 @@ export default {
         referredUsers: []
       },
       
-      // متغيرات تفاصيل الحساب الجديدة
       showAccountDetailsModal: false,
       accountDetails: {
         email: "",
         phoneNumber: "",
         vipLevel: "عادي",
-        vipLevelName: "",
         vipExpiryDate: null,
         createdAt: null,
         balance: 0,
@@ -768,16 +762,13 @@ export default {
     }
   },
   methods: {
-    // دالة عرض تفاصيل الحساب
     async openAccountDetailsModal(user) {
       try {
         this.showAccountDetailsModal = true;
         this.showWithdrawHistory = false;
         this.showRechargeHistory = false;
         
-        // جلب بيانات VIP للمستخدم
         let vipLevel = "عادي";
-        let vipLevelName = "عادي";
         let vipExpiryDate = null;
         
         try {
@@ -793,18 +784,15 @@ export default {
           if (!vipSnap.empty) {
             const vipData = vipSnap.docs[0].data();
             vipLevel = vipData.vipLevel || "عادي";
-            vipLevelName = this.getVipText(vipLevel);
             vipExpiryDate = vipData.expiryDate;
           } else if (user.vipLevel && user.vipLevel !== "عادي") {
             vipLevel = user.vipLevel;
-            vipLevelName = this.getVipText(vipLevel);
             vipExpiryDate = user.vipExpiryDate || null;
           }
         } catch (err) {
           console.warn("Failed to fetch VIP data:", err);
           if (user.vipLevel) {
             vipLevel = user.vipLevel;
-            vipLevelName = this.getVipText(vipLevel);
           }
         }
         
@@ -812,7 +800,6 @@ export default {
           email: user.email || "—",
           phoneNumber: user.phoneNumber || "—",
           vipLevel: vipLevel,
-          vipLevelName: vipLevelName,
           vipExpiryDate: vipExpiryDate,
           createdAt: user.createdAt || null,
           balance: user.balance || 0,
@@ -820,10 +807,7 @@ export default {
           userId: user.id
         };
         
-        // جلب سجل السحوبات للمستخدم
         await this.loadUserWithdrawHistory(user.id);
-        
-        // جلب سجل التعبئة للمستخدم
         await this.loadUserRechargeHistory(user.id);
         
       } catch (error) {
@@ -839,11 +823,27 @@ export default {
           where("userId", "==", userId),
           orderBy("createdAt", "desc")
         );
-        const snap = await getDocs(withdrawLogsQuery);
-        this.accountWithdrawHistory = snap.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        const withdrawSnap = await getDocs(withdrawLogsQuery);
+        
+        if (!withdrawSnap.empty) {
+          this.accountWithdrawHistory = withdrawSnap.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+        } else {
+          const transactionsQuery = query(
+            collection(db, "transactions"),
+            where("userId", "==", userId),
+            where("type", "==", "withdraw"),
+            orderBy("createdAt", "desc")
+          );
+          const transSnap = await getDocs(transactionsQuery);
+          this.accountWithdrawHistory = transSnap.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            type: doc.data().status
+          }));
+        }
       } catch (error) {
         console.error("خطأ في جلب سجل السحوبات:", error);
         this.accountWithdrawHistory = [];
@@ -857,13 +857,14 @@ export default {
           where("userId", "==", userId),
           orderBy("createdAt", "desc")
         );
-        const snap = await getDocs(rechargeLogsQuery);
-        this.accountRechargeHistory = snap.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        const rechargeSnap = await getDocs(rechargeLogsQuery);
         
-        if (this.accountRechargeHistory.length === 0) {
+        if (!rechargeSnap.empty) {
+          this.accountRechargeHistory = rechargeSnap.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+        } else {
           const transactionsQuery = query(
             collection(db, "transactions"),
             where("userId", "==", userId),
@@ -873,7 +874,8 @@ export default {
           const transSnap = await getDocs(transactionsQuery);
           this.accountRechargeHistory = transSnap.docs.map(doc => ({
             id: doc.id,
-            ...doc.data()
+            ...doc.data(),
+            type: doc.data().status
           }));
         }
       } catch (error) {
@@ -898,7 +900,6 @@ export default {
         email: "",
         phoneNumber: "",
         vipLevel: "عادي",
-        vipLevelName: "",
         vipExpiryDate: null,
         createdAt: null,
         balance: 0,
