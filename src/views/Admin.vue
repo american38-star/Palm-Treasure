@@ -28,6 +28,9 @@
       <button :class="['tab', activeTab === 'rechargeLogs' ? 'active' : '']" @click="switchTab('rechargeLogs')">
         سجل التعبئة
       </button>
+      <button :class="['tab', activeTab === 'wheelSettings' ? 'active' : '']" @click="switchTab('wheelSettings')">
+        🎡 إعدادات العجلة
+      </button>
     </div>
 
     <!-- طلبات السحب -->
@@ -167,6 +170,9 @@
               <button class="btn gold-outline" type="button" @click="viewUserNotifications(u)">
                 الإشعارات ({{ u.notificationsCount || 0 }})
               </button>
+              <button class="btn wheel-settings-btn" type="button" @click="openUserWheelSettings(u)">
+                🎡 إعدادات العجلة
+              </button>
             </div>
           </div>
         </div>
@@ -272,6 +278,103 @@
       </div>
     </div>
 
+    <!-- إعدادات عجلة الحظ العامة -->
+    <div v-if="activeTab === 'wheelSettings'" class="panel">
+      <div class="panel-header">
+        <h2>🎡 إعدادات عجلة الحظ (العامة)</h2>
+        <div class="controls">
+          <button @click="loadWheelSettings" type="button">تحديث</button>
+          <button @click="resetToDefaultSettings" type="button">استعادة الإعدادات الافتراضية</button>
+        </div>
+      </div>
+
+      <div v-if="loadingWheelSettings" class="loading">⏳ جاري تحميل إعدادات العجلة...</div>
+      <div v-else>
+        <div class="wheel-settings-form">
+          <div class="form-group">
+            <label>نسبة الخسارة (%)</label>
+            <input 
+              type="number" 
+              v-model.number="wheelSettings.lossRate" 
+              @input="validateWheelRates"
+              min="0" 
+              max="100"
+              step="0.1"
+              class="settings-input"
+            />
+            <span class="value-display">{{ wheelSettings.lossRate }}%</span>
+          </div>
+          
+          <div class="form-group">
+            <label>نسبة الربح الصغير (%)</label>
+            <input 
+              type="number" 
+              v-model.number="wheelSettings.smallWinRate" 
+              @input="validateWheelRates"
+              min="0" 
+              max="100"
+              step="0.1"
+              class="settings-input"
+            />
+            <span class="value-display">{{ wheelSettings.smallWinRate }}%</span>
+            <small class="hint">(مضاعف 0.5x)</small>
+          </div>
+          
+          <div class="form-group">
+            <label>نسبة الربح الكبير (%)</label>
+            <input 
+              type="number" 
+              v-model.number="wheelSettings.bigWinRate" 
+              @input="validateWheelRates"
+              min="0" 
+              max="100"
+              step="0.1"
+              class="settings-input"
+            />
+            <span class="value-display">{{ wheelSettings.bigWinRate }}%</span>
+            <small class="hint">(مضاعف 1.5x)</small>
+          </div>
+          
+          <div class="total-info" :class="{ 'error': wheelSettingsTotal !== 100 }">
+            <strong>المجموع: {{ wheelSettingsTotal }}%</strong>
+            <span v-if="wheelSettingsTotal !== 100" class="error-message">
+              يجب أن يكون المجموع 100% (الفرق: {{ (100 - wheelSettingsTotal).toFixed(1) }}%)
+            </span>
+            <span v-else class="success-message">
+              ✓ النسب صحيحة
+            </span>
+          </div>
+          
+          <div class="preview">
+            <h3>معاينة النسب الحالية</h3>
+            <div class="preview-bars">
+              <div class="bar loss" :style="{ width: wheelSettings.lossRate + '%' }">
+                خسارة: {{ wheelSettings.lossRate }}%
+              </div>
+              <div class="bar small-win" :style="{ width: wheelSettings.smallWinRate + '%' }">
+                ربح صغير: {{ wheelSettings.smallWinRate }}%
+              </div>
+              <div class="bar big-win" :style="{ width: wheelSettings.bigWinRate + '%' }">
+                ربح كبير: {{ wheelSettings.bigWinRate }}%
+              </div>
+            </div>
+          </div>
+          
+          <button 
+            @click="saveWheelSettings" 
+            :disabled="!wheelSettingsValid || savingWheelSettings"
+            class="save-btn"
+          >
+            {{ savingWheelSettings ? 'جاري الحفظ...' : '💾 حفظ الإعدادات العامة' }}
+          </button>
+          
+          <div v-if="wheelSettingsMessage" class="save-message" :class="wheelSettingsMessageType">
+            {{ wheelSettingsMessage }}
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal رفض مع سبب -->
     <div v-if="showRejectModal" class="modal-backdrop" @click.self="closeRejectModal">
       <div class="modal">
@@ -330,6 +433,98 @@
             تأكيد الموافقة
           </button>
           <button class="btn gold-outline" type="button" @click="closeApproveModal">إلغاء</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal إعدادات العجلة للمستخدم -->
+    <div v-if="showUserWheelModal" class="modal-backdrop" @click.self="closeUserWheelModal">
+      <div class="modal user-wheel-modal">
+        <h3>🎡 إعدادات عجلة الحظ للمستخدم</h3>
+        <p><strong>المستخدم:</strong> <span class="gold-text">{{ selectedUser.email || selectedUser.phoneNumber || '—' }}</span></p>
+        <p class="muted">تحديد "استخدام الإعدادات العامة" يعني أن اللعبة ستستخدم إعدادات العجلة العامة</p>
+        
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" v-model="useGlobalSettingsForUser" @change="onUseGlobalSettingsChange" />
+            <span>استخدام الإعدادات العامة</span>
+          </label>
+        </div>
+        
+        <div v-if="!useGlobalSettingsForUser" class="user-settings-form">
+          <div class="form-group">
+            <label>نسبة الخسارة (%)</label>
+            <input 
+              type="number" 
+              v-model.number="userWheelSettings.lossRate" 
+              @input="validateUserWheelRates"
+              min="0" 
+              max="100"
+              step="0.1"
+              class="settings-input"
+            />
+            <span class="value-display">{{ userWheelSettings.lossRate }}%</span>
+          </div>
+          
+          <div class="form-group">
+            <label>نسبة الربح الصغير (%)</label>
+            <input 
+              type="number" 
+              v-model.number="userWheelSettings.smallWinRate" 
+              @input="validateUserWheelRates"
+              min="0" 
+              max="100"
+              step="0.1"
+              class="settings-input"
+            />
+            <span class="value-display">{{ userWheelSettings.smallWinRate }}%</span>
+            <small class="hint">(مضاعف 0.5x)</small>
+          </div>
+          
+          <div class="form-group">
+            <label>نسبة الربح الكبير (%)</label>
+            <input 
+              type="number" 
+              v-model.number="userWheelSettings.bigWinRate" 
+              @input="validateUserWheelRates"
+              min="0" 
+              max="100"
+              step="0.1"
+              class="settings-input"
+            />
+            <span class="value-display">{{ userWheelSettings.bigWinRate }}%</span>
+            <small class="hint">(مضاعف 1.5x)</small>
+          </div>
+          
+          <div class="total-info" :class="{ 'error': userWheelSettingsTotal !== 100 }">
+            <strong>المجموع: {{ userWheelSettingsTotal }}%</strong>
+            <span v-if="userWheelSettingsTotal !== 100" class="error-message">
+              يجب أن يكون المجموع 100% (الفرق: {{ (100 - userWheelSettingsTotal).toFixed(1) }}%)
+            </span>
+            <span v-else class="success-message">
+              ✓ النسب صحيحة
+            </span>
+          </div>
+        </div>
+        
+        <div v-else class="global-settings-info">
+          <p>سيتم استخدام الإعدادات العامة التالية:</p>
+          <div class="global-preview">
+            <div class="preview-item">خسارة: {{ globalWheelSettings.lossRate }}%</div>
+            <div class="preview-item">ربح صغير: {{ globalWheelSettings.smallWinRate }}%</div>
+            <div class="preview-item">ربح كبير: {{ globalWheelSettings.bigWinRate }}%</div>
+          </div>
+        </div>
+        
+        <div class="modal-actions">
+          <button class="btn gold" type="button" @click="saveUserWheelSettings" :disabled="savingUserWheelSettings">
+            {{ savingUserWheelSettings ? 'جاري الحفظ...' : '💾 حفظ الإعدادات' }}
+          </button>
+          <button class="btn gold-outline" type="button" @click="closeUserWheelModal">إلغاء</button>
+        </div>
+        
+        <div v-if="userWheelSettingsMessage" class="save-message" :class="userWheelSettingsMessageType">
+          {{ userWheelSettingsMessage }}
         </div>
       </div>
     </div>
@@ -522,7 +717,8 @@ import {
   orderBy,
   where,
   increment,
-  limit
+  limit,
+  setDoc
 } from "firebase/firestore";
 import { db } from "../firebase";
 
@@ -603,7 +799,36 @@ export default {
       accountWithdrawHistory: [],
       accountRechargeHistory: [],
       showWithdrawHistory: false,
-      showRechargeHistory: false
+      showRechargeHistory: false,
+      
+      // إعدادات عجلة الحظ
+      wheelSettings: {
+        lossRate: 40,
+        smallWinRate: 35,
+        bigWinRate: 25
+      },
+      globalWheelSettings: {
+        lossRate: 40,
+        smallWinRate: 35,
+        bigWinRate: 25
+      },
+      loadingWheelSettings: false,
+      savingWheelSettings: false,
+      wheelSettingsMessage: "",
+      wheelSettingsMessageType: "",
+      
+      // إعدادات العجلة للمستخدم
+      showUserWheelModal: false,
+      selectedUser: null,
+      useGlobalSettingsForUser: true,
+      userWheelSettings: {
+        lossRate: 40,
+        smallWinRate: 35,
+        bigWinRate: 25
+      },
+      savingUserWheelSettings: false,
+      userWheelSettingsMessage: "",
+      userWheelSettingsMessageType: ""
     };
   },
   computed: {
@@ -726,6 +951,24 @@ export default {
       
       return list;
     },
+    wheelSettingsTotal() {
+      return this.wheelSettings.lossRate + this.wheelSettings.smallWinRate + this.wheelSettings.bigWinRate;
+    },
+    wheelSettingsValid() {
+      return Math.abs(this.wheelSettingsTotal - 100) < 0.01 &&
+             this.wheelSettings.lossRate >= 0 && 
+             this.wheelSettings.smallWinRate >= 0 && 
+             this.wheelSettings.bigWinRate >= 0;
+    },
+    userWheelSettingsTotal() {
+      return this.userWheelSettings.lossRate + this.userWheelSettings.smallWinRate + this.userWheelSettings.bigWinRate;
+    },
+    userWheelSettingsValid() {
+      return Math.abs(this.userWheelSettingsTotal - 100) < 0.01 &&
+             this.userWheelSettings.lossRate >= 0 && 
+             this.userWheelSettings.smallWinRate >= 0 && 
+             this.userWheelSettings.bigWinRate >= 0;
+    }
   },
   created() {
     const auth = getAuth();
@@ -751,6 +994,7 @@ export default {
         this.loadWithdrawRequests(),
         this.loadUsers(),
         this.loadWithdrawLogs(),
+        this.loadWheelSettings()
       ]);
       this.attachRechargeListener();
     });
@@ -762,6 +1006,203 @@ export default {
     }
   },
   methods: {
+    // ==================== إعدادات عجلة الحظ ====================
+    async loadWheelSettings() {
+      this.loadingWheelSettings = true;
+      try {
+        const settingsRef = doc(db, "settings", "wheel");
+        const settingsDoc = await getDoc(settingsRef);
+        
+        if (settingsDoc.exists()) {
+          this.wheelSettings = settingsDoc.data();
+          this.globalWheelSettings = { ...this.wheelSettings };
+        } else {
+          await this.createDefaultWheelSettings();
+        }
+      } catch (error) {
+        console.error("خطأ في تحميل إعدادات العجلة:", error);
+        this.wheelSettingsMessage = "حدث خطأ في تحميل الإعدادات";
+        this.wheelSettingsMessageType = "error";
+      } finally {
+        this.loadingWheelSettings = false;
+      }
+    },
+    
+    async createDefaultWheelSettings() {
+      try {
+        const defaultSettings = {
+          lossRate: 40,
+          smallWinRate: 35,
+          bigWinRate: 25
+        };
+        const settingsRef = doc(db, "settings", "wheel");
+        await setDoc(settingsRef, defaultSettings);
+        this.wheelSettings = defaultSettings;
+        this.globalWheelSettings = { ...defaultSettings };
+      } catch (error) {
+        console.error("خطأ في إنشاء الإعدادات الافتراضية:", error);
+      }
+    },
+    
+    validateWheelRates() {
+      this.wheelSettings.lossRate = Math.min(100, Math.max(0, this.wheelSettings.lossRate || 0));
+      this.wheelSettings.smallWinRate = Math.min(100, Math.max(0, this.wheelSettings.smallWinRate || 0));
+      this.wheelSettings.bigWinRate = Math.min(100, Math.max(0, this.wheelSettings.bigWinRate || 0));
+      this.wheelSettingsMessage = "";
+    },
+    
+    async saveWheelSettings() {
+      if (!this.wheelSettingsValid) {
+        this.wheelSettingsMessage = "الرجاء التأكد من أن مجموع النسب يساوي 100%";
+        this.wheelSettingsMessageType = "error";
+        return;
+      }
+      
+      this.savingWheelSettings = true;
+      this.wheelSettingsMessage = "";
+      
+      try {
+        const settingsRef = doc(db, "settings", "wheel");
+        await updateDoc(settingsRef, {
+          lossRate: this.wheelSettings.lossRate,
+          smallWinRate: this.wheelSettings.smallWinRate,
+          bigWinRate: this.wheelSettings.bigWinRate
+        });
+        
+        this.globalWheelSettings = { ...this.wheelSettings };
+        this.wheelSettingsMessage = "تم حفظ الإعدادات العامة بنجاح!";
+        this.wheelSettingsMessageType = "success";
+        
+        setTimeout(() => {
+          this.wheelSettingsMessage = "";
+        }, 3000);
+      } catch (error) {
+        console.error("خطأ في حفظ الإعدادات:", error);
+        this.wheelSettingsMessage = "حدث خطأ أثناء حفظ الإعدادات";
+        this.wheelSettingsMessageType = "error";
+      } finally {
+        this.savingWheelSettings = false;
+      }
+    },
+    
+    async resetToDefaultSettings() {
+      if (!confirm("هل أنت متأكد من استعادة الإعدادات الافتراضية؟")) return;
+      
+      this.wheelSettings = {
+        lossRate: 40,
+        smallWinRate: 35,
+        bigWinRate: 25
+      };
+      
+      await this.saveWheelSettings();
+    },
+    
+    // ==================== إعدادات العجلة لكل مستخدم ====================
+    async openUserWheelSettings(user) {
+      this.selectedUser = user;
+      this.userWheelSettingsMessage = "";
+      this.savingUserWheelSettings = false;
+      
+      try {
+        const userSettingsRef = doc(db, "user_wheel_settings", user.id);
+        const userSettingsDoc = await getDoc(userSettingsRef);
+        
+        if (userSettingsDoc.exists()) {
+          const data = userSettingsDoc.data();
+          this.useGlobalSettingsForUser = data.useGlobalSettings !== false;
+          
+          if (!this.useGlobalSettingsForUser && data.settings) {
+            this.userWheelSettings = {
+              lossRate: data.settings.lossRate || 40,
+              smallWinRate: data.settings.smallWinRate || 35,
+              bigWinRate: data.settings.bigWinRate || 25
+            };
+          } else {
+            this.userWheelSettings = { ...this.globalWheelSettings };
+          }
+        } else {
+          this.useGlobalSettingsForUser = true;
+          this.userWheelSettings = { ...this.globalWheelSettings };
+        }
+        
+        this.showUserWheelModal = true;
+      } catch (error) {
+        console.error("خطأ في تحميل إعدادات المستخدم:", error);
+        alert("حدث خطأ في تحميل الإعدادات");
+      }
+    },
+    
+    closeUserWheelModal() {
+      this.showUserWheelModal = false;
+      this.selectedUser = null;
+      this.userWheelSettingsMessage = "";
+    },
+    
+    validateUserWheelRates() {
+      this.userWheelSettings.lossRate = Math.min(100, Math.max(0, this.userWheelSettings.lossRate || 0));
+      this.userWheelSettings.smallWinRate = Math.min(100, Math.max(0, this.userWheelSettings.smallWinRate || 0));
+      this.userWheelSettings.bigWinRate = Math.min(100, Math.max(0, this.userWheelSettings.bigWinRate || 0));
+      this.userWheelSettingsMessage = "";
+    },
+    
+    onUseGlobalSettingsChange() {
+      if (this.useGlobalSettingsForUser) {
+        this.userWheelSettings = { ...this.globalWheelSettings };
+      }
+    },
+    
+    async saveUserWheelSettings() {
+      if (!this.useGlobalSettingsForUser && !this.userWheelSettingsValid) {
+        this.userWheelSettingsMessage = "الرجاء التأكد من أن مجموع النسب يساوي 100%";
+        this.userWheelSettingsMessageType = "error";
+        return;
+      }
+      
+      this.savingUserWheelSettings = true;
+      this.userWheelSettingsMessage = "";
+      
+      try {
+        const userSettingsRef = doc(db, "user_wheel_settings", this.selectedUser.id);
+        
+        const dataToSave = {
+          userId: this.selectedUser.id,
+          userEmail: this.selectedUser.email,
+          userPhone: this.selectedUser.phoneNumber,
+          useGlobalSettings: this.useGlobalSettingsForUser,
+          updatedAt: serverTimestamp(),
+          updatedBy: this.currentUser?.email || "admin"
+        };
+        
+        if (!this.useGlobalSettingsForUser) {
+          dataToSave.settings = {
+            lossRate: this.userWheelSettings.lossRate,
+            smallWinRate: this.userWheelSettings.smallWinRate,
+            bigWinRate: this.userWheelSettings.bigWinRate
+          };
+        }
+        
+        await setDoc(userSettingsRef, dataToSave, { merge: true });
+        
+        this.userWheelSettingsMessage = "تم حفظ إعدادات المستخدم بنجاح!";
+        this.userWheelSettingsMessageType = "success";
+        
+        setTimeout(() => {
+          this.userWheelSettingsMessage = "";
+        }, 2000);
+        
+        setTimeout(() => {
+          this.closeUserWheelModal();
+        }, 1500);
+      } catch (error) {
+        console.error("خطأ في حفظ إعدادات المستخدم:", error);
+        this.userWheelSettingsMessage = "حدث خطأ أثناء حفظ الإعدادات";
+        this.userWheelSettingsMessageType = "error";
+      } finally {
+        this.savingUserWheelSettings = false;
+      }
+    },
+    
+    // ==================== باقي دوال الأدمن ====================
     async openAccountDetailsModal(user) {
       try {
         this.showAccountDetailsModal = true;
@@ -1114,6 +1555,9 @@ export default {
       }
       else if (tab === "rechargeLogs") {
         this.loadRechargeLogs();
+      }
+      else if (tab === "wheelSettings") {
+        this.loadWheelSettings();
       }
     },
     
@@ -2330,6 +2774,11 @@ export default {
   background: #9c27b0;
 }
 
+.wheel-settings-btn {
+  background: #ff9800;
+  color: #0A0C10;
+}
+
 .loading {
   text-align: center;
   padding: 10px;
@@ -2367,6 +2816,10 @@ export default {
   border: 1px solid rgba(212, 175, 55, 0.3);
 }
 
+.user-wheel-modal {
+  max-width: 450px;
+}
+
 .account-details-modal {
   max-width: 500px;
 }
@@ -2396,6 +2849,202 @@ export default {
   gap: 8px;
   margin-top: 10px;
   justify-content: flex-end;
+}
+
+/* إعدادات العجلة */
+.wheel-settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 10px;
+}
+
+.form-group {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.form-group label {
+  width: 150px;
+  font-weight: 600;
+  color: #D4AF37;
+}
+
+.settings-input {
+  flex: 1;
+  min-width: 120px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  background: #1A1F2A;
+  color: white;
+  font-size: 14px;
+}
+
+.settings-input:focus {
+  outline: none;
+  border-color: #D4AF37;
+}
+
+.value-display {
+  min-width: 60px;
+  color: #D4AF37;
+  font-weight: bold;
+}
+
+.hint {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-right: 8px;
+}
+
+.total-info {
+  padding: 10px;
+  border-radius: 6px;
+  background: #1A1F2A;
+  text-align: center;
+}
+
+.total-info.error {
+  background: rgba(220, 53, 69, 0.2);
+  border: 1px solid #dc3545;
+}
+
+.total-info .error-message {
+  color: #dc3545;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.total-info .success-message {
+  color: #28a745;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.preview {
+  margin-top: 15px;
+  padding: 10px;
+  background: #1A1F2A;
+  border-radius: 8px;
+}
+
+.preview h3 {
+  font-size: 12px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.preview-bars {
+  display: flex;
+  height: 30px;
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.preview-bars .bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  text-shadow: 0 0 2px black;
+}
+
+.bar.loss {
+  background: #dc3545;
+}
+
+.bar.small-win {
+  background: #ff9800;
+}
+
+.bar.big-win {
+  background: #28a745;
+}
+
+.save-btn {
+  background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
+  color: #0A0C10;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.save-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+}
+
+.save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.save-message {
+  margin-top: 10px;
+  padding: 8px;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 12px;
+}
+
+.save-message.success {
+  background: rgba(40, 167, 69, 0.2);
+  color: #28a745;
+  border: 1px solid #28a745;
+}
+
+.save-message.error {
+  background: rgba(220, 53, 69, 0.2);
+  color: #dc3545;
+  border: 1px solid #dc3545;
+}
+
+.global-settings-info {
+  padding: 10px;
+  background: #1A1F2A;
+  border-radius: 6px;
+  margin-top: 10px;
+}
+
+.global-preview {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.global-preview .preview-item {
+  padding: 4px 8px;
+  background: #11151C;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.checkbox-label input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.user-settings-form {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(212, 175, 55, 0.3);
 }
 
 .account-details {
@@ -2620,6 +3269,19 @@ export default {
   
   .account-buttons {
     flex-direction: column;
+  }
+  
+  .form-group {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .form-group label {
+    width: auto;
+  }
+  
+  .settings-input {
+    width: 100%;
   }
 }
 </style>
