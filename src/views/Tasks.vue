@@ -162,14 +162,14 @@ export default {
       
       // أجزاء العجلة (8 أجزاء) - جميع المضاعفات تعمل
       wheelSegments: [
-        { value: 0, probability: 40 },     // قطاع 0 - 0-45° (خسارة)
-        { value: 3, probability: 10 },      // قطاع 1 - 45-90° (ربح كبير)
-        { value: 5, probability: 8 },       // قطاع 2 - 90-135° (ربح كبير)
-        { value: 10, probability: 5 },      // قطاع 3 - 135-180° (جائزة كبرى)
-        { value: 2, probability: 12 },      // قطاع 4 - 180-225° (ربح متوسط)
-        { value: 0.5, probability: 25 },    // قطاع 5 - 225-270° (ربح صغير)
-        { value: 1, probability: 20 },      // قطاع 6 - 270-315° (تعادل)
-        { value: 1.5, probability: 15 }     // قطاع 7 - 315-360° (ربح متوسط)
+        { value: 2, probability: 40 },     // قطاع 0 - 0-45° (خسارة)
+        { value: 0.5, probability: 10 },      // قطاع 1 - 45-90° (ربح كبير)
+        { value: 1, probability: 8 },       // قطاع 2 - 90-135° (ربح كبير)
+        { value: 1.5, probability: 5 },      // قطاع 3 - 135-180° (جائزة كبرى)
+        { value: 0, probability: 12 },      // قطاع 4 - 180-225° (ربح متوسط)
+        { value: 3, probability: 25 },    // قطاع 5 - 225-270° (ربح صغير)
+        { value: 5, probability: 20 },      // قطاع 6 - 270-315° (تعادل)
+        { value: 10, probability: 15 }     // قطاع 7 - 315-360° (ربح متوسط)
       ],
       
       lastResult: null,
