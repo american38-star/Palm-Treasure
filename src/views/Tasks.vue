@@ -160,12 +160,12 @@ export default {
       settingsLoading: false,
       unsubscribeSettings: null,
       
-      // أجزاء العجلة (8 أجزاء) - جميع المضاعفات تعمل
+      // أجزاء العجلة (8 أجزاء) - تستخدم فقط للعرض البصري
       wheelSegments: [
-        { value: 10, probability: 40 },     // قطاع 0 - 0-45° (خسارة)
+        { value: 0, probability: 40 },     // قطاع 0 - 0-45° (خسارة)
         { value: 3, probability: 10 },      // قطاع 1 - 45-90° (ربح كبير)
         { value: 5, probability: 8 },       // قطاع 2 - 90-135° (ربح كبير)
-        { value: 0, probability: 5 },      // قطاع 3 - 135-180° (جائزة كبرى)
+        { value: 10, probability: 5 },      // قطاع 3 - 135-180° (جائزة كبرى)
         { value: 2, probability: 12 },      // قطاع 4 - 180-225° (ربح متوسط)
         { value: 0.5, probability: 25 },    // قطاع 5 - 225-270° (ربح صغير)
         { value: 1, probability: 20 },      // قطاع 6 - 270-315° (تعادل)
@@ -381,14 +381,14 @@ export default {
     },
     
     getSegmentColor(value) {
-      if (value === 10) return '#ffd700' // أحمر (خسارة)
+      if (value === 0) return '#d32f2f' // أحمر (خسارة)
       if (value === 0.5) return '#fb8c00' // برتقالي (ربح صغير)
       if (value === 1) return '#ffa726' // برتقالي فاتح (تعادل)
       if (value === 1.5) return '#ffb74d' // برتقالي غامق
       if (value === 2) return '#66bb6a' // أخضر فاتح
       if (value === 3) return '#4caf50' // أخضر
       if (value === 5) return '#2e7d32' // أخضر غامق
-      if (value === 0) return '#d32f2f' // ذهبي
+      if (value === 10) return '#ffd700' // ذهبي
       return '#388e3c'
     },
     
@@ -429,31 +429,25 @@ export default {
       return centerY + radius * Math.sin(angle)
     },
     
-    // دالة لتحديد القطاع بناءً على زاوية الدوران
+    // دالة لتحديد القطاع بناءً على زاوية الدوران (تستخدم فقط للعرض البصري)
     getCurrentSegmentIndex() {
-      // زاوية الدوران الحالية (0-360)
+      // زاوية الدوران المعدلة (0-360)
       let rotation = this.wheelRotation % 360
       if (rotation < 0) rotation += 360
       
-      // السهم في الأعلى - في نظام SVG الزاوية 270° تشير للأعلى
-      const pointerAngle = 270
+      // السهم في الأعلى (زاوية 90 درجة)
+      // القطاع الذي يشير إليه السهم هو القطاع الذي تكون زاويته 90 درجة في الاتجاه المعاكس للدوران
+      const pointerAngle = 90
       
-      // حساب الزاوية التي يشير إليها السهم بالنسبة للعجلة
-      let segmentAngleAtPointer = (pointerAngle + rotation) % 360
-      
-      // تصحيح الزاوية لتصبح ضمن 0-360
-      if (segmentAngleAtPointer < 0) segmentAngleAtPointer += 360
+      // الزاوية الفعلية للقطاع تحت السهم
+      const segmentAngleAtPointer = (pointerAngle - rotation + 360) % 360
       
       // تحديد رقم القطاع بناءً على الزاوية
       const segmentSize = this.segmentAngle
       let segmentIndex = Math.floor(segmentAngleAtPointer / segmentSize)
       
       // التأكد من أن المؤشر ضمن النطاق الصحيح
-      if (segmentIndex >= this.wheelSegments.length) {
-        segmentIndex = this.wheelSegments.length - 1
-      }
-      
-      console.log(`🔍 زاوية الدوران: ${rotation}° | زاوية السهم: ${pointerAngle}° | زاوية القطاع تحت السهم: ${segmentAngleAtPointer}° | القطاع: ${segmentIndex}`)
+      if (segmentIndex >= this.wheelSegments.length) segmentIndex = this.wheelSegments.length - 1
       
       return segmentIndex
     },
@@ -524,22 +518,32 @@ export default {
       // تشغيل صوت الدوران
       this.playSound(this.spinSound)
       
-      // استخدام النظام الجديد لتحديد النتيجة بناءً على الاحتمالات
+      // تحديد النتيجة باستخدام نظام الاحتمالات (مستقل تماماً عن العجلة)
       const result = this.getWinningResult()
       console.log(`🎯 النتيجة المستهدفة: ${result.message} (مضاعف ${result.multiplier}x)`)
       
-      // تحديد القطاع المناسب بناءً على النتيجة
-      const winningIndex = result.segmentIndex
-      const winningSegment = this.wheelSegments[winningIndex]
+      // إيجاد القطاع المناسب للعرض البصري بناءً على قيمة المضاعف الناتج
+      // البحث في wheelSegments عن قطاع يحمل نفس قيمة المضاعف
+      const visualSegmentIndex = this.wheelSegments.findIndex(segment => segment.value === result.multiplier)
       
-      console.log(`🎯 سيتوقف على: قطاع ${winningIndex} بقيمة ${winningSegment.value}x`)
+      let targetSegmentIndex = visualSegmentIndex
+      if (targetSegmentIndex === -1) {
+        // إذا لم يتم العثور على القطاع (لا يجب أن يحدث)، نستخدم قطاع الخسارة
+        targetSegmentIndex = 0
+        console.warn(`⚠️ لم يتم العثور على قطاع بمضاعف ${result.multiplier}، استخدام القطاع 0`)
+      }
       
-      // منتصف القطاع الفائز
-      const segmentMiddle = (winningIndex * this.segmentAngle) + (this.segmentAngle / 2)
+      console.log(`🎯 للعرض البصري: سيتوقف على قطاع ${targetSegmentIndex} بقيمة ${this.wheelSegments[targetSegmentIndex].value}x`)
       
-      // السهم في الأعلى (زاوية 270° في نظام SVG)
-      // الزاوية المطلوبة لجعل منتصف القطاع تحت السهم
-      let requiredAngle = (segmentMiddle - 270 + 360) % 360
+      // منتصف القطاع المطلوب للعرض البصري
+      const segmentMiddle = (targetSegmentIndex * this.segmentAngle) + (this.segmentAngle / 2)
+      
+      // السهم في الأعلى (زاوية 90 درجة في نظام SVG)
+      // الزاوية المطلوبة لجعل منتصف القطاع تحت السهم = 90 - منتصف القطاع
+      let requiredAngle = 90 - segmentMiddle
+      
+      // تصحيح الزاوية لتكون ضمن 0-360
+      if (requiredAngle < 0) requiredAngle += 360
       
       // عدد دورات عشوائي (15-25 دورة) لتبدو طبيعية
       const spins = 15 + Math.floor(Math.random() * 10)
@@ -566,10 +570,9 @@ export default {
           // التأكد من الزاوية النهائية مضبوطة
           this.wheelRotation = targetRotation
           
-          // انتظار بسيط ثم تمرير النتيجة المحددة مسبقاً مباشرة
+          // ننتظر قليلاً ثم ننهي الدوران باستخدام النتيجة المحسوبة مسبقاً
           setTimeout(() => {
-            // استخدام النتيجة المحددة مسبقاً وعدم إعادة الحساب
-            this.finishSpin(winningIndex, winningSegment, result)
+            this.finishSpin(result)
           }, 200)
         }
       }
@@ -577,15 +580,16 @@ export default {
       requestAnimationFrame(animate)
     },
     
-    async finishSpin(winningIndex, winningSegment, predictedResult) {
+    async finishSpin(predictedResult) {
       this.isSpinning = false
       
-      const multiplier = winningSegment.value
+      // استخدام المضاعف من النتيجة المحسوبة مسبقاً (مستقل تماماً عن العجلة)
+      const multiplier = predictedResult.multiplier
       const winAmount = this.betAmount * multiplier
       let message = ''
       let isWin = false
       
-      console.log(`💰 النتيجة النهائية: مضاعف ${multiplier}x | المبلغ ${winAmount.toFixed(2)} USDT | القطاع ${winningIndex}`)
+      console.log(`💰 النتيجة النهائية: مضاعف ${multiplier}x | المبلغ ${winAmount.toFixed(2)} USDT`)
       
       // حساب النتيجة بدقة حسب قيمة المضاعف الفعلية
       if (multiplier === 0) {
@@ -665,7 +669,6 @@ export default {
       
       // حفظ النتيجة الأخيرة
       this.lastResult = {
-        segmentIndex: winningIndex,
         multiplier: multiplier,
         isWin: isWin,
         winAmount: winAmount,
