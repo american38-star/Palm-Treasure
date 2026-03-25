@@ -429,7 +429,7 @@ export default {
       return centerY + radius * Math.sin(angle)
     },
     
-    // دالة لتحديد القطاع بناءً على زاوية الدوران (تم إصلاحها)
+    // دالة لتحديد القطاع بناءً على زاوية الدوران
     getCurrentSegmentIndex() {
       // زاوية الدوران الحالية (0-360)
       let rotation = this.wheelRotation % 360
@@ -439,8 +439,6 @@ export default {
       const pointerAngle = 270
       
       // حساب الزاوية التي يشير إليها السهم بالنسبة للعجلة
-      // العجلة تدور عكس اتجاه عقارب الساعة (لأن الزاوية تزيد مع الدوران)
-      // لذلك نحتاج إلى إضافة زاوية الدوران بدلاً من طرحها
       let segmentAngleAtPointer = (pointerAngle + rotation) % 360
       
       // تصحيح الزاوية لتصبح ضمن 0-360
@@ -568,16 +566,10 @@ export default {
           // التأكد من الزاوية النهائية مضبوطة
           this.wheelRotation = targetRotation
           
-          // ننتظر قليلاً ثم نحدد القطاع الفعلي بناءً على زاوية التوقف
+          // انتظار بسيط ثم تمرير النتيجة المحددة مسبقاً مباشرة
           setTimeout(() => {
-            // تحديد القطاع الذي يقف عنده السهم بدقة
-            const actualSegmentIndex = this.getCurrentSegmentIndex()
-            const actualSegment = this.wheelSegments[actualSegmentIndex]
-            
-            console.log(`✅ القطاع الفعلي بعد التوقف: قطاع ${actualSegmentIndex} بقيمة ${actualSegment.value}x`)
-            
-            // التأكد أن القطاع الفعلي هو نفسه القطاع المخطط له
-            this.finishSpin(actualSegmentIndex, actualSegment, result)
+            // استخدام النتيجة المحددة مسبقاً وعدم إعادة الحساب
+            this.finishSpin(winningIndex, winningSegment, result)
           }, 200)
         }
       }
@@ -593,7 +585,7 @@ export default {
       let message = ''
       let isWin = false
       
-      console.log(`💰 النتيجة النهائية: مضاعف ${multiplier}x | المبلغ ${winAmount.toFixed(2)} USDT`)
+      console.log(`💰 النتيجة النهائية: مضاعف ${multiplier}x | المبلغ ${winAmount.toFixed(2)} USDT | القطاع ${winningIndex}`)
       
       // حساب النتيجة بدقة حسب قيمة المضاعف الفعلية
       if (multiplier === 0) {
