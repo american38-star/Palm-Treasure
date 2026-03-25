@@ -1,4 +1,362 @@
-وت الخسارة
+<template>
+  <div class="game-page">
+    <!-- الرصيد -->
+    <div class="top-bar">
+      <div class="balance-gold">
+        <i class="fas fa-coins"></i>
+        <span>رصيدك: <strong>{{ balance.toFixed(2) }} USDT</strong></span>
+      </div>
+    </div>
+
+    <!-- رسالة الفوز/الخسارة - تظهر فقط بعد توقف العجلة -->
+    <transition name="slide-fade">
+      <div v-if="showResultMessage" class="result-message" :class="resultType">
+        <i :class="resultIcon"></i>
+        <span>{{ resultText }}</span>
+      </div>
+    </transition>
+
+    <!-- زر الرجوع عندما تكون اللعبة مفتوحة -->
+    <div v-if="gameOpened" class="back-button-container">
+      <button @click="closeGame" class="back-button">
+        <i class="fas fa-arrow-right"></i>
+        رجوع إلى الألعاب
+      </button>
+    </div>
+
+    <!-- التبويبات - تظهر فقط عندما لا تكون اللعبة مفتوحة -->
+    <div v-if="!gameOpened" class="tabs">
+      <button 
+        v-for="tab in gamesList" 
+        :key="tab.id"
+        :class="{active: selectedGame === tab.id}" 
+        @click="openGame(tab.id)"
+      >
+        <span class="tab-icon">{{ tab.icon }}</span>
+        <span class="tab-text">{{ tab.name }}</span>
+      </button>
+    </div>
+
+    <!-- عرض اللعبة المختارة - تظهر بملء الشاشة -->
+    <div v-if="gameOpened" class="game-fullscreen">
+      <!-- لعبة عجلة الحظ -->
+      <div v-if="selectedGame === 'wheel-of-fortune'" class="wheel-card">
+        <div class="wheel-header">
+          <h2>🎡 WHEEL OF FORTUNE</h2>
+          <div class="header-glow"></div>
+        </div>
+
+        <div class="wheel-content">
+          <!-- العجلة مع المضاعفات داخلها -->
+          <div class="wheel-wrapper">
+            <div class="pointer">▼</div>
+            <div class="wheel-container">
+              <svg 
+                class="wheel-svg" 
+                viewBox="0 0 200 200"
+                :style="{ transform: `rotate(${wheelRotation}deg)` }"
+              >
+                <!-- رسم القطاعات الدائرية -->
+                <g v-for="(segment, index) in wheelSegments" :key="index">
+                  <path
+                    :d="getSegmentPath(index)"
+                    :fill="getSegmentColor(segment.value)"
+                    stroke="white"
+                    stroke-width="1"
+                  />
+                  <text
+                    :x="getTextX(index)"
+                    :y="getTextY(index)"
+                    text-anchor="middle"
+                    dominant-baseline="middle"
+                    :fill="getTextColor(segment.value)"
+                    font-size="14"
+                    font-weight="bold"
+                  >
+                    {{ segment.value }}x
+                  </text>
+                </g>
+                
+                <!-- الدائرة الداخلية -->
+                <circle cx="100" cy="100" r="25" fill="#222" stroke="gold" stroke-width="3" />
+              </svg>
+            </div>
+          </div>
+
+          <!-- حقل الرهان -->
+          <div class="bet-section">
+            <div class="bet-input-wrapper">
+              <span class="bet-icon">💰</span>
+              <input
+                type="number"
+                v-model.number="betAmount"
+                placeholder="أدخل مبلغ الرهان"
+                class="bet-input"
+                min="0.01"
+                step="0.01"
+                :disabled="isSpinning"
+              />
+              <span class="bet-currency">USDT</span>
+            </div>
+
+            <div v-if="betAmount > balance" class="error-message">
+              ❌ الرصيد غير كافي
+            </div>
+
+            <div v-if="gameError" class="error-message">
+              ❌ {{ gameError }}
+            </div>
+
+            <button 
+              @click="spinWheel"
+              class="spin-btn"
+              :disabled="!canSpin || isSpinning"
+            >
+              <span v-if="!isSpinning">🎡 ابدأ الدوران</span>
+              <span v-else>جاري الدوران...</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { auth, db, doc, getDoc, updateDoc, onSnapshot } from "../firebase"
+
+export default {
+  name: "Games",
+  
+  data() {
+    return {
+      gameOpened: false,
+      selectedGame: "wheel-of-fortune",
+      showResultMessage: false,
+      resultType: '',
+      resultIcon: '',
+      resultText: '',
+      resultTimeout: null,
+      
+      gamesList: [
+        { id: 'wheel-of-fortune', name: 'Wheel of Fortune', icon: '🎡' }
+      ],
+      
+      balance: 0,
+      gameError: "",
+      
+      // بيانات عجلة الحظ
+      wheelRotation: 0,
+      isSpinning: false,
+      betAmount: null,
+      
+      // إعدادات النسب من Firebase
+      winSettings: {
+        lossRate: 40,
+        smallWinRate: 35,
+        bigWinRate: 25
+      },
+      
+      settingsLoading: false,
+      unsubscribeSettings: null,
+      
+      // أجزاء العجلة (8 أجزاء) - تستخدم فقط للعرض البصري
+      wheelSegments: [
+        { value: 2, probability: 40 },     // قطاع 0 - 0-45° (خسارة)
+        { value: 0.5, probability: 10 },      // قطاع 1 - 45-90° (ربح كبير)
+        { value: 1, probability: 8 },       // قطاع 2 - 90-135° (ربح كبير)
+        { value: 1.5, probability: 5 },      // قطاع 3 - 135-180° (جائزة كبرى)
+        { value: 0, probability: 12 },      // قطاع 4 - 180-225° (ربح متوسط)
+        { value: 3, probability: 25 },    // قطاع 5 - 225-270° (ربح صغير)
+        { value: 5, probability: 20 },      // قطاع 6 - 270-315° (تعادل)
+        { value: 10, probability: 15 }     // قطاع 7 - 315-360° (ربح متوسط)
+      ],
+      
+      lastResult: null,
+      
+      // أصوات اللعبة
+      spinSound: null,
+      winSound: null,
+      loseSound: null,
+      clickSound: null
+    }
+  },
+  
+  computed: {
+    segmentAngle() {
+      return 360 / this.wheelSegments.length // 45 درجة
+    },
+    
+    canSpin() {
+      return this.betAmount && 
+             this.betAmount > 0 && 
+             this.betAmount <= this.balance && 
+             !this.isSpinning
+    }
+  },
+  
+  async created() {
+    const user = auth.currentUser
+    if (!user) return
+    
+    const snap = await getDoc(doc(db, "users", user.uid))
+    if (snap.exists()) {
+      this.balance = Number(snap.data().balance || 0)
+    }
+    
+    // تحميل إعدادات النسب من Firebase
+    await this.fetchWheelSettings()
+    
+    // الاشتراك في التحديثات المباشرة للإعدادات
+    this.subscribeToSettings()
+    
+    // تهيئة الأصوات
+    this.initSounds()
+  },
+  
+  beforeUnmount() {
+    // إلغاء الاشتراك عند إغلاق المكون
+    if (this.unsubscribeSettings) {
+      this.unsubscribeSettings()
+    }
+  },
+  
+  methods: {
+    // دالة لجلب إعدادات العجلة من Firebase
+    async fetchWheelSettings() {
+      this.settingsLoading = true
+      try {
+        const settingsRef = doc(db, "settings", "wheel")
+        const settingsDoc = await getDoc(settingsRef)
+        
+        if (settingsDoc.exists()) {
+          this.winSettings = settingsDoc.data()
+          // تحديث احتمالات القطاعات بناءً على الإعدادات
+          this.updateSegmentProbabilities()
+        } else {
+          // إذا لم تكن الوثيقة موجودة، نقوم بإنشائها بالقيم الافتراضية
+          await this.createDefaultSettings()
+        }
+      } catch (error) {
+        console.error("❌ خطأ في جلب إعدادات العجلة:", error)
+        // استخدام القيم الافتراضية في حالة الخطأ
+      } finally {
+        this.settingsLoading = false
+      }
+    },
+    
+    // دالة لتحديث احتمالات القطاعات بناءً على الإعدادات
+    updateSegmentProbabilities() {
+      const { lossRate, smallWinRate, bigWinRate } = this.winSettings
+      
+      // توزيع النسب على القطاعات
+      // الخسارة: قطاع 0
+      this.wheelSegments[0].probability = lossRate
+      
+      // الأرباح الصغيرة: قطاع 0.5 و 1
+      const smallWinTotal = smallWinRate
+      this.wheelSegments[5].probability = smallWinTotal * 0.5 // 0.5x
+      this.wheelSegments[6].probability = smallWinTotal * 0.5 // 1x
+      
+      // الأرباح الكبيرة: قطاع 1.5, 2, 3, 5, 10
+      const bigWinTotal = bigWinRate
+      this.wheelSegments[7].probability = bigWinTotal * 0.25 // 1.5x
+      this.wheelSegments[4].probability = bigWinTotal * 0.2 // 2x
+      this.wheelSegments[1].probability = bigWinTotal * 0.2 // 3x
+      this.wheelSegments[2].probability = bigWinTotal * 0.2 // 5x
+      this.wheelSegments[3].probability = bigWinTotal * 0.15 // 10x
+    },
+    
+    // دالة لإنشاء الإعدادات الافتراضية
+    async createDefaultSettings() {
+      try {
+        const defaultSettings = {
+          lossRate: 40,
+          smallWinRate: 35,
+          bigWinRate: 25
+        }
+        const settingsRef = doc(db, "settings", "wheel")
+        await updateDoc(settingsRef, defaultSettings)
+        this.winSettings = defaultSettings
+        this.updateSegmentProbabilities()
+      } catch (error) {
+        console.error("❌ خطأ في إنشاء الإعدادات الافتراضية:", error)
+      }
+    },
+    
+    // الاشتراك في التحديثات المباشرة للإعدادات
+    subscribeToSettings() {
+      const settingsRef = doc(db, "settings", "wheel")
+      this.unsubscribeSettings = onSnapshot(settingsRef, (doc) => {
+        if (doc.exists()) {
+          this.winSettings = doc.data()
+          this.updateSegmentProbabilities()
+          console.log("✅ تم تحديث إعدادات العجلة:", this.winSettings)
+        }
+      }, (error) => {
+        console.error("❌ خطأ في الاستماع للإعدادات:", error)
+      })
+    },
+    
+    // دالة تحديد النتيجة بناءً على الاحتمالات الموزعة على القطاعات
+    getWinningResult() {
+      // حساب المجموع الكلي للاحتمالات
+      const totalProbability = this.wheelSegments.reduce((sum, segment) => sum + segment.probability, 0)
+      
+      // توليد رقم عشوائي
+      const random = Math.random() * totalProbability
+      
+      let cumulative = 0
+      for (let i = 0; i < this.wheelSegments.length; i++) {
+        cumulative += this.wheelSegments[i].probability
+        if (random < cumulative) {
+          const segment = this.wheelSegments[i]
+          let type = ''
+          let message = ''
+          
+          if (segment.value === 0) {
+            type = 'loss'
+            message = 'خسارة'
+          } else if (segment.value === 0.5) {
+            type = 'smallWin'
+            message = 'ربح صغير'
+          } else if (segment.value === 1) {
+            type = 'draw'
+            message = 'تعادل'
+          } else {
+            type = 'bigWin'
+            message = 'ربح كبير'
+          }
+          
+          console.log(`🎲 النتيجة: ${segment.value}x | الاحتمال: ${segment.probability}% | النوع: ${message}`)
+          
+          return {
+            type: type,
+            multiplier: segment.value,
+            message: message,
+            segmentIndex: i
+          }
+        }
+      }
+      
+      // افتراضي: العودة إلى القطاع الأول
+      return {
+        type: 'loss',
+        multiplier: 0,
+        message: 'خسارة',
+        segmentIndex: 0
+      }
+    },
+    
+    initSounds() {
+      try {
+        // صوت الدوران
+        this.spinSound = new Audio('data:audio/wav;base64,UklGRlwAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVQAAACAgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f38=')
+        
+        // صوت الفوز
+        this.winSound = new Audio('data:audio/wav;base64,UklGRlwAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVQAAACAgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f38=')
+        
+        // صوت الخسارة
         this.loseSound = new Audio('data:audio/wav;base64,UklGRlwAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVQAAACAgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f38=')
         
         // صوت النقر
