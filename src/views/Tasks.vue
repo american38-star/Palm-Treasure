@@ -165,16 +165,19 @@ export default {
       settingsLoading: false,
       unsubscribeSettings: null,
       
-      // أجزاء العجلة (8 أجزاء) - تم تبديل الأرقام فقط
+      // أجزاء العجلة (8 أجزاء) - تم تبديل الأرقام حسب المطلوب
+      // value: القيمة الفعلية المستخدمة في الحسابات (النتيجة الحقيقية)
+      // displayValue: القيمة المعروضة في العجلة (للجمال فقط)
+      // probability: نسبة ظهور هذا القطاع (يتم تحديثها من Firebase)
       wheelSegments: [
-        { value: 2, displayValue: 2, probability: 40 },      // كان 0
-        { value: 0.5, displayValue: 0.5, probability: 5 },   // كان 3
-        { value: 1, displayValue: 1, probability: 5 },       // كان 5
-        { value: 1.5, displayValue: 1.5, probability: 5 },   // كان 10
-        { value: 0, displayValue: 0, probability: 5 },       // كان 2
-        { value: 3, displayValue: 3, probability: 20 },      // كان 0.5
-        { value: 5, displayValue: 5, probability: 15 },      // كان 1
-        { value: 10, displayValue: 10, probability: 5 }      // كان 1.5
+        { value: 3, displayValue: 3, probability: 40 },      // قطاع 0 - كان 0 أصبح 2 ثم 3
+        { value: 0.5, displayValue: 0.5, probability: 5 },   // قطاع 1 - كان 3 أصبح 0.5
+        { value: 5, displayValue: 5, probability: 5 },       // قطاع 2 - كان 5 أصبح 1 ثم 5
+        { value: 10, displayValue: 10, probability: 5 },     // قطاع 3 - كان 10 أصبح 1.5 ثم 10
+        { value: 2, displayValue: 2, probability: 5 },       // قطاع 4 - كان 2 أصبح 0 ثم 2
+        { value: 3, displayValue: 3, probability: 20 },      // قطاع 5 - كان 0.5 أصبح 3
+        { value: 1, displayValue: 1, probability: 15 },      // قطاع 6 - كان 1 أصبح 5 ثم 1
+        { value: 1.5, displayValue: 1.5, probability: 5 }    // قطاع 7 - كان 1.5 أصبح 10 ثم 1.5
       ],
       
       lastResult: null,
@@ -257,17 +260,17 @@ export default {
       const { lossRate, smallWinRate, bigWinRate } = this.winSettings
       
       // توزيع النسب على القطاعات بشكل متوازن
-      // قطاع الخسارة (0x) - index 4
+      // قطاع الخسارة (0x)
       this.wheelSegments[4].probability = lossRate
       
-      // قطاع الربح الصغير (0.5x) - index 1
-      this.wheelSegments[1].probability = smallWinRate * 0.6
+      // قطاع الربح الصغير (0.5x)
+      this.wheelSegments[1].probability = smallWinRate * 0.6 // 60% من الأرباح الصغيرة
         
-      // قطاع التعادل (1x) - index 2
-      this.wheelSegments[2].probability = smallWinRate * 0.4
+      // قطاع التعادل (1x)
+      this.wheelSegments[6].probability = smallWinRate * 0.4 // 40% من الأرباح الصغيرة
       
       // توزيع الأرباح الكبيرة على باقي القطاعات (1.5x, 2x, 3x, 5x, 10x)
-      const bigWinSegments = [3, 0, 5, 6, 7] // indices: 1.5x, 2x, 3x, 5x, 10x
+      const bigWinSegments = [7, 0, 5, 2, 3] // indices: 1.5x, 2x, 3x, 5x, 10x
       const bigWinTotal = bigWinRate
       const perSegment = bigWinTotal / bigWinSegments.length
       
