@@ -161,17 +161,17 @@ export default {
       settingsLoading: false,
       unsubscribeSettings: null,
       
-      // أجزاء العجلة (8 أجزاء) - تم تعديل ترتيب الأرقام الظاهرة فقط
-      // التبديل: 0.5 ⇄ 3, 0 ⇄ 2, 1 ⇄ 5, 1.5 ⇄ 10
+      // أجزاء العجلة (8 أجزاء) - جميع المضاعفات تعمل
+      // تم تعديل ترتيب الأرقام داخل العجلة فقط (UI)
       wheelSegments: [
-        { value: 2, probability: 40 },     // قطاع 0 - (كان 0, أصبح 2) خسارة
-        { value: 0.5, probability: 10 },   // قطاع 1 - (كان 3, أصبح 0.5)
-        { value: 1, probability: 8 },      // قطاع 2 - (كان 5, أصبح 1)
-        { value: 1.5, probability: 5 },    // قطاع 3 - (كان 10, أصبح 1.5)
-        { value: 0, probability: 12 },     // قطاع 4 - (كان 2, أصبح 0)
-        { value: 3, probability: 25 },     // قطاع 5 - (كان 0.5, أصبح 3)
-        { value: 5, probability: 20 },     // قطاع 6 - (كان 1, أصبح 5)
-        { value: 10, probability: 15 }     // قطاع 7 - (كان 1.5, أصبح 10)
+        { value: 2, probability: 40 },     // قطاع 0 - 0-45° (خسارة)
+        { value: 0.5, probability: 10 },    // قطاع 1 - 45-90° (ربح كبير)
+        { value: 1, probability: 8 },       // قطاع 2 - 90-135° (ربح كبير)
+        { value: 1.5, probability: 5 },     // قطاع 3 - 135-180° (جائزة كبرى)
+        { value: 0, probability: 12 },      // قطاع 4 - 180-225° (ربح متوسط)
+        { value: 3, probability: 25 },      // قطاع 5 - 225-270° (ربح صغير)
+        { value: 5, probability: 20 },      // قطاع 6 - 270-315° (تعادل)
+        { value: 10, probability: 15 }      // قطاع 7 - 315-360° (ربح متوسط)
       ],
       
       lastResult: null,
@@ -255,22 +255,22 @@ export default {
     updateSegmentProbabilities() {
       const { lossRate, smallWinRate, bigWinRate } = this.winSettings
       
-      // توزيع النسب على القطاعات (مع الحفاظ على نفس المنطق ولكن مع الأرقام الجديدة)
-      // الخسارة: قطاع 0 (الذي قيمته الآن 2)
+      // توزيع النسب على القطاعات
+      // الخسارة: قطاع 0
       this.wheelSegments[0].probability = lossRate
       
-      // الأرباح الصغيرة: قطاع 0.5 و 1 (القطاع 1 و 2)
+      // الأرباح الصغيرة: قطاع 0.5 و 1
       const smallWinTotal = smallWinRate
-      this.wheelSegments[1].probability = smallWinTotal * 0.5 // 0.5x
-      this.wheelSegments[2].probability = smallWinTotal * 0.5 // 1x
+      this.wheelSegments[5].probability = smallWinTotal * 0.5 // 0.5x
+      this.wheelSegments[6].probability = smallWinTotal * 0.5 // 1x
       
-      // الأرباح الكبيرة: قطاع 1.5, 2, 3, 5, 10 (القطاعات 3, 4, 5, 6, 7)
+      // الأرباح الكبيرة: قطاع 1.5, 2, 3, 5, 10
       const bigWinTotal = bigWinRate
-      this.wheelSegments[3].probability = bigWinTotal * 0.25 // 1.5x
-      this.wheelSegments[4].probability = bigWinTotal * 0.2 // 0x (يظهر كخسارة في الواجهة)
-      this.wheelSegments[5].probability = bigWinTotal * 0.2 // 3x
-      this.wheelSegments[6].probability = bigWinTotal * 0.2 // 5x
-      this.wheelSegments[7].probability = bigWinTotal * 0.15 // 10x
+      this.wheelSegments[7].probability = bigWinTotal * 0.25 // 1.5x
+      this.wheelSegments[4].probability = bigWinTotal * 0.2 // 2x
+      this.wheelSegments[1].probability = bigWinTotal * 0.2 // 3x
+      this.wheelSegments[2].probability = bigWinTotal * 0.2 // 5x
+      this.wheelSegments[3].probability = bigWinTotal * 0.15 // 10x
     },
     
     // دالة لإنشاء الإعدادات الافتراضية
