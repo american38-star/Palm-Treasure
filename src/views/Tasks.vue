@@ -162,14 +162,14 @@ export default {
       
       // أجزاء العجلة (8 أجزاء) - جميع المضاعفات تعمل
       wheelSegments: [
-        { value: 2, probability: 40 },     // قطاع 0 - 0-45° (خسارة)
-        { value: 0.5, probability: 10 },      // قطاع 1 - 45-90° (ربح كبير)
-        { value: 1, probability: 8 },       // قطاع 2 - 90-135° (ربح كبير)
-        { value: 1.5, probability: 5 },      // قطاع 3 - 135-180° (جائزة كبرى)
-        { value: 0, probability: 12 },      // قطاع 4 - 180-225° (ربح متوسط)
-        { value: 10, probability: 25 },    // قطاع 5 - 225-270° (ربح صغير)
-        { value: 5, probability: 20 },      // قطاع 6 - 270-315° (تعادل)
-        { value: 3, probability: 15 }     // قطاع 7 - 315-360° (ربح متوسط)
+        { value: 0, probability: 40 },     // قطاع 0 - 0-45° (خسارة)
+        { value: 3, probability: 10 },      // قطاع 1 - 45-90° (ربح كبير)
+        { value: 5, probability: 8 },       // قطاع 2 - 90-135° (ربح كبير)
+        { value: 10, probability: 5 },      // قطاع 3 - 135-180° (جائزة كبرى)
+        { value: 2, probability: 12 },      // قطاع 4 - 180-225° (ربح متوسط)
+        { value: 0.5, probability: 25 },    // قطاع 5 - 225-270° (ربح صغير)
+        { value: 1, probability: 20 },      // قطاع 6 - 270-315° (تعادل)
+        { value: 1.5, probability: 15 }     // قطاع 7 - 315-360° (ربح متوسط)
       ],
       
       lastResult: null,
@@ -251,20 +251,20 @@ export default {
       
       // توزيع النسب على القطاعات
       // الخسارة: قطاع 0
-      this.wheelSegments[0].probability = lossRate
+      this.wheelSegments[4].probability = lossRate
       
       // الأرباح الصغيرة: قطاع 0.5 و 1
       const smallWinTotal = smallWinRate
-      this.wheelSegments[5].probability = smallWinTotal * 0.5 // 0.5x
-      this.wheelSegments[6].probability = smallWinTotal * 0.5 // 1x
+      this.wheelSegments[1].probability = smallWinTotal * 0.5 // 0.5x
+      this.wheelSegments[2].probability = smallWinTotal * 0.5 // 1x
       
       // الأرباح الكبيرة: قطاع 1.5, 2, 3, 5, 10
       const bigWinTotal = bigWinRate
-      this.wheelSegments[7].probability = bigWinTotal * 0.25 // 1.5x
-      this.wheelSegments[4].probability = bigWinTotal * 0.2 // 2x
-      this.wheelSegments[1].probability = bigWinTotal * 0.2 // 3x
-      this.wheelSegments[2].probability = bigWinTotal * 0.2 // 5x
-      this.wheelSegments[3].probability = bigWinTotal * 0.15 // 10x
+      this.wheelSegments[3].probability = bigWinTotal * 0.25 // 1.5x
+      this.wheelSegments[0].probability = bigWinTotal * 0.2 // 2x
+      this.wheelSegments[5].probability = bigWinTotal * 0.2 // 3x
+      this.wheelSegments[6].probability = bigWinTotal * 0.2 // 5x
+      this.wheelSegments[7].probability = bigWinTotal * 0.15 // 10x
     },
     
     // دالة لإنشاء الإعدادات الافتراضية
