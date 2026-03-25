@@ -162,14 +162,14 @@ export default {
       
       // أجزاء العجلة (8 أجزاء) - جميع المضاعفات تعمل
       wheelSegments: [
-        { value: 0, probability: 40 },     // قطاع 0 - 0-45° (خسارة)
-        { value: 3, probability: 10 },      // قطاع 1 - 45-90° (ربح كبير)
-        { value: 5, probability: 8 },       // قطاع 2 - 90-135° (ربح كبير)
-        { value: 10, probability: 5 },      // قطاع 3 - 135-180° (جائزة كبرى)
-        { value: 2, probability: 12 },      // قطاع 4 - 180-225° (ربح متوسط)
-        { value: 0.5, probability: 25 },    // قطاع 5 - 225-270° (ربح صغير)
-        { value: 1, probability: 20 },      // قطاع 6 - 270-315° (تعادل)
-        { value: 1.5, probability: 15 }     // قطاع 7 - 315-360° (ربح متوسط)
+        { value: 2, probability: 40 },     // قطاع 0 - 0-45° (خسارة)
+        { value: 0.5, probability: 10 },      // قطاع 1 - 45-90° (ربح كبير)
+        { value: 1, probability: 8 },       // قطاع 2 - 90-135° (ربح كبير)
+        { value: 1.5, probability: 5 },      // قطاع 3 - 135-180° (جائزة كبرى)
+        { value: 0, probability: 12 },      // قطاع 4 - 180-225° (ربح متوسط)
+        { value: 10, probability: 25 },    // قطاع 5 - 225-270° (ربح صغير)
+        { value: 5, probability: 20 },      // قطاع 6 - 270-315° (تعادل)
+        { value: 3, probability: 15 }     // قطاع 7 - 315-360° (ربح متوسط)
       ],
       
       lastResult: null,
@@ -384,17 +384,17 @@ export default {
       if (value === 0) return '#d32f2f' // أحمر (خسارة)
       if (value === 0.5) return '#fb8c00' // برتقالي (ربح صغير)
       if (value === 1) return '#ffa726' // برتقالي فاتح (تعادل)
-      if (value === 10) return '#ffb74d' // برتقالي غامق
+      if (value === 1.5) return '#ffb74d' // برتقالي غامق
       if (value === 2) return '#66bb6a' // أخضر فاتح
       if (value === 3) return '#4caf50' // أخضر
       if (value === 5) return '#2e7d32' // أخضر غامق
-      if (value === 1.5) return '#ffd700' // ذهبي
+      if (value === 10) return '#ffd700' // ذهبي
       return '#388e3c'
     },
     
     getTextColor(value) {
-      if (value === 2 || value === 0.5 || value === 1 || value === 10 || value === 0 || value === 3 || value === 5) return 'white'
-      if (value === 1.5) return '#222'
+      if (value === 0 || value === 0.5 || value === 1 || value === 1.5 || value === 2 || value === 3 || value === 5) return 'white'
+      if (value === 10) return '#222'
       return 'white'
     },
     
