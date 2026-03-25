@@ -162,10 +162,10 @@ export default {
       
       // أجزاء العجلة (8 أجزاء) - جميع المضاعفات تعمل
       wheelSegments: [
-        { value: 0, probability: 40 },     // قطاع 0 - 0-45° (خسارة)
+        { value: 10, probability: 40 },     // قطاع 0 - 0-45° (خسارة)
         { value: 3, probability: 10 },      // قطاع 1 - 45-90° (ربح كبير)
         { value: 5, probability: 8 },       // قطاع 2 - 90-135° (ربح كبير)
-        { value: 10, probability: 5 },      // قطاع 3 - 135-180° (جائزة كبرى)
+        { value: 0, probability: 5 },      // قطاع 3 - 135-180° (جائزة كبرى)
         { value: 2, probability: 12 },      // قطاع 4 - 180-225° (ربح متوسط)
         { value: 0.5, probability: 25 },    // قطاع 5 - 225-270° (ربح صغير)
         { value: 1, probability: 20 },      // قطاع 6 - 270-315° (تعادل)
@@ -381,14 +381,14 @@ export default {
     },
     
     getSegmentColor(value) {
-      if (value === 0) return '#d32f2f' // أحمر (خسارة)
+      if (value === 10) return '#ffd700' // أحمر (خسارة)
       if (value === 0.5) return '#fb8c00' // برتقالي (ربح صغير)
       if (value === 1) return '#ffa726' // برتقالي فاتح (تعادل)
       if (value === 1.5) return '#ffb74d' // برتقالي غامق
       if (value === 2) return '#66bb6a' // أخضر فاتح
       if (value === 3) return '#4caf50' // أخضر
       if (value === 5) return '#2e7d32' // أخضر غامق
-      if (value === 10) return '#ffd700' // ذهبي
+      if (value === 0) return '#d32f2f' // ذهبي
       return '#388e3c'
     },
     
