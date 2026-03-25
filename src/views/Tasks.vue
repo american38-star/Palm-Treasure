@@ -393,8 +393,8 @@ export default {
     },
     
     getTextColor(value) {
-      if (value === 0 || value === 0.5 || value === 1 || value === 1.5 || value === 2 || value === 3 || value === 5) return 'white'
-      if (value === 10) return '#222'
+      if (value === 2 || value === 0.5 || value === 1 || value === 10 || value === 0 || value === 3 || value === 5) return 'white'
+      if (value === 1.5) return '#222'
       return 'white'
     },
     
