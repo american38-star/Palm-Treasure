@@ -60,7 +60,7 @@
                 <g v-for="(segment, index) in wheelSegments" :key="index">
                   <path
                     :d="getSegmentPath(index)"
-                    :fill="getSegmentColor(segment.value)"
+                    :fill="getSegmentColor(segment.displayValue)"
                     stroke="white"
                     stroke-width="1"
                   />
@@ -69,11 +69,11 @@
                     :y="getTextY(index)"
                     text-anchor="middle"
                     dominant-baseline="middle"
-                    :fill="getTextColor(segment.value)"
+                    :fill="getTextColor(segment.displayValue)"
                     font-size="14"
                     font-weight="bold"
                   >
-                    {{ segment.value }}x
+                    {{ segment.displayValue }}x
                   </text>
                 </g>
                 
@@ -162,16 +162,17 @@ export default {
       unsubscribeSettings: null,
       
       // أجزاء العجلة (8 أجزاء) - جميع المضاعفات تعمل
-      // تم تعديل ترتيب الأرقام داخل العجلة فقط (UI)
+      // value هو الرقم الفعلي المستخدم في الحسابات (لا يتغير)
+      // displayValue هو الرقم المعروض في العجلة فقط (تم التبديل حسب المطلوب)
       wheelSegments: [
-        { value: 2, probability: 40 },     // قطاع 0 - 0-45° (خسارة)
-        { value: 0.5, probability: 10 },    // قطاع 1 - 45-90° (ربح كبير)
-        { value: 1, probability: 8 },       // قطاع 2 - 90-135° (ربح كبير)
-        { value: 1.5, probability: 5 },     // قطاع 3 - 135-180° (جائزة كبرى)
-        { value: 0, probability: 12 },      // قطاع 4 - 180-225° (ربح متوسط)
-        { value: 3, probability: 25 },      // قطاع 5 - 225-270° (ربح صغير)
-        { value: 5, probability: 20 },      // قطاع 6 - 270-315° (تعادل)
-        { value: 10, probability: 15 }      // قطاع 7 - 315-360° (ربح متوسط)
+        { value: 0, displayValue: 2, probability: 40 },     // قطاع 0 - عرض 2 بدلاً من 0
+        { value: 3, displayValue: 0.5, probability: 10 },    // قطاع 1 - عرض 0.5 بدلاً من 3
+        { value: 5, displayValue: 1, probability: 8 },       // قطاع 2 - عرض 1 بدلاً من 5
+        { value: 10, displayValue: 1.5, probability: 5 },    // قطاع 3 - عرض 1.5 بدلاً من 10
+        { value: 2, displayValue: 0, probability: 12 },      // قطاع 4 - عرض 0 بدلاً من 2
+        { value: 0.5, displayValue: 3, probability: 25 },    // قطاع 5 - عرض 3 بدلاً من 0.5
+        { value: 1, displayValue: 5, probability: 20 },      // قطاع 6 - عرض 5 بدلاً من 1
+        { value: 1.5, displayValue: 10, probability: 15 }    // قطاع 7 - عرض 10 بدلاً من 1.5
       ],
       
       lastResult: null,
