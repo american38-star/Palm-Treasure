@@ -150,6 +150,10 @@ export default {
       isSpinning: false,
       betAmount: null,
       animationFrame: null,
+      spinStartTime: null,
+      spinDuration: 0,
+      spinStartRotation: 0,
+      spinTargetRotation: 0,
       
       // إعدادات النسب من Firebase
       winSettings: {
@@ -446,7 +450,7 @@ export default {
       const pointerAngle = 90
       
       // الزاوية الفعلية للقطاع تحت السهم
-      const segmentAngleAtPointer = (pointerAngle - rotation + 360) % 360
+      let segmentAngleAtPointer = (pointerAngle - rotation + 360) % 360
       
       // تحديد رقم القطاع بناءً على الزاوية
       const segmentSize = this.segmentAngle
@@ -454,6 +458,7 @@ export default {
       
       // التأكد من أن المؤشر ضمن النطاق الصحيح
       if (segmentIndex >= this.wheelSegments.length) segmentIndex = this.wheelSegments.length - 1
+      if (segmentIndex < 0) segmentIndex = 0
       
       return segmentIndex
     },
@@ -534,9 +539,8 @@ export default {
       
       // تحديد القطاع المناسب بناءً على النتيجة
       const winningIndex = result.segmentIndex
-      const winningSegment = this.wheelSegments[winningIndex]
       
-      console.log(`🎯 سيتوقف على: قطاع ${winningIndex} بقيمة ${winningSegment.value}x`)
+      console.log(`🎯 سيتوقف على: قطاع ${winningIndex} بقيمة ${this.wheelSegments[winningIndex].value}x`)
       
       // حساب زاوية التوقف الدقيقة
       await this.animateWheelSpin(winningIndex)
@@ -546,59 +550,56 @@ export default {
         const actualSegmentIndex = this.getCurrentSegmentIndex()
         const actualSegment = this.wheelSegments[actualSegmentIndex]
         console.log(`✅ القطاع الفعلي بعد التوقف: قطاع ${actualSegmentIndex} بقيمة ${actualSegment.value}x`)
-        this.finishSpin(actualSegmentIndex, actualSegment, result)
-      }, 100)
+        this.finishSpin(actualSegmentIndex, actualSegment)
+      }, 50)
     },
     
-    // دالة جديدة للدوران الواقعي
-    async animateWheelSpin(targetSegmentIndex) {
+    // دالة الدوران الواقعي المحسنة
+    animateWheelSpin(targetSegmentIndex) {
       return new Promise((resolve) => {
         // إيقاف أي أنيميشن سابق
         if (this.animationFrame) {
           cancelAnimationFrame(this.animationFrame)
         }
         
-        // حساب زاوية التوقف المطلوبة
-        const segmentMiddle = (targetSegmentIndex * this.segmentAngle) + (this.segmentAngle / 2)
-        let requiredAngle = 90 - segmentMiddle
-        if (requiredAngle < 0) requiredAngle += 360
+        // حساب الزاوية المستهدفة للقطاع المطلوب
+        // نريد أن يتوقف القطاع تحت المؤشر (السهم)
+        // السهم في الزاوية 90 درجة، لذلك نحتاج أن تكون منتصف القطاع عند الزاوية 90
+        const segmentCenterAngle = (targetSegmentIndex * this.segmentAngle) + (this.segmentAngle / 2)
         
-        // عدد الدورات العشوائية (بين 8 و 20 دورة لجعل الدوران واقعي)
-        const spins = 8 + Math.random() * 12
+        // الزاوية المطلوبة للعجلة بحيث يكون مركز القطاع عند السهم
+        let targetWheelAngle = (90 - segmentCenterAngle + 360) % 360
+        
+        // عدد الدورات الإضافية (بين 5 و 12 دورة كاملة)
+        const extraRotations = 8 + Math.random() * 8
         
         // الزاوية المستهدفة النهائية
-        const targetRotationAngle = (360 * spins) + requiredAngle
-        const startRotation = this.wheelRotation % 360
-        const rotationDelta = targetRotationAngle - startRotation
+        const targetRotation = (extraRotations * 360) + targetWheelAngle
         
-        const startTime = performance.now()
-        const duration = 3000 + Math.random() * 1000 // مدة الدوران بين 3-4 ثواني
+        // تسجيل بيانات الدوران
+        this.spinStartRotation = this.wheelRotation
+        this.spinTargetRotation = targetRotation
+        this.spinStartTime = performance.now()
+        this.spinDuration = 3500 + Math.random() * 1000 // 3.5-4.5 ثانية
         
         const animate = (currentTime) => {
-          const elapsed = currentTime - startTime
-          const progress = Math.min(elapsed / duration, 1)
+          const elapsed = currentTime - this.spinStartTime
+          let progress = Math.min(elapsed / this.spinDuration, 1)
           
-          // منحنى التباطؤ الطبيعي (cubic bezier)
-          // يبدأ سريعاً ثم يبطئ تدريجياً
+          // منحنى التباطؤ (easeOutCubic) - دوران طبيعي يبدأ سريعاً ويبطئ تدريجياً
           const easeOutCubic = 1 - Math.pow(1 - progress, 3)
           
-          // إضافة تأثير اهتزاز بسيط في النهاية (اختياري)
-          let finalProgress = easeOutCubic
-          if (progress > 0.95) {
-            // آخر 5% من الوقت، نضيف تأثير تثبيت
-            const shakeProgress = (progress - 0.95) / 0.05
-            finalProgress = 0.95 + (shakeProgress * 0.05)
-          }
+          // حساب الدوران الحالي
+          const deltaRotation = this.spinTargetRotation - this.spinStartRotation
+          const currentRotation = this.spinStartRotation + (deltaRotation * easeOutCubic)
           
-          // حساب الزاوية الجديدة
-          const newRotation = startRotation + (rotationDelta * finalProgress)
-          this.wheelRotation = newRotation
+          this.wheelRotation = currentRotation
           
           if (progress < 1) {
             this.animationFrame = requestAnimationFrame(animate)
           } else {
             // التأكد من الوصول للزاوية المطلوبة بالضبط
-            this.wheelRotation = targetRotationAngle
+            this.wheelRotation = this.spinTargetRotation
             if (this.animationFrame) {
               cancelAnimationFrame(this.animationFrame)
               this.animationFrame = null
@@ -611,8 +612,14 @@ export default {
       })
     },
     
-    async finishSpin(winningIndex, winningSegment, predictedResult) {
+    async finishSpin(winningIndex, winningSegment) {
       this.isSpinning = false
+      
+      // إيقاف صوت الدوران
+      if (this.spinSound) {
+        this.spinSound.pause()
+        this.spinSound.currentTime = 0
+      }
       
       const multiplier = winningSegment.value
       const winAmount = this.betAmount * multiplier
