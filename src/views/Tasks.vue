@@ -160,22 +160,18 @@ export default {
       settingsLoading: false,
       unsubscribeSettings: null,
       
-      // أجزاء العجلة (8 أجزاء) - جميع المضاعفات موجودة للعرض فقط
+      // أجزاء العجلة (8 أجزاء) - جميع المضاعفات تعمل
       wheelSegments: [
-        { value: 0 },     // قطاع 0 - 0-45° (للعرض فقط - لا يقف عليه السهم أبداً)
-        { value: 3 },   // قطاع 1 - 45-90° (مسموح)
-        { value: 5 },     // قطاع 2 - 90-135° (مسموح)
-        { value: 10 },   // قطاع 3 - 135-180° (مسموح)
-        { value: 2 },     // قطاع 4 - 180-225° (مسموح)
-        { value: 0.5 },     // قطاع 5 - 225-270° (للعرض فقط - لا يقف عليه السهم أبداً)
-        { value: 1 },     // قطاع 6 - 270-315° (للعرض فقط - لا يقف عليه السهم أبداً)
-        { value: 1.5 }     // قطاع 7 - 315-360° (للعرض فقط - لا يقف عليه السهم أبداً)
+        { value: 0, probability: 40 },     // قطاع 0 - 0-45° (خسارة)
+        { value: 3, probability: 10 },      // قطاع 1 - 45-90° (ربح كبير)
+        { value: 5, probability: 8 },       // قطاع 2 - 90-135° (ربح كبير)
+        { value: 10, probability: 5 },      // قطاع 3 - 135-180° (جائزة كبرى)
+        { value: 2, probability: 12 },      // قطاع 4 - 180-225° (ربح متوسط)
+        { value: 0.5, probability: 25 },    // قطاع 5 - 225-270° (ربح صغير)
+        { value: 1, probability: 20 },      // قطاع 6 - 270-315° (تعادل)
+        { value: 1.5, probability: 15 }     // قطاع 7 - 315-360° (ربح متوسط)
       ],
       
-      // المؤشرات المسموح بها فقط (التي يمكن للعجلة أن تقف عليها)
-      // 0, 0.5, 1, 1.5 فقط
-      allowedIndices: [1, 2, 3, 4], // المؤشرات التي تحتوي على القيم: 0.5, 1, 1.5, 0
-        
       lastResult: null,
       
       // أصوات اللعبة
@@ -235,6 +231,8 @@ export default {
         
         if (settingsDoc.exists()) {
           this.winSettings = settingsDoc.data()
+          // تحديث احتمالات القطاعات بناءً على الإعدادات
+          this.updateSegmentProbabilities()
         } else {
           // إذا لم تكن الوثيقة موجودة، نقوم بإنشائها بالقيم الافتراضية
           await this.createDefaultSettings()
@@ -245,6 +243,28 @@ export default {
       } finally {
         this.settingsLoading = false
       }
+    },
+    
+    // دالة لتحديث احتمالات القطاعات بناءً على الإعدادات
+    updateSegmentProbabilities() {
+      const { lossRate, smallWinRate, bigWinRate } = this.winSettings
+      
+      // توزيع النسب على القطاعات
+      // الخسارة: قطاع 0
+      this.wheelSegments[0].probability = lossRate
+      
+      // الأرباح الصغيرة: قطاع 0.5 و 1
+      const smallWinTotal = smallWinRate
+      this.wheelSegments[5].probability = smallWinTotal * 0.5 // 0.5x
+      this.wheelSegments[6].probability = smallWinTotal * 0.5 // 1x
+      
+      // الأرباح الكبيرة: قطاع 1.5, 2, 3, 5, 10
+      const bigWinTotal = bigWinRate
+      this.wheelSegments[7].probability = bigWinTotal * 0.25 // 1.5x
+      this.wheelSegments[4].probability = bigWinTotal * 0.2 // 2x
+      this.wheelSegments[1].probability = bigWinTotal * 0.2 // 3x
+      this.wheelSegments[2].probability = bigWinTotal * 0.2 // 5x
+      this.wheelSegments[3].probability = bigWinTotal * 0.15 // 10x
     },
     
     // دالة لإنشاء الإعدادات الافتراضية
@@ -258,6 +278,7 @@ export default {
         const settingsRef = doc(db, "settings", "wheel")
         await updateDoc(settingsRef, defaultSettings)
         this.winSettings = defaultSettings
+        this.updateSegmentProbabilities()
       } catch (error) {
         console.error("❌ خطأ في إنشاء الإعدادات الافتراضية:", error)
       }
@@ -269,6 +290,7 @@ export default {
       this.unsubscribeSettings = onSnapshot(settingsRef, (doc) => {
         if (doc.exists()) {
           this.winSettings = doc.data()
+          this.updateSegmentProbabilities()
           console.log("✅ تم تحديث إعدادات العجلة:", this.winSettings)
         }
       }, (error) => {
@@ -276,59 +298,54 @@ export default {
       })
     },
     
-    // دالة تحديد النتيجة بناءً على الإعدادات من Firebase
+    // دالة تحديد النتيجة بناءً على الاحتمالات الموزعة على القطاعات
     getWinningResult() {
-      const { lossRate, smallWinRate, bigWinRate } = this.winSettings
+      // حساب المجموع الكلي للاحتمالات
+      const totalProbability = this.wheelSegments.reduce((sum, segment) => sum + segment.probability, 0)
       
-      // التأكد من صحة المجموع
-      const total = lossRate + smallWinRate + bigWinRate
-      if (Math.abs(total - 100) > 0.01) {
-        console.warn('⚠️ مجموع النسب لا يساوي 100%، القيم الحالية:', { lossRate, smallWinRate, bigWinRate, total })
+      // توليد رقم عشوائي
+      const random = Math.random() * totalProbability
+      
+      let cumulative = 0
+      for (let i = 0; i < this.wheelSegments.length; i++) {
+        cumulative += this.wheelSegments[i].probability
+        if (random < cumulative) {
+          const segment = this.wheelSegments[i]
+          let type = ''
+          let message = ''
+          
+          if (segment.value === 0) {
+            type = 'loss'
+            message = 'خسارة'
+          } else if (segment.value === 0.5) {
+            type = 'smallWin'
+            message = 'ربح صغير'
+          } else if (segment.value === 1) {
+            type = 'draw'
+            message = 'تعادل'
+          } else {
+            type = 'bigWin'
+            message = 'ربح كبير'
+          }
+          
+          console.log(`🎲 النتيجة: ${segment.value}x | الاحتمال: ${segment.probability}% | النوع: ${message}`)
+          
+          return {
+            type: type,
+            multiplier: segment.value,
+            message: message,
+            segmentIndex: i
+          }
+        }
       }
       
-      const random = Math.random() * 100
-      
-      console.log(`🎲 النسبة العشوائية: ${random.toFixed(2)}% | الخسارة: ${lossRate}% | ربح صغير: ${smallWinRate}% | ربح كبير: ${bigWinRate}%`)
-      
-      if (random < lossRate) {
-        return {
-          type: 'loss',
-          multiplier: 0,
-          message: 'خسارة'
-        }
-      } else if (random < lossRate + smallWinRate) {
-        return {
-          type: 'smallWin',
-          multiplier: 0.5,
-          message: 'ربح صغير'
-        }
-      } else {
-        return {
-          type: 'bigWin',
-          multiplier: 1.5,
-          message: 'ربح كبير'
-        }
+      // افتراضي: العودة إلى القطاع الأول
+      return {
+        type: 'loss',
+        multiplier: 0,
+        message: 'خسارة',
+        segmentIndex: 0
       }
-    },
-    
-    // دالة لتحديد أي قطاع سيتم اختياره بناءً على النتيجة
-    getSegmentIndexByResult(result) {
-      // بناءً على قيمة المضاعف، نحدد القطاع المناسب
-      if (result.multiplier === 0) {
-        // خسارة: قطاع رقم 4 (قيمة 2 في allowedIndices ولكنها تمثل 0 في العرض)
-        return 4
-      } else if (result.multiplier === 0.5) {
-        // ربح صغير: قطاع رقم 5 (قيمة 0.5)
-        return 5
-      } else if (result.multiplier === 1) {
-        // تعادل: قطاع رقم 6 (قيمة 1)
-        return 6
-      } else if (result.multiplier === 1.5) {
-        // ربح كبير: قطاع رقم 7 (قيمة 1.5)
-        return 7
-      }
-      // افتراضي: قطاع الخسارة
-      return 4
     },
     
     initSounds() {
@@ -365,15 +382,18 @@ export default {
     
     getSegmentColor(value) {
       if (value === 0) return '#d32f2f' // أحمر (خسارة)
-      if (value === 0.5 || value === 1) return '#fb8c00' // برتقالي
-      if (value === 1.5) return '#388e3c' // أخضر
-      if (value === 2 || value === 3 || value === 5) return '#9c27b0' // بنفسجي (للجاذبية فقط)
+      if (value === 0.5) return '#fb8c00' // برتقالي (ربح صغير)
+      if (value === 1) return '#ffa726' // برتقالي فاتح (تعادل)
+      if (value === 1.5) return '#ffb74d' // برتقالي غامق
+      if (value === 2) return '#66bb6a' // أخضر فاتح
+      if (value === 3) return '#4caf50' // أخضر
+      if (value === 5) return '#2e7d32' // أخضر غامق
       if (value === 10) return '#ffd700' // ذهبي
       return '#388e3c'
     },
     
     getTextColor(value) {
-      if (value === 0 || value === 0.5 || value === 1 || value === 2 || value === 3 || value === 5) return 'white'
+      if (value === 0 || value === 0.5 || value === 1 || value === 1.5 || value === 2 || value === 3 || value === 5) return 'white'
       if (value === 10) return '#222'
       return 'white'
     },
@@ -498,12 +518,12 @@ export default {
       // تشغيل صوت الدوران
       this.playSound(this.spinSound)
       
-      // استخدام النظام الجديد لتحديد النتيجة بناءً على إعدادات Firebase
+      // استخدام النظام الجديد لتحديد النتيجة بناءً على الاحتمالات
       const result = this.getWinningResult()
       console.log(`🎯 النتيجة المستهدفة: ${result.message} (مضاعف ${result.multiplier}x)`)
       
       // تحديد القطاع المناسب بناءً على النتيجة
-      const winningIndex = this.getSegmentIndexByResult(result)
+      const winningIndex = result.segmentIndex
       const winningSegment = this.wheelSegments[winningIndex]
       
       console.log(`🎯 سيتوقف على: قطاع ${winningIndex} بقيمة ${winningSegment.value}x`)
@@ -578,10 +598,10 @@ export default {
         isWin = false
       } 
       else if (multiplier === 0.5) {
-        // ربح صغير (خسارة نصف الرهان)
+        // ربح صغير
         this.balance += winAmount
         await this.updateBalance(this.balance)
-        message = `🎉 ربحت ${winAmount.toFixed(2)} USDT! (ربح صغير)`
+        message = `🎉 ربحت ${winAmount.toFixed(2)} USDT! (ربح صغير ×${multiplier})`
         this.playSound(this.winSound)
         isWin = true
       }
@@ -594,10 +614,42 @@ export default {
         isWin = true
       }
       else if (multiplier === 1.5) {
+        // ربح متوسط
+        this.balance += winAmount
+        await this.updateBalance(this.balance)
+        message = `🎉 ربحت ${winAmount.toFixed(2)} USDT! (ربح متوسط ×${multiplier})`
+        this.playSound(this.winSound)
+        isWin = true
+      }
+      else if (multiplier === 2) {
+        // ربح جيد
+        this.balance += winAmount
+        await this.updateBalance(this.balance)
+        message = `🎉🎉 ربحت ${winAmount.toFixed(2)} USDT! (ربح جيد ×${multiplier}) 🎉🎉`
+        this.playSound(this.winSound)
+        isWin = true
+      }
+      else if (multiplier === 3) {
         // ربح كبير
         this.balance += winAmount
         await this.updateBalance(this.balance)
-        message = `🎉🎉🎉 ربحت ${winAmount.toFixed(2)} USDT! (ربح كبير) 🎉🎉🎉`
+        message = `🎉🎉🎉 ربحت ${winAmount.toFixed(2)} USDT! (ربح كبير ×${multiplier}) 🎉🎉🎉`
+        this.playSound(this.winSound)
+        isWin = true
+      }
+      else if (multiplier === 5) {
+        // ربح ممتاز
+        this.balance += winAmount
+        await this.updateBalance(this.balance)
+        message = `🏆🏆🏆 ربحت ${winAmount.toFixed(2)} USDT! (ربح ممتاز ×${multiplier}) 🏆🏆🏆`
+        this.playSound(this.winSound)
+        isWin = true
+      }
+      else if (multiplier === 10) {
+        // الجائزة الكبرى
+        this.balance += winAmount
+        await this.updateBalance(this.balance)
+        message = `👑👑👑 جائزة كبرى! ربحت ${winAmount.toFixed(2)} USDT! (×${multiplier}) 👑👑👑`
         this.playSound(this.winSound)
         isWin = true
       }
