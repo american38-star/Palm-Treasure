@@ -157,28 +157,25 @@ export default {
         bigWinRate: 25
       },
       
-      // إعدادات المستخدم من Firebase
-      userWheelSettings: {
-        useGlobalSettings: true,
-        settings: null
-      },
-      
       settingsLoading: false,
       unsubscribeSettings: null,
-      unsubscribeUserSettings: null,
       
-      // مصفوفة واحدة مصدر الحقيقة - ترتيب القطاعات في العجلة (باتجاه عقارب الساعة من الأعلى)
+      // أجزاء العجلة (8 أجزاء) - جميع المضاعفات موجودة للعرض فقط
       wheelSegments: [
-        { value: 0, label: "0x" },      // قطاع 0 - الأعلى (12 ساعة)
-        { value: 3, label: "3x" },      // قطاع 1
-        { value: 5, label: "5x" },      // قطاع 2
-        { value: 10, label: "10x" },    // قطاع 3
-        { value: 2, label: "2x" },      // قطاع 4
-        { value: 0.5, label: "0.5x" },  // قطاع 5
-        { value: 1, label: "1x" },      // قطاع 6
-        { value: 1.5, label: "1.5x" }   // قطاع 7
+        { value: 0 },     // قطاع 0 - 0-45° (للعرض فقط - لا يقف عليه السهم أبداً)
+        { value: 3 },   // قطاع 1 - 45-90° (مسموح)
+        { value: 5 },     // قطاع 2 - 90-135° (مسموح)
+        { value: 10 },   // قطاع 3 - 135-180° (مسموح)
+        { value: 2 },     // قطاع 4 - 180-225° (مسموح)
+        { value: 0.5 },     // قطاع 5 - 225-270° (للعرض فقط - لا يقف عليه السهم أبداً)
+        { value: 1 },     // قطاع 6 - 270-315° (للعرض فقط - لا يقف عليه السهم أبداً)
+        { value: 1.5 }     // قطاع 7 - 315-360° (للعرض فقط - لا يقف عليه السهم أبداً)
       ],
       
+      // المؤشرات المسموح بها فقط (التي يمكن للعجلة أن تقف عليها)
+      // 0, 0.5, 1, 1.5 فقط
+      allowedIndices: [1, 2, 3, 4], // المؤشرات التي تحتوي على القيم: 0.5, 1, 1.5, 0
+        
       lastResult: null,
       
       // أصوات اللعبة
@@ -214,12 +211,8 @@ export default {
     // تحميل إعدادات النسب من Firebase
     await this.fetchWheelSettings()
     
-    // تحميل إعدادات المستخدم
-    await this.fetchUserWheelSettings(user.uid)
-    
     // الاشتراك في التحديثات المباشرة للإعدادات
     this.subscribeToSettings()
-    this.subscribeToUserSettings(user.uid)
     
     // تهيئة الأصوات
     this.initSounds()
@@ -230,13 +223,10 @@ export default {
     if (this.unsubscribeSettings) {
       this.unsubscribeSettings()
     }
-    if (this.unsubscribeUserSettings) {
-      this.unsubscribeUserSettings()
-    }
   },
   
   methods: {
-    // دالة لجلب إعدادات العجلة العامة من Firebase
+    // دالة لجلب إعدادات العجلة من Firebase
     async fetchWheelSettings() {
       this.settingsLoading = true
       try {
@@ -246,49 +236,15 @@ export default {
         if (settingsDoc.exists()) {
           this.winSettings = settingsDoc.data()
         } else {
+          // إذا لم تكن الوثيقة موجودة، نقوم بإنشائها بالقيم الافتراضية
           await this.createDefaultSettings()
         }
       } catch (error) {
         console.error("❌ خطأ في جلب إعدادات العجلة:", error)
+        // استخدام القيم الافتراضية في حالة الخطأ
       } finally {
         this.settingsLoading = false
       }
-    },
-    
-    // دالة لجلب إعدادات العجلة للمستخدم الحالي
-    async fetchUserWheelSettings(userId) {
-      try {
-        const userSettingsRef = doc(db, "user_wheel_settings", userId)
-        const userSettingsDoc = await getDoc(userSettingsRef)
-        
-        if (userSettingsDoc.exists()) {
-          const data = userSettingsDoc.data()
-          this.userWheelSettings = {
-            useGlobalSettings: data.useGlobalSettings !== false,
-            settings: data.settings || null
-          }
-          console.log("✅ تم تحميل إعدادات المستخدم:", this.userWheelSettings)
-        } else {
-          this.userWheelSettings = {
-            useGlobalSettings: true,
-            settings: null
-          }
-        }
-      } catch (error) {
-        console.error("❌ خطأ في جلب إعدادات المستخدم:", error)
-        this.userWheelSettings = {
-          useGlobalSettings: true,
-          settings: null
-        }
-      }
-    },
-    
-    // دالة للحصول على إعدادات العجلة الفعلية (عامة أو مخصصة للمستخدم)
-    getEffectiveWheelSettings() {
-      if (!this.userWheelSettings.useGlobalSettings && this.userWheelSettings.settings) {
-        return this.userWheelSettings.settings
-      }
-      return this.winSettings
     },
     
     // دالة لإنشاء الإعدادات الافتراضية
@@ -307,40 +263,22 @@ export default {
       }
     },
     
-    // الاشتراك في التحديثات المباشرة للإعدادات العامة
+    // الاشتراك في التحديثات المباشرة للإعدادات
     subscribeToSettings() {
       const settingsRef = doc(db, "settings", "wheel")
       this.unsubscribeSettings = onSnapshot(settingsRef, (doc) => {
         if (doc.exists()) {
           this.winSettings = doc.data()
-          console.log("✅ تم تحديث إعدادات العجلة العامة:", this.winSettings)
+          console.log("✅ تم تحديث إعدادات العجلة:", this.winSettings)
         }
       }, (error) => {
         console.error("❌ خطأ في الاستماع للإعدادات:", error)
       })
     },
     
-    // الاشتراك في التحديثات المباشرة لإعدادات المستخدم
-    subscribeToUserSettings(userId) {
-      const userSettingsRef = doc(db, "user_wheel_settings", userId)
-      this.unsubscribeUserSettings = onSnapshot(userSettingsRef, (doc) => {
-        if (doc.exists()) {
-          const data = doc.data()
-          this.userWheelSettings = {
-            useGlobalSettings: data.useGlobalSettings !== false,
-            settings: data.settings || null
-          }
-          console.log("✅ تم تحديث إعدادات المستخدم:", this.userWheelSettings)
-        }
-      }, (error) => {
-        console.error("❌ خطأ في الاستماع لإعدادات المستخدم:", error)
-      })
-    },
-    
-    // دالة تحديد النتيجة بناءً على الإعدادات الفعلية
+    // دالة تحديد النتيجة بناءً على الإعدادات من Firebase
     getWinningResult() {
-      const settings = this.getEffectiveWheelSettings()
-      const { lossRate, smallWinRate, bigWinRate } = settings
+      const { lossRate, smallWinRate, bigWinRate } = this.winSettings
       
       // التأكد من صحة المجموع
       const total = lossRate + smallWinRate + bigWinRate
@@ -355,53 +293,59 @@ export default {
       if (random < lossRate) {
         return {
           type: 'loss',
-          value: 0,
           multiplier: 0,
           message: 'خسارة'
         }
       } else if (random < lossRate + smallWinRate) {
         return {
           type: 'smallWin',
-          value: 0.5,
           multiplier: 0.5,
           message: 'ربح صغير'
         }
       } else {
         return {
           type: 'bigWin',
-          value: 1.5,
           multiplier: 1.5,
           message: 'ربح كبير'
         }
       }
     },
     
-    // دالة للحصول على index القطاع من مصفوفة wheelSegments بناءً على قيمة المضاعف
-    getSegmentIndexByValue(value) {
-      return this.wheelSegments.findIndex(segment => segment.value === value)
-    },
-    
-    // دالة لحساب زاوية الدوران المطلوبة لتوقف العجلة على قطاع معين
-    getTargetRotationForSegment(index) {
-      const segmentAngle = this.segmentAngle
-      // منتصف القطاع
-      const segmentMiddle = (index * segmentAngle) + (segmentAngle / 2)
-      // السهم في الأعلى (زاوية 0 درجة)
-      // الزاوية المطلوبة لجعل منتصف القطاع تحت السهم
-      let requiredAngle = (360 - segmentMiddle) % 360
-      // عدد دورات عشوائي (15-25 دورة) لتبدو طبيعية
-      const spins = 15 + Math.floor(Math.random() * 10)
-      // الزاوية المستهدفة
-      return (360 * spins) + requiredAngle
+    // دالة لتحديد أي قطاع سيتم اختياره بناءً على النتيجة
+    getSegmentIndexByResult(result) {
+      // بناءً على قيمة المضاعف، نحدد القطاع المناسب
+      if (result.multiplier === 0) {
+        // خسارة: قطاع رقم 4 (قيمة 2 في allowedIndices ولكنها تمثل 0 في العرض)
+        return 4
+      } else if (result.multiplier === 0.5) {
+        // ربح صغير: قطاع رقم 5 (قيمة 0.5)
+        return 5
+      } else if (result.multiplier === 1) {
+        // تعادل: قطاع رقم 6 (قيمة 1)
+        return 6
+      } else if (result.multiplier === 1.5) {
+        // ربح كبير: قطاع رقم 7 (قيمة 1.5)
+        return 7
+      }
+      // افتراضي: قطاع الخسارة
+      return 4
     },
     
     initSounds() {
       try {
+        // صوت الدوران
         this.spinSound = new Audio('data:audio/wav;base64,UklGRlwAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVQAAACAgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f38=')
+        
+        // صوت الفوز
         this.winSound = new Audio('data:audio/wav;base64,UklGRlwAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVQAAACAgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f38=')
+        
+        // صوت الخسارة
         this.loseSound = new Audio('data:audio/wav;base64,UklGRlwAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVQAAACAgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f38=')
+        
+        // صوت النقر
         this.clickSound = new Audio('data:audio/wav;base64,UklGRlwAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVQAAACAgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f38=')
         
+        // ضبط مستوى الصوت
         this.spinSound.volume = 0.3
         this.winSound.volume = 0.5
         this.loseSound.volume = 0.4
@@ -423,7 +367,7 @@ export default {
       if (value === 0) return '#d32f2f' // أحمر (خسارة)
       if (value === 0.5 || value === 1) return '#fb8c00' // برتقالي
       if (value === 1.5) return '#388e3c' // أخضر
-      if (value === 2 || value === 3 || value === 5) return '#9c27b0' // بنفسجي
+      if (value === 2 || value === 3 || value === 5) return '#9c27b0' // بنفسجي (للجاذبية فقط)
       if (value === 10) return '#ffd700' // ذهبي
       return '#388e3c'
     },
@@ -438,6 +382,7 @@ export default {
       const centerX = 100
       const centerY = 100
       const radius = 85
+      // SVG: الزاوية 0 على اليمين، 90 للأسفل
       const startAngle = (index * this.segmentAngle) * Math.PI / 180
       const endAngle = ((index + 1) * this.segmentAngle) * Math.PI / 180
       
@@ -452,6 +397,7 @@ export default {
     getTextX(index) {
       const centerX = 100
       const radius = 60
+      // منتصف القطاع
       const angle = ((index + 0.5) * this.segmentAngle) * Math.PI / 180
       return centerX + radius * Math.cos(angle)
     },
@@ -463,20 +409,22 @@ export default {
       return centerY + radius * Math.sin(angle)
     },
     
-    // دالة لتحديد القطاع الحالي بناءً على زاوية الدوران
+    // دالة لتحديد القطاع بناءً على زاوية الدوران
     getCurrentSegmentIndex() {
       // زاوية الدوران المعدلة (0-360)
       let rotation = this.wheelRotation % 360
       if (rotation < 0) rotation += 360
       
-      // السهم في الأعلى (زاوية 0 درجة)
-      const pointerAngle = 0
+      // السهم في الأعلى (زاوية 90 درجة)
+      // القطاع الذي يشير إليه السهم هو القطاع الذي تكون زاويته 90 درجة في الاتجاه المعاكس للدوران
+      const pointerAngle = 90
       
       // الزاوية الفعلية للقطاع تحت السهم
       const segmentAngleAtPointer = (pointerAngle - rotation + 360) % 360
       
       // تحديد رقم القطاع بناءً على الزاوية
-      let segmentIndex = Math.floor(segmentAngleAtPointer / this.segmentAngle)
+      const segmentSize = this.segmentAngle
+      let segmentIndex = Math.floor(segmentAngleAtPointer / segmentSize)
       
       // التأكد من أن المؤشر ضمن النطاق الصحيح
       if (segmentIndex >= this.wheelSegments.length) segmentIndex = this.wheelSegments.length - 1
@@ -554,14 +502,27 @@ export default {
       const result = this.getWinningResult()
       console.log(`🎯 النتيجة المستهدفة: ${result.message} (مضاعف ${result.multiplier}x)`)
       
-      // تحديد القطاع المناسب بناءً على قيمة المضاعف من مصفوفة wheelSegments
-      const winningIndex = this.getSegmentIndexByValue(result.value)
+      // تحديد القطاع المناسب بناءً على النتيجة
+      const winningIndex = this.getSegmentIndexByResult(result)
       const winningSegment = this.wheelSegments[winningIndex]
       
-      console.log(`🎯 سيتوقف على: قطاع ${winningIndex} (قيمة ${winningSegment.value}x)`)
+      console.log(`🎯 سيتوقف على: قطاع ${winningIndex} بقيمة ${winningSegment.value}x`)
       
-      // حساب زاوية الدوران المطلوبة بناءً على index القطاع
-      const targetRotation = this.getTargetRotationForSegment(winningIndex)
+      // منتصف القطاع الفائز
+      const segmentMiddle = (winningIndex * this.segmentAngle) + (this.segmentAngle / 2)
+      
+      // السهم في الأعلى (زاوية 90 درجة في نظام SVG)
+      // الزاوية المطلوبة لجعل منتصف القطاع تحت السهم = 90 - منتصف القطاع
+      let requiredAngle = 90 - segmentMiddle
+      
+      // تصحيح الزاوية لتكون ضمن 0-360
+      if (requiredAngle < 0) requiredAngle += 360
+      
+      // عدد دورات عشوائي (15-25 دورة) لتبدو طبيعية
+      const spins = 15 + Math.floor(Math.random() * 10)
+      
+      // الزاوية المستهدفة: (360 * عدد الدورات) + الزاوية المطلوبة
+      const targetRotation = (360 * spins) + requiredAngle
       
       const start = this.wheelRotation
       const duration = 3500
@@ -588,15 +549,9 @@ export default {
             const actualSegmentIndex = this.getCurrentSegmentIndex()
             const actualSegment = this.wheelSegments[actualSegmentIndex]
             
-            console.log(`✅ القطاع الفعلي بعد التوقف: قطاع ${actualSegmentIndex} (قيمة ${actualSegment.value}x)`)
+            console.log(`✅ القطاع الفعلي بعد التوقف: قطاع ${actualSegmentIndex} بقيمة ${actualSegment.value}x`)
             
             // التأكد أن القطاع الفعلي هو نفسه القطاع المخطط له
-            if (actualSegmentIndex === winningIndex) {
-              console.log('✅ التطابق صحيح: النتيجة تتطابق مع مكان التوقف')
-            } else {
-              console.error('❌ خطأ في التطابق! متوقع:', winningIndex, 'فعلي:', actualSegmentIndex)
-            }
-            
             this.finishSpin(actualSegmentIndex, actualSegment, result)
           }, 200)
         }
@@ -617,11 +572,13 @@ export default {
       
       // حساب النتيجة بدقة حسب قيمة المضاعف الفعلية
       if (multiplier === 0) {
+        // خسارة كاملة
         message = `😢 خسرت ${this.betAmount.toFixed(2)} USDT`
         this.playSound(this.loseSound)
         isWin = false
       } 
       else if (multiplier === 0.5) {
+        // ربح صغير (خسارة نصف الرهان)
         this.balance += winAmount
         await this.updateBalance(this.balance)
         message = `🎉 ربحت ${winAmount.toFixed(2)} USDT! (ربح صغير)`
@@ -629,6 +586,7 @@ export default {
         isWin = true
       }
       else if (multiplier === 1) {
+        // تعادل - استرجاع الرهان كاملاً
         this.balance += this.betAmount
         await this.updateBalance(this.balance)
         message = `🤝 تعادل! استرجعت ${this.betAmount.toFixed(2)} USDT`
@@ -636,6 +594,7 @@ export default {
         isWin = true
       }
       else if (multiplier === 1.5) {
+        // ربح كبير
         this.balance += winAmount
         await this.updateBalance(this.balance)
         message = `🎉🎉🎉 ربحت ${winAmount.toFixed(2)} USDT! (ربح كبير) 🎉🎉🎉`
@@ -643,6 +602,7 @@ export default {
         isWin = true
       }
       else {
+        // هذا لا يجب أن يحدث أبداً ولكن للاحتياط
         console.error('⚠️ قيمة غير متوقعة!', multiplier)
         this.balance += this.betAmount
         await this.updateBalance(this.balance)
