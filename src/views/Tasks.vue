@@ -251,7 +251,7 @@ export default {
       
       // توزيع النسب على القطاعات
       // الخسارة: قطاع 0
-      this.wheelSegments[0].probability = bigWinTotal * 0.2 // 2x
+      this.wheelSegments[0].probability = lossRate
       
       // الأرباح الصغيرة: قطاع 0.5 و 1
       const smallWinTotal = smallWinRate
@@ -261,7 +261,7 @@ export default {
       // الأرباح الكبيرة: قطاع 1.5, 2, 3, 5, 10
       const bigWinTotal = bigWinRate
       this.wheelSegments[7].probability = bigWinTotal * 0.25 // 1.5x
-      this.wheelSegments[4].probability = lossRate
+      this.wheelSegments[4].probability = bigWinTotal * 0.2 // 2x
       this.wheelSegments[1].probability = bigWinTotal * 0.2 // 3x
       this.wheelSegments[2].probability = bigWinTotal * 0.2 // 5x
       this.wheelSegments[3].probability = bigWinTotal * 0.15 // 10x
@@ -381,14 +381,14 @@ export default {
     },
     
     getSegmentColor(value) {
-      if (value === 0) return '#d32f2f' // أحمر (خسارة)
+      if (value === 2) return '#d32f2f' // أحمر (خسارة)
       if (value === 0.5) return '#fb8c00' // برتقالي (ربح صغير)
       if (value === 1) return '#ffa726' // برتقالي فاتح (تعادل)
-      if (value === 1.5) return '#ffb74d' // برتقالي غامق
-      if (value === 2) return '#66bb6a' // أخضر فاتح
+      if (value === 10) return '#ffb74d' // برتقالي غامق
+      if (value === 0) return '#66bb6a' // أخضر فاتح
       if (value === 3) return '#4caf50' // أخضر
       if (value === 5) return '#2e7d32' // أخضر غامق
-      if (value === 10) return '#ffd700' // ذهبي
+      if (value === 1.5) return '#ffd700' // ذهبي
       return '#388e3c'
     },
     
