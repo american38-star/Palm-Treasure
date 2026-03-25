@@ -251,20 +251,20 @@ export default {
       
       // توزيع النسب على القطاعات
       // الخسارة: قطاع 0
-      this.wheelSegments[4].probability = lossRate
+      this.wheelSegments[0].probability = lossRate
       
       // الأرباح الصغيرة: قطاع 0.5 و 1
       const smallWinTotal = smallWinRate
-      this.wheelSegments[1].probability = smallWinTotal * 0.5 // 0.5x
-      this.wheelSegments[2].probability = smallWinTotal * 0.5 // 1x
+      this.wheelSegments[5].probability = smallWinTotal * 0.5 // 0.5x
+      this.wheelSegments[6].probability = smallWinTotal * 0.5 // 1x
       
       // الأرباح الكبيرة: قطاع 1.5, 2, 3, 5, 10
       const bigWinTotal = bigWinRate
-      this.wheelSegments[3].probability = bigWinTotal * 0.25 // 1.5x
-      this.wheelSegments[0].probability = bigWinTotal * 0.2 // 2x
-      this.wheelSegments[5].probability = bigWinTotal * 0.2 // 3x
-      this.wheelSegments[6].probability = bigWinTotal * 0.2 // 5x
-      this.wheelSegments[7].probability = bigWinTotal * 0.15 // 10x
+      this.wheelSegments[7].probability = bigWinTotal * 0.25 // 1.5x
+      this.wheelSegments[4].probability = bigWinTotal * 0.2 // 2x
+      this.wheelSegments[1].probability = bigWinTotal * 0.2 // 3x
+      this.wheelSegments[2].probability = bigWinTotal * 0.2 // 5x
+      this.wheelSegments[3].probability = bigWinTotal * 0.15 // 10x
     },
     
     // دالة لإنشاء الإعدادات الافتراضية
@@ -429,25 +429,33 @@ export default {
       return centerY + radius * Math.sin(angle)
     },
     
-    // دالة لتحديد القطاع بناءً على زاوية الدوران
+    // دالة لتحديد القطاع بناءً على زاوية الدوران (تم إصلاحها)
     getCurrentSegmentIndex() {
-      // زاوية الدوران المعدلة (0-360)
+      // زاوية الدوران الحالية (0-360)
       let rotation = this.wheelRotation % 360
       if (rotation < 0) rotation += 360
       
-      // السهم في الأعلى (زاوية 90 درجة)
-      // القطاع الذي يشير إليه السهم هو القطاع الذي تكون زاويته 90 درجة في الاتجاه المعاكس للدوران
-      const pointerAngle = 90
+      // السهم في الأعلى - في نظام SVG الزاوية 270° تشير للأعلى
+      const pointerAngle = 270
       
-      // الزاوية الفعلية للقطاع تحت السهم
-      const segmentAngleAtPointer = (pointerAngle - rotation + 360) % 360
+      // حساب الزاوية التي يشير إليها السهم بالنسبة للعجلة
+      // العجلة تدور عكس اتجاه عقارب الساعة (لأن الزاوية تزيد مع الدوران)
+      // لذلك نحتاج إلى إضافة زاوية الدوران بدلاً من طرحها
+      let segmentAngleAtPointer = (pointerAngle + rotation) % 360
+      
+      // تصحيح الزاوية لتصبح ضمن 0-360
+      if (segmentAngleAtPointer < 0) segmentAngleAtPointer += 360
       
       // تحديد رقم القطاع بناءً على الزاوية
       const segmentSize = this.segmentAngle
       let segmentIndex = Math.floor(segmentAngleAtPointer / segmentSize)
       
       // التأكد من أن المؤشر ضمن النطاق الصحيح
-      if (segmentIndex >= this.wheelSegments.length) segmentIndex = this.wheelSegments.length - 1
+      if (segmentIndex >= this.wheelSegments.length) {
+        segmentIndex = this.wheelSegments.length - 1
+      }
+      
+      console.log(`🔍 زاوية الدوران: ${rotation}° | زاوية السهم: ${pointerAngle}° | زاوية القطاع تحت السهم: ${segmentAngleAtPointer}° | القطاع: ${segmentIndex}`)
       
       return segmentIndex
     },
@@ -531,12 +539,9 @@ export default {
       // منتصف القطاع الفائز
       const segmentMiddle = (winningIndex * this.segmentAngle) + (this.segmentAngle / 2)
       
-      // السهم في الأعلى (زاوية 90 درجة في نظام SVG)
-      // الزاوية المطلوبة لجعل منتصف القطاع تحت السهم = 90 - منتصف القطاع
-      let requiredAngle = 90 - segmentMiddle
-      
-      // تصحيح الزاوية لتكون ضمن 0-360
-      if (requiredAngle < 0) requiredAngle += 360
+      // السهم في الأعلى (زاوية 270° في نظام SVG)
+      // الزاوية المطلوبة لجعل منتصف القطاع تحت السهم
+      let requiredAngle = (segmentMiddle - 270 + 360) % 360
       
       // عدد دورات عشوائي (15-25 دورة) لتبدو طبيعية
       const spins = 15 + Math.floor(Math.random() * 10)
