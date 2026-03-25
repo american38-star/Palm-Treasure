@@ -149,6 +149,7 @@ export default {
       wheelRotation: 0,
       isSpinning: false,
       betAmount: null,
+      animationFrame: null,
       
       // إعدادات النسب من Firebase
       winSettings: {
@@ -218,6 +219,10 @@ export default {
     // إلغاء الاشتراك عند إغلاق المكون
     if (this.unsubscribeSettings) {
       this.unsubscribeSettings()
+    }
+    // إيقاف الأنيميشن إذا كان قيد التشغيل
+    if (this.animationFrame) {
+      cancelAnimationFrame(this.animationFrame)
     }
   },
   
@@ -436,7 +441,6 @@ export default {
       if (rotation < 0) rotation += 360
       
       // السهم في الأعلى (زاوية 90 درجة)
-      // القطاع الذي يشير إليه السهم هو القطاع الذي تكون زاويته 90 درجة في الاتجاه المعاكس للدوران
       const pointerAngle = 90
       
       // الزاوية الفعلية للقطاع تحت السهم
@@ -491,6 +495,10 @@ export default {
       this.isSpinning = false
       this.lastResult = null
       this.gameError = ''
+      if (this.animationFrame) {
+        cancelAnimationFrame(this.animationFrame)
+        this.animationFrame = null
+      }
     },
     
     async spinWheel() {
@@ -518,7 +526,7 @@ export default {
       // تشغيل صوت الدوران
       this.playSound(this.spinSound)
       
-      // استخدام النظام الجديد لتحديد النتيجة بناءً على الاحتمالات
+      // تحديد النتيجة بناءً على الاحتمالات
       const result = this.getWinningResult()
       console.log(`🎯 النتيجة المستهدفة: ${result.message} (مضاعف ${result.multiplier}x)`)
       
@@ -528,56 +536,77 @@ export default {
       
       console.log(`🎯 سيتوقف على: قطاع ${winningIndex} بقيمة ${winningSegment.value}x`)
       
-      // منتصف القطاع الفائز
-      const segmentMiddle = (winningIndex * this.segmentAngle) + (this.segmentAngle / 2)
+      // حساب زاوية التوقف الدقيقة
+      await this.animateWheelSpin(winningIndex)
       
-      // السهم في الأعلى (زاوية 90 درجة في نظام SVG)
-      // الزاوية المطلوبة لجعل منتصف القطاع تحت السهم = 90 - منتصف القطاع
-      let requiredAngle = 90 - segmentMiddle
-      
-      // تصحيح الزاوية لتكون ضمن 0-360
-      if (requiredAngle < 0) requiredAngle += 360
-      
-      // عدد دورات عشوائي (15-25 دورة) لتبدو طبيعية
-      const spins = 15 + Math.floor(Math.random() * 10)
-      
-      // الزاوية المستهدفة: (360 * عدد الدورات) + الزاوية المطلوبة
-      const targetRotation = (360 * spins) + requiredAngle
-      
-      const start = this.wheelRotation
-      const duration = 3500
-      const startTime = performance.now()
-      
-      const animate = (time) => {
-        const elapsed = time - startTime
-        const progress = Math.min(elapsed / duration, 1)
-        
-        // منحنى التباطؤ الطبيعي (يبدأ سريعًا ثم يبطئ)
-        const easeOut = 1 - Math.pow(1 - progress, 3)
-        
-        this.wheelRotation = start + ((targetRotation - start) * easeOut)
-        
-        if (progress < 1) {
-          requestAnimationFrame(animate)
-        } else {
-          // التأكد من الزاوية النهائية مضبوطة
-          this.wheelRotation = targetRotation
-          
-          // ننتظر قليلاً ثم نحدد القطاع الفعلي بناءً على زاوية التوقف
-          setTimeout(() => {
-            // تحديد القطاع الذي يقف عنده السهم بدقة
-            const actualSegmentIndex = this.getCurrentSegmentIndex()
-            const actualSegment = this.wheelSegments[actualSegmentIndex]
-            
-            console.log(`✅ القطاع الفعلي بعد التوقف: قطاع ${actualSegmentIndex} بقيمة ${actualSegment.value}x`)
-            
-            // التأكد أن القطاع الفعلي هو نفسه القطاع المخطط له
-            this.finishSpin(actualSegmentIndex, actualSegment, result)
-          }, 200)
+      // بعد انتهاء الدوران، نحدد القطاع الفعلي ونعرض النتيجة
+      setTimeout(() => {
+        const actualSegmentIndex = this.getCurrentSegmentIndex()
+        const actualSegment = this.wheelSegments[actualSegmentIndex]
+        console.log(`✅ القطاع الفعلي بعد التوقف: قطاع ${actualSegmentIndex} بقيمة ${actualSegment.value}x`)
+        this.finishSpin(actualSegmentIndex, actualSegment, result)
+      }, 100)
+    },
+    
+    // دالة جديدة للدوران الواقعي
+    async animateWheelSpin(targetSegmentIndex) {
+      return new Promise((resolve) => {
+        // إيقاف أي أنيميشن سابق
+        if (this.animationFrame) {
+          cancelAnimationFrame(this.animationFrame)
         }
-      }
-      
-      requestAnimationFrame(animate)
+        
+        // حساب زاوية التوقف المطلوبة
+        const segmentMiddle = (targetSegmentIndex * this.segmentAngle) + (this.segmentAngle / 2)
+        let requiredAngle = 90 - segmentMiddle
+        if (requiredAngle < 0) requiredAngle += 360
+        
+        // عدد الدورات العشوائية (بين 8 و 20 دورة لجعل الدوران واقعي)
+        const spins = 8 + Math.random() * 12
+        
+        // الزاوية المستهدفة النهائية
+        const targetRotationAngle = (360 * spins) + requiredAngle
+        const startRotation = this.wheelRotation % 360
+        const rotationDelta = targetRotationAngle - startRotation
+        
+        const startTime = performance.now()
+        const duration = 3000 + Math.random() * 1000 // مدة الدوران بين 3-4 ثواني
+        
+        const animate = (currentTime) => {
+          const elapsed = currentTime - startTime
+          const progress = Math.min(elapsed / duration, 1)
+          
+          // منحنى التباطؤ الطبيعي (cubic bezier)
+          // يبدأ سريعاً ثم يبطئ تدريجياً
+          const easeOutCubic = 1 - Math.pow(1 - progress, 3)
+          
+          // إضافة تأثير اهتزاز بسيط في النهاية (اختياري)
+          let finalProgress = easeOutCubic
+          if (progress > 0.95) {
+            // آخر 5% من الوقت، نضيف تأثير تثبيت
+            const shakeProgress = (progress - 0.95) / 0.05
+            finalProgress = 0.95 + (shakeProgress * 0.05)
+          }
+          
+          // حساب الزاوية الجديدة
+          const newRotation = startRotation + (rotationDelta * finalProgress)
+          this.wheelRotation = newRotation
+          
+          if (progress < 1) {
+            this.animationFrame = requestAnimationFrame(animate)
+          } else {
+            // التأكد من الوصول للزاوية المطلوبة بالضبط
+            this.wheelRotation = targetRotationAngle
+            if (this.animationFrame) {
+              cancelAnimationFrame(this.animationFrame)
+              this.animationFrame = null
+            }
+            resolve()
+          }
+        }
+        
+        this.animationFrame = requestAnimationFrame(animate)
+      })
     },
     
     async finishSpin(winningIndex, winningSegment, predictedResult) {
@@ -956,7 +985,7 @@ export default {
 .wheel-svg {
   width: 100%;
   height: 100%;
-  transition: transform 3.5s cubic-bezier(0.1, 0.9, 0.2, 1);
+  transition: transform 0.1s linear;
   filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.3));
 }
 
