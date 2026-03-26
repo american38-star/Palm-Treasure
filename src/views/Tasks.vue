@@ -163,14 +163,14 @@ export default {
       // أجزاء العجلة (8 أجزاء) - تستخدم فقط للعرض البصري (UI)
       // يمكنك تغيير أماكن هذه القيم بحرية دون التأثير على النتيجة
       wheelSegments: [
-        { value: 2, displayValue: 2 },      // قطاع 0 - خسارة
-        { value: 0.5, displayValue: 0.5 },      // قطاع 1 - ربح كبير
-        { value: 1, displayValue: 1 },      // قطاع 2 - ربح كبير
-        { value: 1.5, displayValue: 1.5 },    // قطاع 3 - جائزة كبرى
-        { value: 0, displayValue: 0 },      // قطاع 4 - ربح متوسط
-        { value: 3, displayValue: 3 },  // قطاع 5 - ربح صغير
-        { value: 5, displayValue: 5 },      // قطاع 6 - تعادل
-        { value: 10, displayValue: 10 }   // قطاع 7 - ربح متوسط
+        { value: 2, displayValue: 0 },      // قطاع 0 - خسارة
+        { value: 0.5, displayValue: 3 },      // قطاع 1 - ربح كبير
+        { value: 1, displayValue: 5 },      // قطاع 2 - ربح كبير
+        { value: 1.5, displayValue: 10 },    // قطاع 3 - جائزة كبرى
+        { value: 0, displayValue: 2 },      // قطاع 4 - ربح متوسط
+        { value: 3, displayValue: 0.5 },  // قطاع 5 - ربح صغير
+        { value: 5, displayValue: 1 },      // قطاع 6 - تعادل
+        { value: 10, displayValue: 1.5 }   // قطاع 7 - ربح متوسط
       ],
       
       lastResult: null,
