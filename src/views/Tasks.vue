@@ -147,12 +147,12 @@ export default {
       // ========== هذا هو منطق اللعبة الحقيقي (مستقل تماماً) ==========
       // النسب المئوية للفوز والخسارة
       gameLogic: {
-        lossRate: 40,      // 40% خسارة
-        smallWinRate: 35,  // 35% أرباح صغيرة (0.5x, 1x)
-        bigWinRate: 25     // 25% أرباح كبيرة (1.5x, 2x, 3x, 5x, 10x)
+        lossRate: 40,      // 40% خسارة (مضاعف 0)
+        smallWinRate: 35,  // 35% أرباح صغيرة (مضاعفات 0.5, 1)
+        bigWinRate: 25     // 25% أرباح كبيرة (مضاعفات 1.5, 2, 3, 5, 10)
       },
       
-      // قائمة المضاعفات الحقيقية للعبة
+      // قائمة المضاعفات الحقيقية للعبة (هذه تحدد المكاسب الفعلية)
       realMultipliers: {
         small: [0.5, 1],
         big: [1.5, 2, 3, 5, 10]
@@ -162,17 +162,18 @@ export default {
       unsubscribeSettings: null,
       
       // ========== هذا للعرض البصري فقط ==========
-      // يمكنك تغيير ترتيب وأرقام هذه القطاعات كيفما تشاء
-      // ولن تؤثر على النتائج إطلاقاً
+      // هذه الأرقام تظهر على العجلة - يمكنك تغييرها كيفما تشاء
+      // المهم: كل قطاع له قيمة عرض (displayValue) وقيمة حقيقية (actualValue)
+      // عند تغيير أماكن الأرقام، نحتاج فقط إلى تحديث displayValue
       wheelSegmentsForDisplay: [
-        { displayValue: 0 },      // قطاع 0
-        { displayValue: 3 },      // قطاع 1
-        { displayValue: 5 },      // قطاع 2
-        { displayValue: 10 },     // قطاع 3
-        { displayValue: 2 },      // قطاع 4
-        { displayValue: 0.5 },    // قطاع 5
-        { displayValue: 1 },      // قطاع 6
-        { displayValue: 1.5 }     // قطاع 7
+        { displayValue: 0, actualValue: 0 },      // قطاع 0 - يظهر 0x لكنه يعطي 0x
+        { displayValue: 3, actualValue: 3 },      // قطاع 1 - يظهر 3x يعطي 3x
+        { displayValue: 5, actualValue: 5 },      // قطاع 2 - يظهر 5x يعطي 5x
+        { displayValue: 10, actualValue: 10 },    // قطاع 3 - يظهر 10x يعطي 10x
+        { displayValue: 2, actualValue: 2 },      // قطاع 4 - يظهر 2x يعطي 2x
+        { displayValue: 0.5, actualValue: 0.5 },  // قطاع 5 - يظهر 0.5x يعطي 0.5x
+        { displayValue: 1, actualValue: 1 },      // قطاع 6 - يظهر 1x يعطي 1x
+        { displayValue: 1.5, actualValue: 1.5 }   // قطاع 7 - يظهر 1.5x يعطي 1.5x
       ],
       
       lastResult: null,
@@ -262,7 +263,7 @@ export default {
       })
     },
     
-    // ========== منطق اللعبة الأساسي - لا علاقة له بالعجلة إطلاقاً ==========
+    // ========== منطق اللعبة الأساسي - يحدد النتيجة الحقيقية ==========
     getGameResult() {
       const { lossRate, smallWinRate, bigWinRate } = this.gameLogic
       const total = lossRate + smallWinRate + bigWinRate
@@ -270,25 +271,22 @@ export default {
       
       let resultMultiplier = 0
       let resultMessage = ''
-      let resultType = ''
       
       if (random < lossRate) {
         // خسارة
         resultMultiplier = 0
         resultMessage = 'خسارة'
-        resultType = 'loss'
-        console.log(`🎲 خسارة | المضاعف: 0x`)
+        console.log(`🎲 النتيجة: خسارة | المضاعف: 0x`)
       } 
       else if (random < lossRate + smallWinRate) {
-        // ربح صغير - اختيار عشوائي
+        // ربح صغير
         const smallOptions = this.realMultipliers.small
         resultMultiplier = smallOptions[Math.floor(Math.random() * smallOptions.length)]
         resultMessage = resultMultiplier === 0.5 ? 'ربح صغير' : 'تعادل'
-        resultType = 'smallWin'
-        console.log(`🎲 ربح صغير | المضاعف: ${resultMultiplier}x`)
+        console.log(`🎲 النتيجة: ${resultMessage} | المضاعف: ${resultMultiplier}x`)
       } 
       else {
-        // ربح كبير - اختيار عشوائي
+        // ربح كبير
         const bigOptions = this.realMultipliers.big
         resultMultiplier = bigOptions[Math.floor(Math.random() * bigOptions.length)]
         
@@ -296,15 +294,32 @@ export default {
         else if (resultMultiplier >= 5) resultMessage = 'ربح ممتاز'
         else if (resultMultiplier >= 3) resultMessage = 'ربح كبير'
         else resultMessage = 'ربح متوسط'
-        resultType = 'bigWin'
-        console.log(`🎲 ربح كبير | المضاعف: ${resultMultiplier}x | ${resultMessage}`)
+        console.log(`🎲 النتيجة: ${resultMessage} | المضاعف: ${resultMultiplier}x`)
       }
       
       return {
         multiplier: resultMultiplier,
-        message: resultMessage,
-        type: resultType
+        message: resultMessage
       }
+    },
+    
+    // ========== دالة مهمة: البحث عن قطاع في العجلة له نفس قيمة المضاعف ==========
+    // هذه الدالة تجعل العجلة تتوقف على القطاع المناسب بصرياً
+    // ولكنها لا تستخدم قيمة القطاع في الحساب، فقط للعرض
+    findSegmentIndexByMultiplier(multiplier) {
+      // نبحث في wheelSegmentsForDisplay عن قطاع له نفس actualValue
+      const index = this.wheelSegmentsForDisplay.findIndex(
+        segment => segment.actualValue === multiplier
+      )
+      
+      // إذا وجدنا القطاع، نعيد رقمه
+      if (index !== -1) {
+        return index
+      }
+      
+      // إذا لم نجد (لا يجب أن يحدث)، نعيد أول قطاع
+      console.warn(`⚠️ لم نجد قطاعاً بقيمة ${multiplier}، نستخدم القطاع 0`)
+      return 0
     },
     
     // ========== دوال العرض البصري ==========
@@ -411,11 +426,6 @@ export default {
       this.gameError = ''
     },
     
-    // دالة لتحديد قطاع عشوائي للعرض البصري (لإخفاء النتيجة الحقيقية)
-    getRandomVisualSegmentIndex() {
-      return Math.floor(Math.random() * this.wheelSegmentsForDisplay.length)
-    },
-    
     async spinWheel() {
       if (!this.canSpin) return
       
@@ -429,26 +439,25 @@ export default {
       this.gameError = ''
       this.isSpinning = true
       
-      // خصم الرهان فوراً
+      // خصم الرهان
       this.balance -= this.betAmount
       await this.updateBalance(this.balance)
       
       this.playSound(this.spinSound)
       
-      // ========== الخطوة 1: تحديد النتيجة الحقيقية (مستقل تماماً) ==========
+      // ========== الخطوة 1: حساب النتيجة الحقيقية ==========
       const gameResult = this.getGameResult()
       console.log(`🎯 النتيجة الحقيقية: ${gameResult.multiplier}x - ${gameResult.message}`)
       
-      // ========== الخطوة 2: اختيار قطاع عشوائي للعرض البصري ==========
-      // نختار قطاعاً عشوائياً تماماً ليبقى مظهر العجلة جميلاً
-      // والنتيجة الحقيقية مستقلة تماماً
-      const randomSegmentIndex = this.getRandomVisualSegmentIndex()
-      const randomSegmentValue = this.wheelSegmentsForDisplay[randomSegmentIndex].displayValue
+      // ========== الخطوة 2: إيجاد القطاع المناسب للعرض البصري ==========
+      // نبحث عن قطاع في العجلة له نفس قيمة المضاعف الحقيقي
+      const targetSegmentIndex = this.findSegmentIndexByMultiplier(gameResult.multiplier)
+      const targetSegmentValue = this.wheelSegmentsForDisplay[targetSegmentIndex].displayValue
       
-      console.log(`🎯 للعرض البصري: سيتوقف على قطاع عشوائي ${randomSegmentIndex} (قيمته ${randomSegmentValue}x)`)
+      console.log(`🎯 للعرض البصري: سيتوقف على قطاع ${targetSegmentIndex} (يظهر ${targetSegmentValue}x)`)
       
       // ========== الخطوة 3: حساب زاوية التوقف ==========
-      const segmentMiddle = (randomSegmentIndex * this.segmentAngle) + (this.segmentAngle / 2)
+      const segmentMiddle = (targetSegmentIndex * this.segmentAngle) + (this.segmentAngle / 2)
       let requiredAngle = 90 - segmentMiddle
       if (requiredAngle < 0) requiredAngle += 360
       
@@ -470,7 +479,6 @@ export default {
         } else {
           this.wheelRotation = targetRotation
           setTimeout(() => {
-            // ========== الخطوة 4: إنهاء اللعبة باستخدام النتيجة الحقيقية ==========
             this.finishSpin(gameResult)
           }, 200)
         }
@@ -495,7 +503,6 @@ export default {
         isWin = false
       } 
       else {
-        // ربح بأي نسبة
         this.balance += winAmount
         await this.updateBalance(this.balance)
         
