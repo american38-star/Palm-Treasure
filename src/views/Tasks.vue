@@ -353,14 +353,14 @@ export default {
     },
     
     getSegmentColor(value) {
-      if (value === 0) return '#d32f2f'
-      if (value === 0.5) return '#fb8c00'
-      if (value === 1) return '#ffa726'
-      if (value === 1.5) return '#ffb74d'
-      if (value === 2) return '#66bb6a'
-      if (value === 3) return '#4caf50'
-      if (value === 5) return '#2e7d32'
-      if (value === 10) return '#ffd700'
+      if (value === 2) return '#d32f2f'
+      if (value === 3) return '#fb8c00'
+      if (value === 5) return '#ffa726'
+      if (value === 10) return '#ffb74d'
+      if (value === 0) return '#66bb6a'
+      if (value === 0.5) return '#4caf50'
+      if (value === 1) return '#2e7d32'
+      if (value === 1.5) return '#ffd700'
       return '#388e3c'
     },
     
