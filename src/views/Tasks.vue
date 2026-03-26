@@ -144,36 +144,40 @@ export default {
       isSpinning: false,
       betAmount: null,
       
-      // ========== هذا هو منطق اللعبة الحقيقي (مستقل تماماً) ==========
-      // النسب المئوية للفوز والخسارة
-      gameLogic: {
-        lossRate: 40,      // 40% خسارة (مضاعف 0)
-        smallWinRate: 35,  // 35% أرباح صغيرة (مضاعفات 0.5, 1)
-        bigWinRate: 25     // 25% أرباح كبيرة (مضاعفات 1.5, 2, 3, 5, 10)
+      // ========== الإعدادات العامة من Firebase ==========
+      globalSettings: {
+        lossRate: 40,
+        smallWinRate: 35,
+        bigWinRate: 25
       },
       
-      // قائمة المضاعفات الحقيقية للعبة (هذه تحدد المكاسب الفعلية)
+      // ========== إعدادات المستخدم المخصصة ==========
+      userCustomSettings: {
+        useGlobalSettings: true,  // هل يستخدم الإعدادات العامة؟
+        settings: null            // الإعدادات المخصصة (إذا useGlobalSettings = false)
+      },
+      
+      settingsLoading: false,
+      unsubscribeGlobalSettings: null,
+      unsubscribeUserSettings: null,
+      currentUserId: null,
+      
+      // قائمة المضاعفات الحقيقية للعبة
       realMultipliers: {
         small: [0.5, 1],
         big: [1.5, 2, 3, 5, 10]
       },
       
-      settingsLoading: false,
-      unsubscribeSettings: null,
-      
       // ========== هذا للعرض البصري فقط ==========
-      // هذه الأرقام تظهر على العجلة - يمكنك تغييرها كيفما تشاء
-      // المهم: كل قطاع له قيمة عرض (displayValue) وقيمة حقيقية (actualValue)
-      // عند تغيير أماكن الأرقام، نحتاج فقط إلى تحديث displayValue
       wheelSegmentsForDisplay: [
-        { displayValue: 2, actualValue: 0 },      // قطاع 0 - يظهر 0x لكنه يعطي 0x
-        { displayValue: 0.5, actualValue: 3 },      // قطاع 1 - يظهر 3x يعطي 3x
-        { displayValue: 1, actualValue: 5 },      // قطاع 2 - يظهر 5x يعطي 5x
-        { displayValue: 1.5, actualValue: 10 },    // قطاع 3 - يظهر 10x يعطي 10x
-        { displayValue: 0, actualValue: 2 },      // قطاع 4 - يظهر 2x يعطي 2x
-        { displayValue: 3, actualValue: 0.5 },  // قطاع 5 - يظهر 0.5x يعطي 0.5x
-        { displayValue: 5, actualValue: 1 },      // قطاع 6 - يظهر 1x يعطي 1x
-        { displayValue: 10, actualValue: 1.5 }   // قطاع 7 - يظهر 1.5x يعطي 1.5x
+        { displayValue: 2, actualValue: 0 },      // قطاع 0 - يظهر 2x لكنه يعطي 0x
+        { displayValue: 0.5, actualValue: 3 },    // قطاع 1 - يظهر 0.5x لكنه يعطي 3x
+        { displayValue: 1, actualValue: 5 },      // قطاع 2 - يظهر 1x لكنه يعطي 5x
+        { displayValue: 1.5, actualValue: 10 },   // قطاع 3 - يظهر 1.5x لكنه يعطي 10x
+        { displayValue: 0, actualValue: 2 },      // قطاع 4 - يظهر 0x لكنه يعطي 2x
+        { displayValue: 3, actualValue: 0.5 },    // قطاع 5 - يظهر 3x لكنه يعطي 0.5x
+        { displayValue: 5, actualValue: 1 },      // قطاع 6 - يظهر 5x لكنه يعطي 1x
+        { displayValue: 10, actualValue: 1.5 }    // قطاع 7 - يظهر 10x لكنه يعطي 1.5x
       ],
       
       lastResult: null,
@@ -195,6 +199,18 @@ export default {
              this.betAmount > 0 && 
              this.betAmount <= this.balance && 
              !this.isSpinning
+    },
+    
+    // ========== الحصول على الإعدادات الفعلية المستخدمة ==========
+    activeSettings() {
+      // إذا كان المستخدم يستخدم إعدادات مخصصة ولديه إعدادات
+      if (!this.userCustomSettings.useGlobalSettings && this.userCustomSettings.settings) {
+        console.log("🎯 استخدام إعدادات المستخدم المخصصة:", this.userCustomSettings.settings)
+        return this.userCustomSettings.settings
+      }
+      // وإلا استخدام الإعدادات العامة
+      console.log("🎯 استخدام الإعدادات العامة:", this.globalSettings)
+      return this.globalSettings
     }
   },
   
@@ -202,43 +218,56 @@ export default {
     const user = auth.currentUser
     if (!user) return
     
+    this.currentUserId = user.uid
+    
     const snap = await getDoc(doc(db, "users", user.uid))
     if (snap.exists()) {
       this.balance = Number(snap.data().balance || 0)
     }
     
-    await this.fetchGameSettings()
-    this.subscribeToSettings()
+    // تحميل الإعدادات العامة
+    await this.fetchGlobalSettings()
+    
+    // تحميل إعدادات المستخدم المخصصة
+    await this.fetchUserSettings()
+    
+    // الاشتراك في التحديثات المباشرة
+    this.subscribeToGlobalSettings()
+    this.subscribeToUserSettings()
+    
     this.initSounds()
   },
   
   beforeUnmount() {
-    if (this.unsubscribeSettings) {
-      this.unsubscribeSettings()
+    if (this.unsubscribeGlobalSettings) {
+      this.unsubscribeGlobalSettings()
+    }
+    if (this.unsubscribeUserSettings) {
+      this.unsubscribeUserSettings()
     }
   },
   
   methods: {
-    // جلب إعدادات اللعبة من Firebase
-    async fetchGameSettings() {
+    // ========== جلب الإعدادات العامة ==========
+    async fetchGlobalSettings() {
       this.settingsLoading = true
       try {
         const settingsRef = doc(db, "settings", "wheel")
         const settingsDoc = await getDoc(settingsRef)
         
         if (settingsDoc.exists()) {
-          this.gameLogic = settingsDoc.data()
+          this.globalSettings = settingsDoc.data()
         } else {
-          await this.createDefaultSettings()
+          await this.createDefaultGlobalSettings()
         }
       } catch (error) {
-        console.error("❌ خطأ:", error)
+        console.error("❌ خطأ في جلب الإعدادات العامة:", error)
       } finally {
         this.settingsLoading = false
       }
     },
     
-    async createDefaultSettings() {
+    async createDefaultGlobalSettings() {
       try {
         const defaultSettings = {
           lossRate: 40,
@@ -247,46 +276,99 @@ export default {
         }
         const settingsRef = doc(db, "settings", "wheel")
         await updateDoc(settingsRef, defaultSettings)
-        this.gameLogic = defaultSettings
+        this.globalSettings = defaultSettings
       } catch (error) {
-        console.error("❌ خطأ:", error)
+        console.error("❌ خطأ في إنشاء الإعدادات الافتراضية:", error)
       }
     },
     
-    subscribeToSettings() {
+    subscribeToGlobalSettings() {
       const settingsRef = doc(db, "settings", "wheel")
-      this.unsubscribeSettings = onSnapshot(settingsRef, (doc) => {
+      this.unsubscribeGlobalSettings = onSnapshot(settingsRef, (doc) => {
         if (doc.exists()) {
-          this.gameLogic = doc.data()
-          console.log("✅ تم تحديث إعدادات اللعبة:", this.gameLogic)
+          this.globalSettings = doc.data()
+          console.log("✅ تم تحديث الإعدادات العامة:", this.globalSettings)
         }
+      }, (error) => {
+        console.error("❌ خطأ في الاستماع للإعدادات العامة:", error)
       })
     },
     
-    // ========== منطق اللعبة الأساسي - يحدد النتيجة الحقيقية ==========
+    // ========== جلب إعدادات المستخدم المخصصة ==========
+    async fetchUserSettings() {
+      try {
+        const userSettingsRef = doc(db, "user_wheel_settings", this.currentUserId)
+        const userSettingsDoc = await getDoc(userSettingsRef)
+        
+        if (userSettingsDoc.exists()) {
+          const data = userSettingsDoc.data()
+          this.userCustomSettings = {
+            useGlobalSettings: data.useGlobalSettings !== false,
+            settings: data.settings || null
+          }
+          console.log("✅ تم تحميل إعدادات المستخدم:", this.userCustomSettings)
+        } else {
+          console.log("📌 لا توجد إعدادات مخصصة للمستخدم، سيتم استخدام الإعدادات العامة")
+          this.userCustomSettings = {
+            useGlobalSettings: true,
+            settings: null
+          }
+        }
+      } catch (error) {
+        console.error("❌ خطأ في جلب إعدادات المستخدم:", error)
+        this.userCustomSettings = {
+          useGlobalSettings: true,
+          settings: null
+        }
+      }
+    },
+    
+    subscribeToUserSettings() {
+      const userSettingsRef = doc(db, "user_wheel_settings", this.currentUserId)
+      this.unsubscribeUserSettings = onSnapshot(userSettingsRef, (doc) => {
+        if (doc.exists()) {
+          const data = doc.data()
+          this.userCustomSettings = {
+            useGlobalSettings: data.useGlobalSettings !== false,
+            settings: data.settings || null
+          }
+          console.log("✅ تم تحديث إعدادات المستخدم:", this.userCustomSettings)
+        } else {
+          this.userCustomSettings = {
+            useGlobalSettings: true,
+            settings: null
+          }
+        }
+      }, (error) => {
+        console.error("❌ خطأ في الاستماع لإعدادات المستخدم:", error)
+      })
+    },
+    
+    // ========== منطق اللعبة الأساسي - يستخدم activeSettings ==========
     getGameResult() {
-      const { lossRate, smallWinRate, bigWinRate } = this.gameLogic
+      const settings = this.activeSettings
+      const { lossRate, smallWinRate, bigWinRate } = settings
       const total = lossRate + smallWinRate + bigWinRate
       const random = Math.random() * total
       
       let resultMultiplier = 0
       let resultMessage = ''
       
+      console.log(`🎲 الإعدادات المستخدمة: خسارة ${lossRate}% | ربح صغير ${smallWinRate}% | ربح كبير ${bigWinRate}%`)
+      console.log(`🎲 الرقم العشوائي: ${random.toFixed(2)} من أصل ${total}`)
+      
       if (random < lossRate) {
-        // خسارة
         resultMultiplier = 0
         resultMessage = 'خسارة'
         console.log(`🎲 النتيجة: خسارة | المضاعف: 0x`)
       } 
       else if (random < lossRate + smallWinRate) {
-        // ربح صغير
         const smallOptions = this.realMultipliers.small
         resultMultiplier = smallOptions[Math.floor(Math.random() * smallOptions.length)]
         resultMessage = resultMultiplier === 0.5 ? 'ربح صغير' : 'تعادل'
         console.log(`🎲 النتيجة: ${resultMessage} | المضاعف: ${resultMultiplier}x`)
       } 
       else {
-        // ربح كبير
         const bigOptions = this.realMultipliers.big
         resultMultiplier = bigOptions[Math.floor(Math.random() * bigOptions.length)]
         
@@ -303,21 +385,16 @@ export default {
       }
     },
     
-    // ========== دالة مهمة: البحث عن قطاع في العجلة له نفس قيمة المضاعف ==========
-    // هذه الدالة تجعل العجلة تتوقف على القطاع المناسب بصرياً
-    // ولكنها لا تستخدم قيمة القطاع في الحساب، فقط للعرض
+    // البحث عن قطاع في العجلة له نفس قيمة المضاعف
     findSegmentIndexByMultiplier(multiplier) {
-      // نبحث في wheelSegmentsForDisplay عن قطاع له نفس actualValue
       const index = this.wheelSegmentsForDisplay.findIndex(
         segment => segment.actualValue === multiplier
       )
       
-      // إذا وجدنا القطاع، نعيد رقمه
       if (index !== -1) {
         return index
       }
       
-      // إذا لم نجد (لا يجب أن يحدث)، نعيد أول قطاع
       console.warn(`⚠️ لم نجد قطاعاً بقيمة ${multiplier}، نستخدم القطاع 0`)
       return 0
     },
@@ -445,12 +522,11 @@ export default {
       
       this.playSound(this.spinSound)
       
-      // ========== الخطوة 1: حساب النتيجة الحقيقية ==========
+      // ========== الخطوة 1: حساب النتيجة الحقيقية باستخدام الإعدادات الفعلية ==========
       const gameResult = this.getGameResult()
       console.log(`🎯 النتيجة الحقيقية: ${gameResult.multiplier}x - ${gameResult.message}`)
       
       // ========== الخطوة 2: إيجاد القطاع المناسب للعرض البصري ==========
-      // نبحث عن قطاع في العجلة له نفس قيمة المضاعف الحقيقي
       const targetSegmentIndex = this.findSegmentIndexByMultiplier(gameResult.multiplier)
       const targetSegmentValue = this.wheelSegmentsForDisplay[targetSegmentIndex].displayValue
       
