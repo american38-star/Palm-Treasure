@@ -381,14 +381,14 @@ export default {
     },
     
     getSegmentColor(value) {
-      if (value === 0) return '#d32f2f' // أحمر (خسارة)
-      if (value === 0.5) return '#fb8c00' // برتقالي (ربح صغير)
-      if (value === 1) return '#ffa726' // برتقالي فاتح (تعادل)
-      if (value === 1.5) return '#ffb74d' // برتقالي غامق
-      if (value === 2) return '#66bb6a' // أخضر فاتح
-      if (value === 3) return '#4caf50' // أخضر
-      if (value === 5) return '#2e7d32' // أخضر غامق
-      if (value === 10) return '#ffd700' // ذهبي
+      if (value === 2) return '#d32f2f' // أحمر (خسارة)
+      if (value === 3) return '#fb8c00' // برتقالي (ربح صغير)
+      if (value === 5) return '#ffa726' // برتقالي فاتح (تعادل)
+      if (value === 10) return '#ffb74d' // برتقالي غامق
+      if (value === 0) return '#66bb6a' // أخضر فاتح
+      if (value === 0.5) return '#4caf50' // أخضر
+      if (value === 1) return '#2e7d32' // أخضر غامق
+      if (value === 1.5) return '#ffd700' // ذهبي
       return '#388e3c'
     },
     
