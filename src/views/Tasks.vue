@@ -166,14 +166,14 @@ export default {
       // المهم: كل قطاع له قيمة عرض (displayValue) وقيمة حقيقية (actualValue)
       // عند تغيير أماكن الأرقام، نحتاج فقط إلى تحديث displayValue
       wheelSegmentsForDisplay: [
-        { displayValue: 0, actualValue: 0 },      // قطاع 0 - يظهر 0x لكنه يعطي 0x
-        { displayValue: 3, actualValue: 3 },      // قطاع 1 - يظهر 3x يعطي 3x
-        { displayValue: 5, actualValue: 5 },      // قطاع 2 - يظهر 5x يعطي 5x
-        { displayValue: 10, actualValue: 10 },    // قطاع 3 - يظهر 10x يعطي 10x
-        { displayValue: 2, actualValue: 2 },      // قطاع 4 - يظهر 2x يعطي 2x
-        { displayValue: 0.5, actualValue: 0.5 },  // قطاع 5 - يظهر 0.5x يعطي 0.5x
-        { displayValue: 1, actualValue: 1 },      // قطاع 6 - يظهر 1x يعطي 1x
-        { displayValue: 1.5, actualValue: 1.5 }   // قطاع 7 - يظهر 1.5x يعطي 1.5x
+        { displayValue: 2, actualValue: 0 },      // قطاع 0 - يظهر 0x لكنه يعطي 0x
+        { displayValue: 0.5, actualValue: 3 },      // قطاع 1 - يظهر 3x يعطي 3x
+        { displayValue: 1, actualValue: 5 },      // قطاع 2 - يظهر 5x يعطي 5x
+        { displayValue: 1.5, actualValue: 10 },    // قطاع 3 - يظهر 10x يعطي 10x
+        { displayValue: 0, actualValue: 2 },      // قطاع 4 - يظهر 2x يعطي 2x
+        { displayValue: 3, actualValue: 0.5 },  // قطاع 5 - يظهر 0.5x يعطي 0.5x
+        { displayValue: 5, actualValue: 1 },      // قطاع 6 - يظهر 1x يعطي 1x
+        { displayValue: 10, actualValue: 1.5 }   // قطاع 7 - يظهر 1.5x يعطي 1.5x
       ],
       
       lastResult: null,
