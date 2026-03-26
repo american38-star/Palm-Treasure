@@ -163,14 +163,14 @@ export default {
       // أجزاء العجلة (8 أجزاء) - تستخدم فقط للعرض البصري (UI)
       // يمكنك تغيير أماكن هذه القيم بحرية دون التأثير على النتيجة
       wheelSegments: [
-        { value: 0, displayValue: 0 },      // قطاع 0 - خسارة
-        { value: 3, displayValue: 3 },      // قطاع 1 - ربح كبير
-        { value: 5, displayValue: 5 },      // قطاع 2 - ربح كبير
-        { value: 10, displayValue: 10 },    // قطاع 3 - جائزة كبرى
-        { value: 2, displayValue: 2 },      // قطاع 4 - ربح متوسط
-        { value: 0.5, displayValue: 0.5 },  // قطاع 5 - ربح صغير
-        { value: 1, displayValue: 1 },      // قطاع 6 - تعادل
-        { value: 1.5, displayValue: 1.5 }   // قطاع 7 - ربح متوسط
+        { value: 2, displayValue: 2 },      // قطاع 0 - خسارة
+        { value: 0.5, displayValue: 0.5 },      // قطاع 1 - ربح كبير
+        { value: 1, displayValue: 1 },      // قطاع 2 - ربح كبير
+        { value: 1.5, displayValue: 1.5 },    // قطاع 3 - جائزة كبرى
+        { value: 0, displayValue: 0 },      // قطاع 4 - ربح متوسط
+        { value: 3, displayValue: 3 },  // قطاع 5 - ربح صغير
+        { value: 5, displayValue: 5 },      // قطاع 6 - تعادل
+        { value: 10, displayValue: 10 }   // قطاع 7 - ربح متوسط
       ],
       
       lastResult: null,
@@ -353,14 +353,14 @@ export default {
     },
     
     getSegmentColor(value) {
-      if (value === 2) return '#d32f2f'
-      if (value === 3) return '#fb8c00'
-      if (value === 5) return '#ffa726'
-      if (value === 10) return '#ffb74d'
-      if (value === 0) return '#66bb6a'
-      if (value === 0.5) return '#4caf50'
-      if (value === 1) return '#2e7d32'
-      if (value === 1.5) return '#ffd700'
+      if (value === 0) return '#d32f2f'
+      if (value === 0.5) return '#fb8c00'
+      if (value === 1) return '#ffa726'
+      if (value === 1.5) return '#ffb74d'
+      if (value === 2) return '#66bb6a'
+      if (value === 3) return '#4caf50'
+      if (value === 5) return '#2e7d32'
+      if (value === 10) return '#ffd700'
       return '#388e3c'
     },
     
