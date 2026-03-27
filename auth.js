@@ -2,30 +2,54 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import CryptoJS from 'crypto-js'
 
-// مفتاح التشفير - يفضل وضعه في متغيرات البيئة
-const ENCRYPTION_KEY = import.meta.env.VITE_ENCRYPTION_KEY || 'your-32-character-encryption-key!'
+// -------------------------------
+// التحقق من وجود مفتاح التشفير
+// -------------------------------
+const ENCRYPTION_KEY = import.meta.env.VITE_ENCRYPTION_KEY
 
-// خدمة التشفير المدمجة
+if (!ENCRYPTION_KEY && import.meta.env.PROD) {
+  console.error('CRITICAL: VITE_ENCRYPTION_KEY is not set in production!')
+}
+
+// -------------------------------
+// خدمة التشفير المحسنة
+// -------------------------------
 const encryptionService = {
   encrypt(data) {
     try {
+      if (!ENCRYPTION_KEY) {
+        throw new Error('Encryption key is missing')
+      }
       const jsonString = JSON.stringify(data)
-      return CryptoJS.AES.encrypt(jsonString, ENCRYPTION_KEY).toString()
+      const encrypted = CryptoJS.AES.encrypt(jsonString, ENCRYPTION_KEY).toString()
+      return encrypted
     } catch (error) {
-      console.error('Encryption error:', error)
+      // في الإنتاج، لا تطبع تفاصيل الأخطاء الحساسة
+      if (import.meta.env.DEV) {
+        console.error('Encryption error:', error.message)
+      }
       return null
     }
   },
 
   decrypt(encryptedData) {
     try {
+      if (!ENCRYPTION_KEY) {
+        throw new Error('Encryption key is missing')
+      }
       if (!encryptedData) return null
+      
       const bytes = CryptoJS.AES.decrypt(encryptedData, ENCRYPTION_KEY)
       const decryptedString = bytes.toString(CryptoJS.enc.Utf8)
+      
       if (!decryptedString) return null
-      return JSON.parse(decryptedString)
+      
+      const parsed = JSON.parse(decryptedString)
+      return parsed
     } catch (error) {
-      console.error('Decryption error:', error)
+      if (import.meta.env.DEV) {
+        console.error('Decryption error:', error.message)
+      }
       return null
     }
   },
@@ -47,7 +71,21 @@ const encryptionService = {
 
   removeItem(key) {
     localStorage.removeItem(key)
+  },
+  
+  clear() {
+    localStorage.clear()
   }
+}
+
+// -------------------------------
+// التحقق من صحة بيانات المستخدم
+// -------------------------------
+function isValidUser(userData) {
+  if (!userData || typeof userData !== 'object') return false
+  // تحقق من وجود الحقول الأساسية
+  if (!userData.uid && !userData.id) return false
+  return true
 }
 
 export const useAuthStore = defineStore('auth', () => {
@@ -55,45 +93,89 @@ export const useAuthStore = defineStore('auth', () => {
   // -------------------------------
   // قراءة الـ Token بشكل آمن
   // -------------------------------
-  const decryptedToken = encryptionService.getItem('token')
-  const token = ref(decryptedToken || '')
+  let initialToken = ''
+  try {
+    const decryptedToken = encryptionService.getItem('token')
+    if (decryptedToken && typeof decryptedToken === 'string') {
+      initialToken = decryptedToken
+    }
+  } catch (e) {
+    if (import.meta.env.DEV) console.warn('Failed to load token')
+  }
+  const token = ref(initialToken)
 
   // -------------------------------
   // قراءة بيانات المستخدم بشكل آمن
   // -------------------------------
-  const decryptedUser = encryptionService.getItem('user')
-  const user = ref(decryptedUser || null)
+  let initialUser = null
+  try {
+    const decryptedUser = encryptionService.getItem('user')
+    if (decryptedUser && isValidUser(decryptedUser)) {
+      initialUser = decryptedUser
+    }
+  } catch (e) {
+    if (import.meta.env.DEV) console.warn('Failed to load user data')
+  }
+  const user = ref(initialUser)
 
   // -------------------------------
-  // إضافة userId (الـ UID الخاص بالمستخدم)
+  // إضافة userId
   // -------------------------------
-  const userId = ref(user.value?.uid || '')
+  const userId = ref(user.value?.uid || user.value?.id || '')
 
   // -------------------------------
   // اللغة (غير حساسة)
   // -------------------------------
   const lang = ref(localStorage.getItem('lang') || 'ar')
   
-  // التحقق من وجود document قبل استخدامه (للتوافق مع SSR)
+  // التحقق من وجود document قبل استخدامه
   if (typeof document !== 'undefined') {
     document.documentElement.dir = lang.value === 'ar' ? 'rtl' : 'ltr'
   }
 
   // -------------------------------
-  // تخزين معلومات المستخدم بشكل آمن مع التشفير
+  // جلسة التطبيق (Session Management)
+  // -------------------------------
+  const SESSION_DURATION_HOURS = 24 // مدة الجلسة 24 ساعة
+  
+  function setSessionExpiry() {
+    const expiryTime = Date.now() + (SESSION_DURATION_HOURS * 60 * 60 * 1000)
+    encryptionService.setItem('session_expiry', expiryTime)
+  }
+  
+  function isSessionValid() {
+    const expiry = encryptionService.getItem('session_expiry')
+    if (!expiry) return false
+    return Date.now() < expiry
+  }
+  
+  function clearSession() {
+    encryptionService.removeItem('session_expiry')
+  }
+
+  // -------------------------------
+  // تخزين معلومات المستخدم بشكل آمن
   // -------------------------------
   function setAuth(t, u) {
-    token.value = t
-    user.value = u
-    userId.value = u?.uid || ''
-    
-    if (t) {
-      encryptionService.setItem('token', t)
-    } else {
-      encryptionService.removeItem('token')
+    // التحقق من صحة البيانات قبل التخزين
+    if (u && !isValidUser(u)) {
+      if (import.meta.env.DEV) console.warn('Attempted to store invalid user data')
+      return
     }
     
-    if (u) {
+    token.value = t
+    user.value = u
+    userId.value = u?.uid || u?.id || ''
+    
+    if (t && typeof t === 'string' && t.length > 0) {
+      encryptionService.setItem('token', t)
+      setSessionExpiry() // تعيين مدة الجلسة
+    } else {
+      encryptionService.removeItem('token')
+      clearSession()
+    }
+    
+    if (u && isValidUser(u)) {
       encryptionService.setItem('user', u)
     } else {
       encryptionService.removeItem('user')
@@ -101,7 +183,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   // -------------------------------
-  // تسجيل الخروج
+  // تسجيل الخروج - مسح جميع البيانات
   // -------------------------------
   function logout() {
     token.value = ''
@@ -109,6 +191,14 @@ export const useAuthStore = defineStore('auth', () => {
     userId.value = ''
     encryptionService.removeItem('token')
     encryptionService.removeItem('user')
+    clearSession()
+  }
+
+  // -------------------------------
+  // التحقق من حالة المصادقة
+  // -------------------------------
+  function isAuthenticated() {
+    return !!(token.value && isSessionValid())
   }
 
   // -------------------------------
@@ -130,5 +220,6 @@ export const useAuthStore = defineStore('auth', () => {
     setAuth,
     logout,
     setLang,
+    isAuthenticated, // إضافة دالة التحقق من المصادقة
   }
 })
