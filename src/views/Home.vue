@@ -204,7 +204,7 @@
             <h4>📢 مواعيد سحب الرواتب الخاصة بحسابات VIP</h4>
             <p>
               حرصًا منا على تنظيم عملية السحب وضمان سلاسة الإجراءات لجميع الأعضاء، تم اعتماد جدول أسبوعي ثابت لمواعيد سحب الرواتب الخاصة بحسابات VIP.<br><br>
-              يرجى من جميع الأعضاء الالتزام باليوم المخصص لكل مستوى، حيث يتم تنفيذ عمليات السحب فقط في اليوم المحدد لكل فئة.
+              يرجى من جميع الأعضاء الالتزام باليوم المحدد لكل مستوى، حيث يتم تنفيذ عمليات السحب فقط في اليوم المحدد لكل فئة.
             </p>
             
             <h4>📅 جدول السحب الأسبوعي:</h4>
@@ -260,7 +260,7 @@
 
 <script>
 import { auth, db } from "../firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 
 export default {
@@ -272,6 +272,8 @@ export default {
       balance: 0,
       showAd: false,
       showTerms: false,
+      currentUserUid: null,
+      unsubscribeUser: null,
       
       vipPlans: [
         { level: 'VIP 1', recharge: '0', daily: '0.3', monthly: '9', yearly: '109.5', tasks: '1', status: 'مفعل الآن' },
@@ -305,6 +307,14 @@ export default {
     this.watchUser();
   },
 
+  beforeUnmount() {
+    // إلغاء الاستماع للتحديثات عند مغادرة الصفحة
+    if (this.unsubscribeUser) {
+      this.unsubscribeUser();
+    }
+    document.body.style.overflow = 'auto';
+  },
+
   methods: {
     watchUser() {
       onAuthStateChanged(auth, async (user) => {
@@ -315,17 +325,26 @@ export default {
           return;
         }
 
-        await this.loadUserData(user.uid);
+        this.currentUserUid = user.uid;
+        await this.setupUserRealtimeListener(user.uid);
       });
     },
 
-    async loadUserData(uid) {
-      try {
-        const snap = await getDoc(doc(db, "users", uid));
+    // إعداد مستمع للتحديثات المباشرة من Firebase
+    setupUserRealtimeListener(uid) {
+      // إلغاء المستمع القديم إذا وجد
+      if (this.unsubscribeUser) {
+        this.unsubscribeUser();
+      }
 
-        if (snap.exists()) {
-          const data = snap.data();
+      const userRef = doc(db, "users", uid);
+      
+      // الاستماع للتحديثات المباشرة من Firebase
+      this.unsubscribeUser = onSnapshot(userRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
           
+          // تحديث اسم المستخدم
           if (data.phoneNumber) {
             this.username = data.phoneNumber;
           } else if (data.email) {
@@ -334,16 +353,17 @@ export default {
             this.username = "مستخدم";
           }
           
+          // تحديث الرصيد مباشرة من Firebase
           this.balance = data.balance ?? 0;
+          
+          console.log("تم تحديث الرصيد تلقائياً:", this.balance);
         } else {
           this.username = "مستخدم";
           this.balance = 0;
         }
-      } catch (err) {
-        console.error("Error loading user data:", err);
-        this.username = "مستخدم";
-        this.balance = 0;
-      }
+      }, (error) => {
+        console.error("خطأ في الاستماع لتحديثات المستخدم:", error);
+      });
     },
 
     getVipClass(level) {
@@ -378,10 +398,6 @@ export default {
       this.showTerms = false;
       document.body.style.overflow = 'auto';
     }
-  },
-
-  beforeUnmount() {
-    document.body.style.overflow = 'auto';
   }
 };
 </script>
