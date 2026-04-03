@@ -369,6 +369,8 @@
 
 <script>
 import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { db } from "./firebase";
+import { collection, doc, getDoc, updateDoc } from "firebase/firestore";
 
 export default {
   name: "App",
@@ -470,6 +472,29 @@ export default {
     document.addEventListener('touchmove', this.onDrag, { passive: false });
     document.addEventListener('touchend', this.stopDrag);
     document.addEventListener('touchcancel', this.stopDrag);
+
+    // نظام تحديث أرباح VIP التلقائي
+    const auth = getAuth();
+    onAuthStateChanged(auth, async (userAuth) => {
+      if (userAuth) {
+        try {
+          const userRef = doc(db, "users", userAuth.uid);
+          const userSnap = await getDoc(userRef);
+          
+          if (userSnap.exists()) {
+            const userData = userSnap.data();
+            const update = this.updateVipProfit(userData);
+            
+            if (update) {
+              await updateDoc(userRef, update);
+              console.log("تم تحديث أرباح VIP بنجاح");
+            }
+          }
+        } catch (error) {
+          console.error("خطأ في تحديث أرباح VIP:", error);
+        }
+      }
+    });
   },
 
   beforeDestroy() {
@@ -492,6 +517,27 @@ export default {
   },
 
   methods: {
+    // دالة تحديث أرباح VIP
+    updateVipProfit(user) {
+      const now = Date.now();
+      const last = user.lastProfitTime || now;
+
+      const hoursPassed = Math.floor((now - last) / (1000 * 60 * 60));
+
+      if (hoursPassed > 0 && user.vipActive) {
+        const profit = hoursPassed * user.vipProfit;
+
+        const newBalance = user.balance + profit;
+
+        return {
+          balance: newBalance,
+          lastProfitTime: now
+        };
+      }
+
+      return null;
+    },
+
     toggleLanguageMenu(event) {
       if (this.hasDragged) {
         this.hasDragged = false;
