@@ -138,11 +138,16 @@
               <input 
                 type="tel" 
                 v-model="phoneForm.phone" 
-                :placeholder="'رقم الهاتف (' + phoneLimit + ' أرقام)'" 
+                :placeholder="'رقم الهاتف'" 
                 class="gold-input-field"
                 @input="handlePhoneInput"
               >
             </div>
+            <!-- عداد الأرقام المطلوب تحت الحقل مباشرة -->
+            <p class="phone-hint" v-if="phoneForm.countryCode">
+              <i class="fas fa-info-circle"></i> 
+              يجب إدخال <span>{{ phoneLimit }}</span> أرقام لهذا الرمز (أدخلت: {{ phoneForm.phone.length }})
+            </p>
           </div>
           <div class="gold-field">
             <label>كلمة المرور للتأكيد</label>
@@ -206,7 +211,7 @@ export default {
       passwordSuccess: "",
       phoneError: "",
       phoneSuccess: "",
-      phoneLimit: 9, // الافتراضي للسعودية
+      phoneLimit: 9,
       passwordForm: { currentPassword: "", newPassword: "", confirmPassword: "" },
       phoneForm: { countryCode: "+966", phone: "", password: "" },
       userData: { email: "", phoneNumber: "", uid: "", createdAt: "", balance: 0, username: "", referralCode: "" }
@@ -255,10 +260,12 @@ export default {
     openChangePasswordModal() { this.showChangePasswordModal = true; this.passwordError = ""; this.passwordSuccess = ""; },
     closeChangePasswordModal() { this.showChangePasswordModal = false; },
     
-    // تحويل رسائل خطأ Firebase إلى العربية
-    translateError(code) {
+    translateError(error) {
+      const code = error.code || error.message;
+      if (code.includes('wrong-password') || code.includes('invalid-credential')) {
+        return 'كلمة المرور غير صحيحة';
+      }
       switch (code) {
-        case 'auth/wrong-password': return 'كلمة المرور الحالية غير صحيحة';
         case 'auth/user-not-found': return 'المستخدم غير موجود';
         case 'auth/too-many-requests': return 'محاولات كثيرة جداً، يرجى المحاولة لاحقاً';
         case 'auth/network-request-failed': return 'خطأ في الاتصال بالشبكة';
@@ -271,7 +278,6 @@ export default {
       this.passwordError = "";
       if (!this.passwordForm.currentPassword) { this.passwordError = "يرجى إدخال كلمة المرور الحالية"; return; }
       if (this.passwordForm.newPassword !== this.passwordForm.confirmPassword) { this.passwordError = "كلمات المرور الجديدة غير متطابقة"; return; }
-      if (this.passwordForm.newPassword.length < 6) { this.passwordError = "كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل"; return; }
       
       this.passwordLoading = true;
       try {
@@ -282,7 +288,7 @@ export default {
         this.passwordSuccess = "تم تحديث كلمة المرور بنجاح ✓";
         setTimeout(() => this.closeChangePasswordModal(), 2000);
       } catch (e) { 
-        this.passwordError = this.translateError(e.code);
+        this.passwordError = this.translateError(e);
       }
       this.passwordLoading = false;
     },
@@ -298,16 +304,13 @@ export default {
         "+970": 9, "+90": 10
       };
       this.phoneLimit = limits[this.phoneForm.countryCode] || 10;
-      // تنظيف الرقم إذا تجاوز الحد الجديد
       if (this.phoneForm.phone.length > this.phoneLimit) {
         this.phoneForm.phone = this.phoneForm.phone.substring(0, this.phoneLimit);
       }
     },
 
     handlePhoneInput(e) {
-      // السماح بالأرقام فقط
       this.phoneForm.phone = e.target.value.replace(/\D/g, '');
-      // الالتزام بالحد الأقصى
       if (this.phoneForm.phone.length > this.phoneLimit) {
         this.phoneForm.phone = this.phoneForm.phone.substring(0, this.phoneLimit);
       }
@@ -333,7 +336,7 @@ export default {
         this.phoneSuccess = "تم ربط رقم الهاتف بنجاح ✓";
         setTimeout(() => this.closePhoneModal(), 2000);
       } catch (e) { 
-        this.phoneError = this.translateError(e.code);
+        this.phoneError = this.translateError(e);
       }
       this.phoneLoading = false;
     },
@@ -580,6 +583,18 @@ export default {
   background: #111111; border: 1px solid #333333; border-radius: 10px;
   padding: 10px; color: #D4AF37; font-weight: bold; outline: none;
   font-size: 13px; width: 100%;
+}
+
+.phone-hint {
+  font-size: 11px;
+  color: #888888;
+  margin-top: 8px;
+  margin-right: 5px;
+}
+
+.phone-hint span {
+  color: #D4AF37;
+  font-weight: bold;
 }
 
 .error-txt { color: #ff4444; font-size: 12px; margin-bottom: 10px; text-align: center; background: rgba(255,68,68,0.1); padding: 8px; border-radius: 8px; }
