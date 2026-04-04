@@ -15,6 +15,7 @@
         <div class="balance-info">
           <span class="balance-label">رصيدك الحالي</span>
           <div class="balance-display">
+            <img src="https://assets.coingecko.com/coins/images/325/large/tether.png" alt="USDT" class="balance-usdt-icon">
             <span class="balance-amount">{{ balance.toFixed(2) }}</span>
             <span class="balance-currency-badge">USDT</span>
           </div>
@@ -390,10 +391,10 @@ export default {
 
     getNetworkIcon(network) {
       const icons = {
-        'TRC20': 'https://cryptologos.cc/logos/tron-trx-logo.png',
-        'ERC20': 'https://cryptologos.cc/logos/ethereum-eth-logo.png',
-        'BEP20': 'https://cryptologos.cc/logos/bnb-bnb-logo.png',
-        'SOL': 'https://cryptologos.cc/logos/solana-sol-logo.png'
+        'TRC20': 'https://assets.coingecko.com/coins/images/1094/large/tron-logo.png',
+        'ERC20': 'https://assets.coingecko.com/coins/images/279/large/ethereum.png',
+        'BEP20': 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png',
+        'SOL': 'https://assets.coingecko.com/coins/images/4128/large/solana.png'
       };
       return icons[network] || '';
     },
@@ -579,7 +580,14 @@ export default {
 .balance-display {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+}
+
+.balance-usdt-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  border-radius: 50%;
 }
 
 .balance-amount {
