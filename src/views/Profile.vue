@@ -16,7 +16,7 @@
         <h2 class="username-display">{{ userData.username || "المستخدم" }}</h2>
       </div>
 
-      <!-- قسم البيانات الأساسية (نظام الحقول الذهبية) -->
+      <!-- قسم البيانات الأساسية (نظام الحقول المخططة بالذهبي) -->
       <div class="fields-section">
         <h3 class="section-label"><i class="fas fa-user-circle"></i> معلومات الحساب</h3>
         
@@ -65,7 +65,7 @@
         </div>
       </div>
 
-      <!-- قسم الرصيد (نظام الحقول الذهبية) -->
+      <!-- قسم الرصيد (نظام الحقول المخططة بالذهبي) -->
       <div class="fields-section">
         <h3 class="section-label"><i class="fas fa-chart-line"></i> الرصيد والبيانات</h3>
         
@@ -101,7 +101,7 @@
       </div>
     </div>
 
-    <!-- نافذة ربط الهاتف (تصميم ذهبي وأسود) -->
+    <!-- نافذة ربط الهاتف (تصميم متناسق مع الصفحة الرئيسية) -->
     <div v-if="showPhoneModal" class="gold-modal-overlay" @click.self="closePhoneModal">
       <div class="gold-modal">
         <div class="modal-head">
@@ -138,12 +138,11 @@
               <input 
                 type="tel" 
                 v-model="phoneForm.phone" 
-                :placeholder="'رقم الهاتف'" 
+                placeholder="رقم الهاتف" 
                 class="gold-input-field"
                 @input="handlePhoneInput"
               >
             </div>
-            <!-- عداد الأرقام المطلوب تحت الحقل مباشرة -->
             <p class="phone-hint" v-if="phoneForm.countryCode">
               <i class="fas fa-info-circle"></i> 
               يجب إدخال <span>{{ phoneLimit }}</span> أرقام لهذا الرمز (أدخلت: {{ phoneForm.phone.length }})
@@ -162,7 +161,7 @@
       </div>
     </div>
 
-    <!-- نافذة تغيير كلمة المرور (تصميم ذهبي وأسود) -->
+    <!-- نافذة تغيير كلمة المرور -->
     <div v-if="showChangePasswordModal" class="gold-modal-overlay" @click.self="closeChangePasswordModal">
       <div class="gold-modal">
         <div class="modal-head">
@@ -348,7 +347,7 @@ export default {
 <style scoped>
 .profile-page {
   min-height: 100vh;
-  background-color: #000000;
+  background-color: #0A0C10; /* نفس لون خلفية الصفحة الرئيسية */
   color: #ffffff;
   padding: 20px;
   padding-top: 60px;
@@ -377,8 +376,8 @@ export default {
 .avatar-circle {
   width: 90px;
   height: 90px;
-  background-color: #111111;
-  border: 2px solid #D4AF37;
+  background-color: #1A1F2A; /* نفس لون الكروت في الصفحة الرئيسية */
+  border: 1px solid rgba(212, 175, 55, 0.3);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -386,7 +385,7 @@ export default {
   font-size: 36px;
   font-weight: bold;
   color: #D4AF37;
-  box-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.1);
 }
 
 .username-display {
@@ -395,32 +394,35 @@ export default {
   font-weight: 700;
 }
 
-/* نظام الحقول الذهبية */
+/* نظام الحقول المخططة بالذهبي */
 .fields-section {
   margin-bottom: 25px;
+  background: #1A1F2A; /* نفس لون الكروت في الصفحة الرئيسية */
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
 }
 
 .section-label {
-  font-size: 15px;
+  font-size: 16px;
   color: #D4AF37;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
   display: flex;
   align-items: center;
   gap: 10px;
-  border-right: 3px solid #D4AF37;
-  padding-right: 10px;
+  font-weight: 700;
 }
 
 .gold-field {
-  margin-bottom: 15px;
+  margin-bottom: 18px;
 }
 
 .gold-field label {
   display: block;
   font-size: 12px;
-  color: #888888;
-  margin-bottom: 5px;
-  margin-right: 5px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 6px;
+  margin-right: 4px;
 }
 
 .field-input-group {
@@ -430,10 +432,10 @@ export default {
 
 .gold-input-field {
   flex: 1;
-  background-color: #111111;
-  border: 1px solid #333333;
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(212, 175, 55, 0.3); /* حقول مخططة بالذهبي */
   border-radius: 10px;
-  padding: 10px 12px;
+  padding: 12px;
   color: #ffffff;
   font-size: 14px;
   outline: none;
@@ -443,6 +445,7 @@ export default {
 
 .gold-input-field:focus {
   border-color: #D4AF37;
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
 }
 
 .highlight-gold {
@@ -451,10 +454,10 @@ export default {
 }
 
 .field-action-btn {
-  background-color: #111111;
+  background-color: transparent;
   border: 1px solid #D4AF37;
   color: #D4AF37;
-  padding: 0 12px;
+  padding: 0 15px;
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -466,12 +469,13 @@ export default {
 
 .field-action-btn:hover {
   background-color: #D4AF37;
-  color: #000000;
+  color: #0A0C10;
 }
 
 .link-btn {
-  min-width: 80px;
+  min-width: 90px;
   justify-content: center;
+  font-weight: 700;
 }
 
 /* الرصيد */
@@ -481,69 +485,76 @@ export default {
 }
 
 .balance-text {
-  font-size: 22px !important;
+  font-size: 24px !important;
   font-weight: 900 !important;
   color: #D4AF37 !important;
   text-align: center;
 }
 
 .currency-tag {
-  background-color: #D4AF37;
-  color: #000000;
-  padding: 0 12px;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A);
+  color: #0A0C10;
+  padding: 0 15px;
   border-radius: 10px;
   display: flex;
   align-items: center;
   font-weight: 800;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 /* الأزرار */
 .action-buttons {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   margin-top: 25px;
 }
 
 .main-gold-btn {
-  background-color: #D4AF37;
-  color: #000000;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
+  color: #0A0C10;
   border: none;
-  border-radius: 10px;
-  padding: 12px;
-  font-size: 15px;
+  border-radius: 50px; /* نفس شكل أزرار الصفحة الرئيسية */
+  padding: 14px;
+  font-size: 16px;
   font-weight: 800;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
   transition: all 0.3s ease;
+  box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
+}
+
+.main-gold-btn:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 20px rgba(212, 175, 55, 0.4);
 }
 
 .outline-gold-btn {
   background-color: transparent;
   border: 1px solid #D4AF37;
   color: #D4AF37;
-  border-radius: 10px;
-  padding: 12px;
-  font-size: 15px;
+  border-radius: 50px;
+  padding: 14px;
+  font-size: 16px;
   font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
+  transition: all 0.3s ease;
 }
 
 .danger-btn {
   background-color: transparent;
   border: 1px solid #ff4444;
   color: #ff4444;
-  border-radius: 10px;
-  padding: 12px;
-  font-size: 15px;
+  border-radius: 50px;
+  padding: 14px;
+  font-size: 16px;
   font-weight: 700;
   cursor: pointer;
   margin-top: 5px;
@@ -553,42 +564,44 @@ export default {
 .gold-modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.9);
+  background: rgba(0,0,0,0.85);
   display: flex; align-items: center; justify-content: center;
   z-index: 1000; padding: 20px;
+  backdrop-filter: blur(5px);
 }
 
 .gold-modal {
-  background: #000000;
+  background: #1A1F2A;
   border: 1px solid #D4AF37;
-  border-radius: 15px;
-  width: 100%; max-width: 380px;
-  padding: 20px;
+  border-radius: 20px;
+  width: 100%; max-width: 400px;
+  padding: 25px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
 }
 
 .modal-head {
   display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 15px; color: #D4AF37;
+  margin-bottom: 20px; color: #D4AF37;
 }
 
 .close-x {
-  background: none; border: none; color: #D4AF37; font-size: 24px; cursor: pointer;
+  background: none; border: none; color: #D4AF37; font-size: 28px; cursor: pointer;
 }
 
 .phone-input-box {
-  display: flex; flex-direction: column; gap: 10px;
+  display: flex; flex-direction: column; gap: 12px;
 }
 
 .country-select {
-  background: #111111; border: 1px solid #333333; border-radius: 10px;
-  padding: 10px; color: #D4AF37; font-weight: bold; outline: none;
-  font-size: 13px; width: 100%;
+  background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 10px;
+  padding: 12px; color: #D4AF37; font-weight: bold; outline: none;
+  font-size: 14px; width: 100%;
 }
 
 .phone-hint {
-  font-size: 11px;
-  color: #888888;
-  margin-top: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 10px;
   margin-right: 5px;
 }
 
@@ -597,14 +610,14 @@ export default {
   font-weight: bold;
 }
 
-.error-txt { color: #ff4444; font-size: 12px; margin-bottom: 10px; text-align: center; background: rgba(255,68,68,0.1); padding: 8px; border-radius: 8px; }
-.success-txt { color: #44ff44; font-size: 12px; margin-bottom: 10px; text-align: center; background: rgba(68,255,68,0.1); padding: 8px; border-radius: 8px; }
+.error-txt { color: #ff4444; font-size: 13px; margin-bottom: 15px; text-align: center; background: rgba(255,68,68,0.1); padding: 10px; border-radius: 10px; border: 1px solid rgba(255,68,68,0.2); }
+.success-txt { color: #44ff44; font-size: 13px; margin-bottom: 15px; text-align: center; background: rgba(68,255,68,0.1); padding: 10px; border-radius: 10px; border: 1px solid rgba(68,255,68,0.2); }
 
-.loading-container { text-align: center; padding: 80px 0; }
+.loading-container { text-align: center; padding: 100px 0; }
 .gold-spinner {
-  width: 40px; height: 40px; border: 2px solid rgba(212, 175, 55, 0.1);
+  width: 50px; height: 50px; border: 3px solid rgba(212, 175, 55, 0.1);
   border-top-color: #D4AF37; border-radius: 50%; animation: spin 1s linear infinite;
-  margin: 0 auto 15px;
+  margin: 0 auto 20px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>
