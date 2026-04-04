@@ -8,9 +8,16 @@
         <i class="fas fa-envelope icon"></i>
       </div>
 
-      <div class="user-box">
-        <div class="welcome">مرحباً، {{ username }}</div>
-        <div class="balance">الرصيد: <strong>{{ balance }} USDT</strong></div>
+      <div class="user-info-card">
+        <div class="info-header">
+          <div class="greeting">مرحباً 👋</div>
+          <div class="username-display">{{ username }}</div>
+        </div>
+        <div class="balance-card">
+          <div class="balance-label">الرصيد الإجمالي</div>
+          <div class="balance-amount">{{ balance.toFixed(2) }}</div>
+          <div class="balance-currency">USDT</div>
+        </div>
       </div>
     </div>
 
@@ -444,25 +451,78 @@ export default {
   transform: scale(1.1);
 }
 
-.user-box {
-  text-align: left;
-}
-
-.welcome {
-  font-size: 16px;
-  font-weight: 600;
-  color: #D4AF37;
+.user-info-card {
+  background: linear-gradient(135deg, #1e2329 0%, #181a20 100%);
+  border-radius: 20px;
+  padding: 18px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   margin-bottom: 5px;
 }
 
-.balance {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
+.info-header {
+  margin-bottom: 16px;
 }
 
-.balance strong {
-  color: #D4AF37;
+.greeting {
+  font-size: 13px;
+  color: #848e9c;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.username-display {
+  font-size: 16px;
+  font-weight: 700;
+  color: #eaecef;
+  word-break: break-word;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.balance-card {
+  background: rgba(212, 175, 55, 0.08);
+  border-radius: 14px;
+  padding: 14px 12px;
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.balance-label {
+  font-size: 11px;
+  color: #848e9c;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.balance-amount {
   font-size: 18px;
+  font-weight: 800;
+  color: #fcd535;
+  font-family: 'Courier New', monospace;
+  letter-spacing: -0.5px;
+  flex: 1;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+.balance-currency {
+  font-size: 10px;
+  color: #fcd535;
+  font-weight: 700;
+  background: rgba(212, 175, 55, 0.1);
+  padding: 3px 6px;
+  border-radius: 5px;
+  white-space: nowrap;
 }
 
 /* شريط الأزرار السريعة */
