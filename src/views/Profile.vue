@@ -12,9 +12,6 @@
           <div class="avatar-circle">
             {{ userData.username ? userData.username.charAt(0).toUpperCase() : 'U' }}
           </div>
-          <div class="vip-tag" v-if="userData.vipLevel">
-            <i class="fas fa-crown"></i> VIP {{ userData.vipLevel }}
-          </div>
         </div>
         <h2 class="username-display">{{ userData.username || "المستخدم" }}</h2>
       </div>
@@ -68,9 +65,9 @@
         </div>
       </div>
 
-      <!-- قسم الرصيد والإحصائيات (نظام الحقول الذهبية) -->
+      <!-- قسم الرصيد (نظام الحقول الذهبية) -->
       <div class="fields-section">
-        <h3 class="section-label"><i class="fas fa-chart-line"></i> الرصيد والإحصائيات</h3>
+        <h3 class="section-label"><i class="fas fa-chart-line"></i> الرصيد والبيانات</h3>
         
         <!-- حقل الرصيد الحالي -->
         <div class="gold-field balance-field">
@@ -78,20 +75,6 @@
           <div class="field-input-group">
             <input type="text" :value="Number(userData.balance).toFixed(2)" readonly class="gold-input-field balance-text">
             <span class="currency-tag">USDT</span>
-          </div>
-        </div>
-
-        <div class="stats-row">
-          <!-- حقل مستوى VIP -->
-          <div class="gold-field half">
-            <label><i class="fas fa-crown"></i> مستوى VIP</label>
-            <input type="text" :value="'VIP ' + (userData.vipLevel || 0)" readonly class="gold-input-field center-text highlight-gold">
-          </div>
-
-          <!-- حقل الإحالات -->
-          <div class="gold-field half">
-            <label><i class="fas fa-users"></i> إجمالي الإحالات</label>
-            <input type="text" :value="userData.totalReferrals || 0" readonly class="gold-input-field center-text highlight-gold">
           </div>
         </div>
 
@@ -246,7 +229,7 @@
 
 <script>
 import { auth, db } from "../firebase";
-import { doc, getDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { onAuthStateChanged, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 
 export default {
@@ -264,7 +247,7 @@ export default {
       phoneSuccess: "",
       passwordForm: { currentPassword: "", newPassword: "", confirmPassword: "" },
       phoneForm: { countryCode: "", phone: "", password: "" },
-      userData: { email: "", phoneNumber: "", uid: "", createdAt: "", balance: 0, username: "", referralCode: "", vipLevel: 0, totalReferrals: 0 }
+      userData: { email: "", phoneNumber: "", uid: "", createdAt: "", balance: 0, username: "", referralCode: "" }
     };
   },
   computed: {
@@ -288,12 +271,9 @@ export default {
       onAuthStateChanged(auth, async (user) => {
         if (!user) { this.loading = false; this.$router.push("/login"); return; }
         try {
-          // جلب البيانات الأساسية فوراً
           const userSnap = await getDoc(doc(db, "users", user.uid));
           if (userSnap.exists()) {
             const data = userSnap.data();
-            
-            // تعيين البيانات الأساسية أولاً لضمان ظهورها
             this.userData = {
               email: data.email || user.email || "",
               phoneNumber: data.phoneNumber || "",
@@ -302,28 +282,9 @@ export default {
               balance: data.balance ?? 0,
               username: data.username || (data.email ? data.email.split("@")[0] : "مستخدم"),
               referralCode: data.referralCode || user.uid.substring(0, 6),
-              vipLevel: data.vipLevel || 0,
-              totalReferrals: data.totalReferrals || 0,
             };
-
-            // محاولة جلب الـ VIP والإحالات بشكل إضافي (اختياري)
-            try {
-              // جلب VIP من الـ subcollection
-              const vipSnap = await getDocs(collection(db, "users", user.uid, "vips"));
-              if (!vipSnap.empty) {
-                const vips = vipSnap.docs.map(d => d.data());
-                this.userData.vipLevel = Math.max(...vips.map(v => v.level || 0));
-              }
-
-              // جلب عدد الإحالات الفعلي
-              if (this.userData.referralCode) {
-                const q = query(collection(db, "users"), where("referredBy", "==", this.userData.referralCode));
-                const referralSnap = await getDocs(q);
-                this.userData.totalReferrals = referralSnap.size;
-              }
-            } catch (e) { console.warn("Optional data fetch failed:", e); }
           }
-        } catch (err) { console.error("Critical error loading profile:", err); }
+        } catch (err) { console.error("Error loading profile:", err); }
         this.loading = false;
       });
     },
@@ -409,19 +370,6 @@ export default {
   font-weight: bold;
   color: #D4AF37;
   box-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
-}
-
-.vip-tag {
-  position: absolute;
-  bottom: -5px;
-  right: -5px;
-  background: #D4AF37;
-  color: #000000;
-  padding: 3px 8px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 800;
-  border: 2px solid #000000;
 }
 
 .username-display {
@@ -531,20 +479,6 @@ export default {
   align-items: center;
   font-weight: 800;
   font-size: 13px;
-}
-
-.stats-row {
-  display: flex;
-  gap: 12px;
-}
-
-.half {
-  flex: 1;
-}
-
-.center-text {
-  text-align: center;
-  font-weight: bold;
 }
 
 /* الأزرار */
