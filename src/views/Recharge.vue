@@ -23,7 +23,7 @@
         </div>
         <div class="balance-info">
           <span class="label">الرصيد الحالي</span>
-          <span class="value">0.00 USDT</span>
+          <span class="value">{{ userBalance.toFixed(2) }} USDT</span>
         </div>
       </div>
 
@@ -139,7 +139,7 @@
 
 <script>
 import { getAuth } from "firebase/auth";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
 export default {
@@ -177,19 +177,33 @@ export default {
       },
       userEmail: "",
       userId: "",
+      userBalance: 0,
     };
   },
   mounted() {
     this.initializeUser();
   },
   methods: {
+    async fetchUserBalance() {
+      if (!this.userId) return;
+      try {
+        const userDoc = await getDoc(doc(db, "users", this.userId));
+        if (userDoc.exists()) {
+          this.userBalance = userDoc.data().balance || 0;
+        }
+      } catch (error) {
+        console.error("Error fetching balance:", error);
+      }
+    },
     initializeUser() {
       const auth = getAuth();
-      const user = auth.currentUser;
-      if (user) {
-        this.userEmail = user.email;
-        this.userId = user.uid;
-      }
+      auth.onAuthStateChanged(async (user) => {
+        if (user) {
+          this.userEmail = user.email;
+          this.userId = user.uid;
+          await this.fetchUserBalance();
+        }
+      });
     },
     toggleDropdown() {
       this.isDropdownOpen = !this.isDropdownOpen;
