@@ -15,7 +15,9 @@
       <!-- Asset Display -->
       <div class="asset-card">
         <div class="asset-main">
-          <img src="https://cryptologos.cc/logos/tether-usdt-logo.png?v=024" alt="USDT" class="coin-logo">
+          <div class="coin-logo-fa">
+            <i class="fab fa-ethereum" style="color: #26a17b;"></i>
+          </div>
           <div class="asset-text">
             <span class="coin-symbol">USDT</span>
             <span class="coin-name">TetherUS</span>
@@ -33,7 +35,7 @@
         <div class="dropdown-container" @click="toggleDropdown" v-click-outside="closeDropdown">
           <div class="dropdown-selected" :class="{ 'is-open': isDropdownOpen }">
             <div class="selected-info">
-              <img :src="getNetworkIcon(network)" class="net-icon" alt="" @error="handleImageError">
+              <i :class="getNetworkIconClass(network)" class="net-icon-fa"></i>
               <span class="net-name">{{ network }}</span>
             </div>
             <i class="fas fa-chevron-down arrow-icon"></i>
@@ -49,7 +51,7 @@
                 @click.stop="selectNetwork(net)"
               >
                 <div class="item-left">
-                  <img :src="getNetworkIcon(net)" class="net-icon" alt="" @error="handleImageError">
+                  <i :class="getNetworkIconClass(net)" class="net-icon-fa"></i>
                   <div class="item-text">
                     <span class="net-title">{{ net }}</span>
                     <span class="net-desc">{{ getNetworkDesc(net) }}</span>
@@ -207,14 +209,14 @@ export default {
     getAddress(net) {
       return this.addresses[net] || "";
     },
-    getNetworkIcon(net) {
+    getNetworkIconClass(net) {
       const icons = {
-        TRC20: "https://cryptologos.cc/logos/tron-trx-logo.png?v=024",
-        ERC20: "https://cryptologos.cc/logos/ethereum-eth-logo.png?v=024",
-        BEP20: "https://cryptologos.cc/logos/bnb-bnb-logo.png?v=024",
-        SOL: "https://cryptologos.cc/logos/solana-sol-logo.png?v=024"
+        TRC20: "fab fa-vimeo-v", // Tron-like icon
+        ERC20: "fab fa-ethereum",
+        BEP20: "fas fa-coins", // BNB-like icon
+        SOL: "fas fa-bolt" // Solana-like icon
       };
-      return icons[net] || "";
+      return icons[net] || "fas fa-circle";
     },
     getNetworkDesc(net) {
       const descs = {
@@ -341,10 +343,27 @@ export default {
   gap: 12px;
 }
 
-.coin-logo {
+.coin-logo-fa {
   width: 40px;
   height: 40px;
+  background: rgba(38, 161, 123, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
 }
+
+.net-icon-fa {
+  font-size: 20px;
+  width: 24px;
+  text-align: center;
+}
+
+.fa-ethereum { color: #627eea; }
+.fa-vimeo-v { color: #ff0013; } /* Tron Red */
+.fa-coins { color: #f3ba2f; } /* BNB Gold */
+.fa-bolt { color: #14f195; } /* Solana Green */
 
 .coin-symbol {
   display: block;
