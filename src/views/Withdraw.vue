@@ -80,19 +80,32 @@
           <i class="fas fa-network-wired"></i>
           الشبكة
         </label>
-        <div class="network-selector">
-          <div class="select-wrapper">
-            <select v-model="network" class="gold-select" @change="validateNetwork">
-              <option value="">اختر الشبكة</option>
-              <option value="TRC20">TRC20 - Tron</option>
-              <option value="ERC20">ERC20 - Ethereum</option>
-              <option value="BEP20">BEP20 - BNB Chain</option>
-              <option value="SOL">SOL - Solana</option>
-            </select>
-            <i class="fas fa-chevron-down select-arrow"></i>
-          </div>
-          <div v-if="network" class="network-icon-display">
-            <img :src="getNetworkIcon(network)" :alt="network" class="network-icon">
+        <div class="custom-dropdown-wrapper">
+          <div class="custom-dropdown">
+            <div class="dropdown-trigger" @click="toggleNetworkDropdown">
+              <div v-if="network" class="selected-network">
+                <img :src="getNetworkIcon(network)" :alt="network" class="dropdown-icon">
+                <span>{{ getNetworkLabel(network) }}</span>
+              </div>
+              <div v-else class="placeholder">اختر الشبكة</div>
+              <i class="fas fa-chevron-down" :class="{ 'rotate': showNetworkDropdown }"></i>
+            </div>
+            <div v-if="showNetworkDropdown" class="dropdown-menu">
+              <div 
+                v-for="net in networks" 
+                :key="net.value"
+                class="dropdown-item"
+                :class="{ 'active': network === net.value }"
+                @click="selectNetwork(net.value)"
+              >
+                <img :src="getNetworkIcon(net.value)" :alt="net.value" class="dropdown-item-icon">
+                <div class="dropdown-item-content">
+                  <div class="dropdown-item-name">{{ net.label }}</div>
+                  <div class="dropdown-item-symbol">{{ net.value }}</div>
+                </div>
+                <i v-if="network === net.value" class="fas fa-check"></i>
+              </div>
+            </div>
           </div>
         </div>
         <span v-if="networkError" class="input-error">{{ networkError }}</span>
@@ -207,6 +220,13 @@ export default {
       userPhone: "",
       userEmail: "",
       minWithdrawAmount: 5,
+      showNetworkDropdown: false,
+      networks: [
+        { value: 'TRC20', label: 'Tron (TRC20)' },
+        { value: 'ERC20', label: 'Ethereum (ERC20)' },
+        { value: 'BEP20', label: 'BNB Chain (BEP20)' },
+        { value: 'SOL', label: 'Solana (SOL)' }
+      ],
       
       // أخطاء الحقول
       amountError: "",
@@ -376,6 +396,26 @@ export default {
         'SOL': 'https://cryptologos.cc/logos/solana-sol-logo.png'
       };
       return icons[network] || '';
+    },
+
+    getNetworkLabel(network) {
+      const labels = {
+        'TRC20': 'Tron (TRC20)',
+        'ERC20': 'Ethereum (ERC20)',
+        'BEP20': 'BNB Chain (BEP20)',
+        'SOL': 'Solana (SOL)'
+      };
+      return labels[network] || '';
+    },
+
+    toggleNetworkDropdown() {
+      this.showNetworkDropdown = !this.showNetworkDropdown;
+    },
+
+    selectNetwork(value) {
+      this.network = value;
+      this.showNetworkDropdown = false;
+      this.validateNetwork();
     },
 
     showMessage(msg, type = "info") {
@@ -723,68 +763,147 @@ export default {
   font-weight: 500;
 }
 
-/* محدد الشبكة */
-.network-selector {
+/* قائمة مخصصة للشبكات */
+.custom-dropdown-wrapper {
+  width: 100%;
+}
+
+.custom-dropdown {
+  position: relative;
+}
+
+.dropdown-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(212, 175, 55, 0.05);
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.dropdown-trigger:hover {
+  background: rgba(212, 175, 55, 0.08);
+  border-color: rgba(212, 175, 55, 0.25);
+}
+
+.selected-network {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  color: #eaecef;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.dropdown-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.placeholder {
+  color: #5a6370;
+  font-weight: 600;
+  font-size: 14px;
+  flex: 1;
+}
+
+.dropdown-trigger i {
+  color: #fcd535;
+  font-size: 12px;
+  transition: transform 0.3s ease;
+}
+
+.dropdown-trigger i.rotate {
+  transform: rotate(180deg);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, #1e2329 0%, #181a20 100%);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  overflow: hidden;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-item {
   display: flex;
   align-items: center;
   gap: 12px;
-}
-
-.select-wrapper {
-  flex: 1;
-  position: relative;
-  background: rgba(212, 175, 55, 0.05);
-  border-radius: 12px;
-  border: 1px solid rgba(212, 175, 55, 0.15);
-  overflow: hidden;
-}
-
-.gold-select {
-  width: 100%;
-  background: transparent;
-  border: none;
-  color: #eaecef;
   padding: 12px 14px;
-  font-size: 14px;
-  outline: none;
-  font-weight: 600;
   cursor: pointer;
-  appearance: none;
-  padding-right: 40px;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.1);
 }
 
-.gold-select option {
-  background: #1e2329;
-  color: #eaecef;
+.dropdown-item:last-child {
+  border-bottom: none;
 }
 
-.select-arrow {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #fcd535;
-  pointer-events: none;
-  font-size: 12px;
+.dropdown-item:hover {
+  background: rgba(212, 175, 55, 0.08);
 }
 
-.network-icon-display {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.08) 100%);
-  border-radius: 14px;
-  border: 1.5px solid rgba(212, 175, 55, 0.25);
-  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.1);
+.dropdown-item.active {
+  background: rgba(212, 175, 55, 0.15);
+  border-left: 3px solid #fcd535;
+  padding-left: 11px;
 }
 
-.network-icon {
-  width: 40px;
-  height: 40px;
+.dropdown-item-icon {
+  width: 28px;
+  height: 28px;
   object-fit: contain;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  flex-shrink: 0;
+}
+
+.dropdown-item-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dropdown-item-name {
+  color: #eaecef;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.dropdown-item-symbol {
+  color: #848e9c;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.dropdown-item i {
+  color: #10b981;
+  font-size: 14px;
+  flex-shrink: 0;
 }
 
 /* صندوق الملخص */
