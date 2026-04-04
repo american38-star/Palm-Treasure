@@ -12,13 +12,12 @@
 
       <!-- رصيد المستخدم -->
       <div class="balance-box">
+        <div class="balance-icon">
+          <i class="fas fa-wallet"></i>
+        </div>
         <div class="balance-info">
           <span class="balance-label">رصيدك الحالي</span>
-          <div class="balance-display">
-            <img src="https://assets.coingecko.com/coins/images/325/large/tether.png" alt="USDT" class="balance-usdt-icon">
-            <span class="balance-amount">{{ balance.toFixed(2) }}</span>
-            <span class="balance-currency-badge">USDT</span>
-          </div>
+          <span class="balance-value">{{ balance }} <span class="balance-currency">USDT</span></span>
         </div>
       </div>
 
@@ -70,7 +69,7 @@
             class="gold-input"
             @input="validateAmount"
           />
-          <span class="input-currency-badge">USDT</span>
+          <span class="input-currency">USDT</span>
         </div>
         <span v-if="amountError" class="input-error">{{ amountError }}</span>
       </div>
@@ -81,33 +80,15 @@
           <i class="fas fa-network-wired"></i>
           الشبكة
         </label>
-        <div class="custom-dropdown-wrapper">
-          <div class="custom-dropdown">
-            <div class="dropdown-trigger" @click="toggleNetworkDropdown">
-              <div v-if="network" class="selected-network">
-                <img :src="getNetworkIcon(network)" :alt="network" class="dropdown-icon">
-                <span>{{ getNetworkLabel(network) }}</span>
-              </div>
-              <div v-else class="placeholder">اختر الشبكة</div>
-              <i class="fas fa-chevron-down" :class="{ 'rotate': showNetworkDropdown }"></i>
-            </div>
-            <div v-if="showNetworkDropdown" class="dropdown-menu">
-              <div 
-                v-for="net in networks" 
-                :key="net.value"
-                class="dropdown-item"
-                :class="{ 'active': network === net.value }"
-                @click="selectNetwork(net.value)"
-              >
-                <img :src="getNetworkIcon(net.value)" :alt="net.value" class="dropdown-item-icon">
-                <div class="dropdown-item-content">
-                  <div class="dropdown-item-name">{{ net.label }}</div>
-                  <div class="dropdown-item-symbol">{{ net.value }}</div>
-                </div>
-                <i v-if="network === net.value" class="fas fa-check"></i>
-              </div>
-            </div>
-          </div>
+        <div class="select-wrapper">
+          <select v-model="network" class="gold-select" @change="validateNetwork">
+            <option value="">اختر الشبكة</option>
+            <option value="TRC20">TRC20</option>
+            <option value="ERC20">ERC20</option>
+            <option value="BEP20">BEP20</option>
+            <option value="SOL">SOL</option>
+          </select>
+          <i class="fas fa-chevron-down select-arrow"></i>
         </div>
         <span v-if="networkError" class="input-error">{{ networkError }}</span>
       </div>
@@ -118,13 +99,15 @@
           <i class="fas fa-qrcode"></i>
           عنوان المحفظة
         </label>
-        <input 
-          type="text" 
-          v-model="wallet" 
-          placeholder="أدخل عنوان محفظتك USDT" 
-          class="gold-input"
-          @input="validateWallet"
-        />
+        <div class="wallet-input-wrapper">
+          <input 
+            type="text" 
+            v-model="wallet" 
+            placeholder="أدخل عنوان محفظتك USDT" 
+            class="gold-input wallet-input"
+            @input="validateWallet"
+          />
+        </div>
         <span v-if="walletError" class="input-error">{{ walletError }}</span>
       </div>
 
@@ -221,13 +204,6 @@ export default {
       userPhone: "",
       userEmail: "",
       minWithdrawAmount: 5,
-      showNetworkDropdown: false,
-      networks: [
-        { value: 'TRC20', label: 'Tron (TRC20)' },
-        { value: 'ERC20', label: 'Ethereum (ERC20)' },
-        { value: 'BEP20', label: 'BNB Chain (BEP20)' },
-        { value: 'SOL', label: 'Solana (SOL)' }
-      ],
       
       // أخطاء الحقول
       amountError: "",
@@ -342,19 +318,31 @@ export default {
           this.balance = userData.balance || 0;
           this.userPhone = userData.phoneNumber || "";
           this.userEmail = userData.email || "";
+
+          // قراءة مستوى VIP من بيانات المستخدم مباشرةً (الطريقة الأساسية)
+          if (userData.vipLevel) {
+            this.userVipLevel = userData.vipLevel;
+          }
         }
 
-        // تحميل مستوى VIP
-        const vipRef = doc(db, "users", user.uid, "vip", "current");
-        const vipSnap = await getDoc(vipRef);
-        
-        if (vipSnap.exists()) {
-          this.userVipLevel = vipSnap.data().level;
-        } else {
-          this.showMessage("لا يوجد اشتراك VIP نشط", "error");
+        // إذا لم يكن VIP موجوداً في بيانات المستخدم، نحاول من subcollection
+        if (!this.userVipLevel) {
+          try {
+            const vipRef = doc(db, "users", user.uid, "vip", "current");
+            const vipSnap = await getDoc(vipRef);
+            if (vipSnap.exists()) {
+              this.userVipLevel = vipSnap.data().level;
+            } else {
+              this.showMessage("لا يوجد اشتراك VIP نشط", "error");
+            }
+          } catch (vipError) {
+            // تجاهل خطأ الأذونات في subcollection إذا كان VIP موجوداً في بيانات المستخدم
+            console.warn("تعذّر قراءة VIP من subcollection:", vipError.message);
+            this.showMessage("لا يوجد اشتراك VIP نشط", "error");
+          }
         }
       } catch (error) {
-        console.error("خطأ:", error);
+        console.error("خطأ في تحميل البيانات:", error);
         this.showMessage("حدث خطأ في تحميل البيانات", "error");
       }
     },
@@ -362,64 +350,53 @@ export default {
     validateAmount() {
       if (!this.amount) {
         this.amountError = "الرجاء إدخال المبلغ";
-      } else if (this.amount < this.minWithdrawAmount) {
-        this.amountError = `الحد الأدنى للسحب هو ${this.minWithdrawAmount} USDT`;
-      } else if (this.amount > this.balance) {
-        this.amountError = "المبلغ أكبر من رصيدك";
-      } else {
-        this.amountError = "";
+        return false;
       }
+      
+      if (this.amount <= 0) {
+        this.amountError = "المبلغ يجب أن يكون أكبر من صفر";
+        return false;
+      }
+      
+      if (Number(this.amount) !== this.minWithdrawAmount) {
+        this.amountError = `مبلغ السحب يجب أن يكون بالضبط ${this.minWithdrawAmount} USDT`;
+        return false;
+      }
+      
+      if (this.amount > this.balance) {
+        this.amountError = "المبلغ أكبر من رصيدك";
+        return false;
+      }
+      
+      this.amountError = "";
+      return true;
     },
 
     validateNetwork() {
       if (!this.network) {
         this.networkError = "الرجاء اختيار الشبكة";
-      } else {
-        this.networkError = "";
+        return false;
       }
+      this.networkError = "";
+      return true;
     },
 
     validateWallet() {
       if (!this.wallet) {
-        this.walletError = "الرجاء إدخال عنوان محفظتك";
-      } else if (this.wallet.length < 20) {
-        this.walletError = "عنوان المحفظة قصير جداً";
-      } else {
-        this.walletError = "";
+        this.walletError = "الرجاء إدخال عنوان المحفظة";
+        return false;
       }
+      
+      if (this.wallet.length < 20) {
+        this.walletError = "عنوان المحفظة غير صحيح (يجب أن يكون 20 حرف على الأقل)";
+        return false;
+      }
+      
+      this.walletError = "";
+      return true;
     },
 
-    getNetworkIcon(network) {
-      const icons = {
-        'TRC20': 'https://assets.coingecko.com/coins/images/1094/large/tron-logo.png',
-        'ERC20': 'https://assets.coingecko.com/coins/images/279/large/ethereum.png',
-        'BEP20': 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png',
-        'SOL': 'https://assets.coingecko.com/coins/images/4128/large/solana.png'
-      };
-      return icons[network] || '';
-    },
-
-    getNetworkLabel(network) {
-      const labels = {
-        'TRC20': 'Tron (TRC20)',
-        'ERC20': 'Ethereum (ERC20)',
-        'BEP20': 'BNB Chain (BEP20)',
-        'SOL': 'Solana (SOL)'
-      };
-      return labels[network] || '';
-    },
-
-    toggleNetworkDropdown() {
-      this.showNetworkDropdown = !this.showNetworkDropdown;
-    },
-
-    selectNetwork(value) {
-      this.network = value;
-      this.showNetworkDropdown = false;
-      this.validateNetwork();
-    },
-
-    showMessage(msg, type = "info") {
+    showMessage(msg, type) {
       this.message = msg;
       this.messageType = type;
       setTimeout(() => {
@@ -428,71 +405,109 @@ export default {
     },
 
     async submitWithdraw() {
-      if (!this.isFormValid) {
-        this.showMessage("يرجى ملء جميع الحقول بشكل صحيح", "error");
+      if (this.isLoading || !this.isFormValid) return;
+      
+      this.message = "";
+
+      const user = auth.currentUser;
+      if (!user) {
+        this.showMessage("الرجاء تسجيل الدخول مرة أخرى", "error");
         return;
       }
 
       this.isLoading = true;
 
       try {
-        const user = auth.currentUser;
-        if (!user) {
-          this.showMessage("يجب تسجيل الدخول أولاً", "error");
-          this.isLoading = false;
-          return;
-        }
+        const userRef = doc(db, "users", user.uid);
+        const withdrawAmount = Number(this.amount);
+        const transactionId = "WITHDRAW_" + Date.now() + "_" + Math.random().toString(36).substring(2, 9);
 
-        // تنفيذ العملية في Firestore
+        // ===================================================
+        // الإصلاح: استخدام transaction.set() بدلاً من addDoc داخل runTransaction
+        // addDoc لا تعمل داخل runTransaction وتسبب خطأ الأذونات
+        // ===================================================
+        const withdrawDocRef = doc(collection(db, "withdraw_requests"));
+        const transactionDocRef = doc(collection(db, "transactions"));
+
         await runTransaction(db, async (transaction) => {
-          const userRef = doc(db, "users", user.uid);
-          const userSnap = await transaction.get(userRef);
-
-          if (!userSnap.exists()) {
+          const userDoc = await transaction.get(userRef);
+          
+          if (!userDoc.exists()) {
             throw new Error("المستخدم غير موجود");
           }
 
-          const currentBalance = userSnap.data().balance || 0;
+          const userData = userDoc.data();
+          
+          if (userData.balance < withdrawAmount) {
+            throw new Error("الرصيد غير كاف");
+          }
 
-          if (currentBalance < this.amount) {
-            throw new Error("الرصيد غير كافي");
+          if (userData.blocked) {
+            throw new Error("حسابك محظور من السحب");
           }
 
           // تحديث الرصيد
           transaction.update(userRef, {
-            balance: currentBalance - this.amount
+            balance: userData.balance - withdrawAmount
           });
 
-          // إضافة سجل الطلب
-          const withdrawalsRef = collection(db, "users", user.uid, "withdrawals");
-          await addDoc(withdrawalsRef, {
-            amount: this.amount,
-            network: this.network,
-            wallet: this.wallet,
-            status: "pending",
-            createdAt: serverTimestamp()
-          });
-
-          // إضافة في جدول المعاملات العام
-          const transactionsRef = collection(db, "transactions");
-          await addDoc(transactionsRef, {
+          // إنشاء طلب سحب في withdraw_requests باستخدام transaction.set()
+          transaction.set(withdrawDocRef, {
+            transactionId: transactionId,
             userId: user.uid,
-            type: "withdrawal",
-            amount: this.amount,
+            userPhone: this.userPhone || null,
+            userEmail: this.userEmail || null,
+            amount: withdrawAmount,
             network: this.network,
             wallet: this.wallet,
+            walletAddress: this.wallet,
             status: "pending",
-            createdAt: serverTimestamp()
+            createdAt: serverTimestamp(),
+            vipLevel: this.userVipLevel,
+            withdrawDay: this.withdrawDay,
+            adminAction: "",
+            adminMessage: "",
+            userMessage: "",
+            reason: ""
+          });
+
+          // إنشاء معاملة في مجموعة transactions باستخدام transaction.set()
+          transaction.set(transactionDocRef, {
+            transactionId: transactionId,
+            userId: user.uid,
+            userPhone: this.userPhone || null,
+            userEmail: this.userEmail || null,
+            type: "withdraw",
+            amount: withdrawAmount,
+            currency: "USDT",
+            network: this.network,
+            wallet: this.wallet,
+            walletAddress: this.wallet,
+            status: "pending",
+            vipLevel: this.userVipLevel,
+            withdrawDay: this.withdrawDay,
+            adminAction: "",
+            adminMessage: "",
+            userMessage: "",
+            reason: "",
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            approvedAt: null
           });
         });
 
-        this.showMessage("تم تقديم طلب السحب بنجاح", "success");
-        setTimeout(() => {
-          this.$router.push("/");
-        }, 2000);
+        this.balance -= withdrawAmount;
+        
+        this.showMessage("✅ تم إرسال طلب السحب بنجاح", "success");
+        
+        // تفريغ الحقول
+        this.amount = "";
+        this.network = "";
+        this.wallet = "";
+
       } catch (error) {
         console.error("خطأ:", error);
-        this.showMessage(error.message || "حدث خطأ في تقديم الطلب", "error");
+        this.showMessage(error.message || "حدث خطأ أثناء السحب", "error");
       } finally {
         this.isLoading = false;
       }
@@ -504,195 +519,205 @@ export default {
 <style scoped>
 .withdraw-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 100%);
-  padding: 20px;
+  background: #0A0C10;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  padding-top: 80px;
-  padding-bottom: 100px;
+  padding: 20px;
+  direction: rtl;
+  font-family: 'Cairo', sans-serif;
 }
 
 .card {
-  background: linear-gradient(135deg, #1e2329 0%, #181a20 100%);
-  border-radius: 24px;
-  padding: 28px;
-  border: 1px solid rgba(212, 175, 55, 0.15);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-  max-width: 500px;
+  background: #11151C;
   width: 100%;
+  max-width: 500px;
+  border-radius: 30px;
+  padding: 30px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.03) 0%, transparent 70%);
+  animation: rotate 30s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .card-header {
-  margin-bottom: 28px;
   text-align: center;
+  margin-bottom: 25px;
 }
 
 .title {
   font-size: 28px;
   font-weight: 800;
-  color: #eaecef;
-  margin-bottom: 8px;
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
+  margin-bottom: 8px;
+}
+
+.title i {
+  color: #D4AF37;
+  font-size: 32px;
 }
 
 .title-glow {
-  color: #fcd535;
-  font-size: 20px;
-  background: rgba(212, 175, 55, 0.15);
-  padding: 4px 12px;
-  border-radius: 8px;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 900;
 }
 
 .sub {
-  color: #848e9c;
+  color: rgba(255, 255, 255, 0.6);
   font-size: 14px;
-  margin: 0;
 }
 
-/* صندوق الرصيد */
 .balance-box {
-  background: rgba(212, 175, 55, 0.08);
-  border-radius: 16px;
-  padding: 16px;
+  background: linear-gradient(135deg, #1A1F2A, #11151C);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 25px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
   border: 1px solid rgba(212, 175, 55, 0.2);
-  margin-bottom: 20px;
-  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.08);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.balance-icon {
+  width: 50px;
+  height: 50px;
+  background: rgba(212, 175, 55, 0.1);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #D4AF37;
+}
+
+.balance-icon i {
+  font-size: 24px;
+  color: #D4AF37;
 }
 
 .balance-info {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  flex: 1;
 }
 
 .balance-label {
-  font-size: 12px;
-  color: #848e9c;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  display: block;
+  margin-bottom: 4px;
 }
 
-.balance-display {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.balance-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: #D4AF37;
 }
 
-.balance-usdt-icon {
-  width: 20px;
-  height: 20px;
-  object-fit: contain;
-  border-radius: 50%;
+.balance-currency {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-right: 5px;
 }
 
-.balance-amount {
-  font-size: 24px;
-  font-weight: 900;
-  color: #fcd535;
-  font-family: 'Courier New', monospace;
-  letter-spacing: -0.5px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 150px;
-}
-
-.balance-currency-badge {
-  font-size: 11px;
-  color: #fcd535;
-  font-weight: 700;
-  background: rgba(212, 175, 55, 0.15);
-  padding: 4px 8px;
-  border-radius: 6px;
-  white-space: nowrap;
-}
-
-/* حالة VIP */
 .vip-status-box {
-  background: rgba(212, 175, 55, 0.08);
-  border-radius: 16px;
-  padding: 16px;
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  margin-bottom: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  background: linear-gradient(135deg, #1A1F2A, #11151C);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 25px;
+  border: 1px solid #D4AF37;
+  box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
 }
 
 .vip-status-box.error {
-  background: rgba(220, 38, 38, 0.08);
-  border-color: rgba(220, 38, 38, 0.2);
-  color: #dc2626;
+  border-color: #ef4444;
+  text-align: center;
+  color: #ef4444;
+}
+
+.vip-status-box.error i {
+  font-size: 24px;
+  margin-bottom: 10px;
 }
 
 .vip-badge {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  display: inline-block;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A);
+  color: #0A0C10;
+  padding: 8px 16px;
+  border-radius: 50px;
   font-weight: 700;
-  color: #fcd535;
   font-size: 14px;
+  margin-bottom: 10px;
+  box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
+}
+
+.vip-badge i {
+  margin-left: 5px;
 }
 
 .user-contact {
-  font-size: 13px;
-  color: #eaecef;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  color: #D4AF37;
+  font-size: 14px;
+  margin-bottom: 15px;
+  padding: 8px;
+  background: rgba(212, 175, 55, 0.05);
+  border-radius: 10px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
 }
 
 .user-contact i {
-  color: #fcd535;
+  color: #D4AF37;
+  font-size: 14px;
 }
 
 .withdraw-condition {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: #eaecef;
-}
-
-.withdraw-condition i {
-  color: #dc2626;
+  gap: 10px;
+  margin: 10px 0;
+  color: rgba(255, 255, 255, 0.9);
   font-size: 14px;
 }
 
+.withdraw-condition i {
+  color: #666;
+  font-size: 16px;
+}
+
 .withdraw-condition i.condition-met {
-  color: #10b981;
+  color: #22c55e;
 }
 
-/* رسائل */
-.message {
-  padding: 12px 16px;
-  border-radius: 12px;
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  font-weight: 600;
-  animation: slideIn 0.3s ease;
+.withdraw-condition strong {
+  color: #D4AF37;
 }
 
-.message.error {
-  background: rgba(220, 38, 38, 0.15);
-  color: #fca5a5;
-  border: 1px solid rgba(220, 38, 38, 0.3);
-}
-
-.message.success {
-  background: rgba(16, 185, 129, 0.15);
-  color: #86efac;
-  border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-/* مجموعات الإدخال */
 .input-group {
   margin-bottom: 20px;
 }
@@ -700,246 +725,157 @@ export default {
 .input-group label {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #eaecef;
+  gap: 8px;
+  color: #D4AF37;
+  font-size: 15px;
+  font-weight: 600;
   margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
 }
 
 .input-group label i {
-  color: #fcd535;
-  font-size: 14px;
-}
-
-.amount-input-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(212, 175, 55, 0.05);
-  border-radius: 12px;
-  padding: 4px 8px;
-  border: 1px solid rgba(212, 175, 55, 0.15);
+  font-size: 16px;
 }
 
 .gold-input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  color: #eaecef;
-  padding: 10px 8px;
-  font-size: 14px;
+  width: 100%;
+  padding: 14px 20px;
+  border-radius: 16px;
+  background: #1A1F2A;
+  color: #ffffff;
+  border: 2px solid rgba(212, 175, 55, 0.3);
+  font-size: 15px;
+  transition: all 0.3s ease;
+}
+
+.gold-input:focus {
   outline: none;
-  font-weight: 600;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  border-color: #D4AF37;
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
 }
 
-.gold-input::placeholder {
-  color: #5a6370;
-}
-
-.input-currency {
-  color: #fcd535;
-  font-weight: 700;
-  font-size: 12px;
-  padding-right: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.input-currency-badge {
-  color: #fcd535;
-  font-weight: 700;
-  font-size: 10px;
-  background: rgba(212, 175, 55, 0.1);
-  padding: 4px 6px;
-  border-radius: 5px;
-  white-space: nowrap;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
+.gold-input.error-input {
+  border-color: #ef4444;
 }
 
 .input-error {
   display: block;
-  color: #fca5a5;
+  color: #ef4444;
   font-size: 12px;
-  margin-top: 6px;
-  font-weight: 500;
+  margin-top: 5px;
+  margin-right: 5px;
 }
 
-/* قائمة مخصصة للشبكات */
-.custom-dropdown-wrapper {
-  width: 100%;
-}
-
-.custom-dropdown {
+.amount-input-wrapper {
   position: relative;
 }
 
-.dropdown-trigger {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  background: rgba(212, 175, 55, 0.05);
-  border: 1px solid rgba(212, 175, 55, 0.15);
-  border-radius: 12px;
-  padding: 12px 14px;
-  cursor: pointer;
+/* إصلاح حقل عنوان المحفظة - إضافة الإطار المرئي */
+.wallet-input-wrapper {
+  position: relative;
+  border-radius: 16px;
+  border: 2px solid rgba(212, 175, 55, 0.3);
+  background: #1A1F2A;
   transition: all 0.3s ease;
 }
 
-.dropdown-trigger:hover {
-  background: rgba(212, 175, 55, 0.08);
-  border-color: rgba(212, 175, 55, 0.25);
+.wallet-input-wrapper:focus-within {
+  border-color: #D4AF37;
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
 }
 
-.selected-network {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 1;
-  color: #eaecef;
-  font-weight: 600;
-  font-size: 14px;
+.wallet-input-wrapper .wallet-input {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  width: 100%;
 }
 
-.dropdown-icon {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
-}
-
-.placeholder {
-  color: #5a6370;
-  font-weight: 600;
-  font-size: 14px;
-  flex: 1;
-}
-
-.dropdown-trigger i {
-  color: #fcd535;
-  font-size: 12px;
-  transition: transform 0.3s ease;
-}
-
-.dropdown-trigger i.rotate {
-  transform: rotate(180deg);
-}
-
-.dropdown-menu {
+.input-currency {
   position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  right: 0;
-  background: linear-gradient(135deg, #1e2329 0%, #181a20 100%);
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  border-radius: 12px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
-  z-index: 100;
-  overflow: hidden;
-  animation: slideDown 0.3s ease;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #D4AF37;
+  font-weight: 700;
+  font-size: 15px;
+  background: rgba(212, 175, 55, 0.1);
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
 }
 
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.select-wrapper {
+  position: relative;
 }
 
-.dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border-bottom: 1px solid rgba(212, 175, 55, 0.1);
-}
-
-.dropdown-item:last-child {
-  border-bottom: none;
-}
-
-.dropdown-item:hover {
-  background: rgba(212, 175, 55, 0.08);
-}
-
-.dropdown-item.active {
-  background: rgba(212, 175, 55, 0.15);
-  border-left: 3px solid #fcd535;
-  padding-left: 11px;
-}
-
-.dropdown-item-icon {
-  width: 28px;
-  height: 28px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-
-.dropdown-item-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.dropdown-item-name {
-  color: #eaecef;
-  font-weight: 600;
-  font-size: 13px;
-}
-
-.dropdown-item-symbol {
-  color: #848e9c;
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
-.dropdown-item i {
-  color: #10b981;
-  font-size: 14px;
-  flex-shrink: 0;
-}
-
-/* صندوق الملخص */
-.summary-box {
-  background: rgba(212, 175, 55, 0.08);
+.gold-select {
+  width: 100%;
+  padding: 14px 20px;
   border-radius: 16px;
-  padding: 16px;
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  margin-bottom: 20px;
+  background: #1A1F2A;
+  color: #ffffff;
+  border: 2px solid rgba(212, 175, 55, 0.3);
+  font-size: 15px;
+  cursor: pointer;
+  appearance: none;
+}
+
+.gold-select:focus {
+  outline: none;
+  border-color: #D4AF37;
+}
+
+.gold-select.error-input {
+  border-color: #ef4444;
+}
+
+.select-arrow {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #D4AF37;
+  pointer-events: none;
+  font-size: 14px;
+}
+
+/* ملخص الطلب */
+.summary-box {
+  background: linear-gradient(135deg, #1A1F2A, #11151C);
+  border-radius: 20px;
+  padding: 20px;
+  margin: 20px 0;
+  border: 2px solid #D4AF37;
+  box-shadow: 0 5px 20px rgba(212, 175, 55, 0.2);
 }
 
 .summary-box h3 {
-  font-size: 14px;
-  font-weight: 700;
-  color: #fcd535;
-  margin: 0 0 12px 0;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
+  color: #D4AF37;
+  font-size: 18px;
+  margin-bottom: 15px;
+  text-align: center;
+  position: relative;
+  padding-bottom: 10px;
+}
+
+.summary-box h3::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 2px;
+  background: #D4AF37;
 }
 
 .summary-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
-  font-size: 12px;
-  color: #eaecef;
-  border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .summary-item:last-child {
@@ -947,111 +883,151 @@ export default {
 }
 
 .summary-item.total {
+  margin-top: 10px;
+  padding-top: 15px;
+  border-top: 2px solid #D4AF37;
   font-weight: 700;
-  color: #fcd535;
-  padding-top: 12px;
-  padding-bottom: 12px;
-  border-top: 1px solid rgba(212, 175, 55, 0.2);
+  color: #D4AF37;
+  font-size: 16px;
 }
 
 .summary-value {
-  color: #fcd535;
   font-weight: 600;
-  word-break: break-word;
-  max-width: 200px;
-  text-align: right;
+  color: #D4AF37;
 }
 
 .summary-value.address {
-  font-family: 'Courier New', monospace;
-  font-size: 11px;
+  font-family: monospace;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(212, 175, 55, 0.1);
+  padding: 4px 8px;
+  border-radius: 8px;
 }
 
-/* صندوق التحذير */
 .warning-box {
-  background: rgba(217, 119, 6, 0.1);
+  background: rgba(212, 175, 55, 0.05);
+  border-right: 4px solid #D4AF37;
+  padding: 15px;
   border-radius: 12px;
-  padding: 12px;
-  border: 1px solid rgba(217, 119, 6, 0.2);
+  margin: 20px 0;
   display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
+  align-items: flex-start;
+  gap: 12px;
 }
 
 .warning-box i {
-  color: #d97706;
-  font-size: 16px;
-  flex-shrink: 0;
+  color: #D4AF37;
+  font-size: 20px;
   margin-top: 2px;
 }
 
-.warning-text {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
 .warning-text p {
-  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  margin: 0 0 5px 0;
+}
+
+.warning-text .small {
   font-size: 12px;
-  color: #eaecef;
-  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
 }
 
-.warning-text p.small {
-  color: #848e9c;
-  font-size: 11px;
-}
-
-/* الزر */
 .gold-button {
   width: 100%;
-  padding: 14px;
-  background: linear-gradient(135deg, #fcd535 0%, #d4af37 100%);
-  color: #0f1419;
+  padding: 16px;
+  border-radius: 20px;
   border: none;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 700;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A);
+  color: #0A0C10;
+  font-size: 18px;
+  font-weight: 800;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  gap: 10px;
+  margin: 20px 0;
+  box-shadow: 0 5px 20px rgba(212, 175, 55, 0.3);
 }
 
 .gold-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(212, 175, 55, 0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(212, 175, 55, 0.4);
 }
 
 .gold-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  filter: grayscale(20%);
 }
 
-/* الانتقالات */
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.message {
+  margin: 15px 0;
+  padding: 15px 20px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid;
 }
 
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
+.message.success {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+  border-color: #22c55e;
 }
 
-.fade-enter-from,
-.fade-leave-to {
+.message.error {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-color: #ef4444;
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.fade-enter-from, .fade-leave-to {
   opacity: 0;
+  transform: translateY(-10px);
+}
+
+.fa-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 20px;
+  }
+  
+  .title {
+    font-size: 24px;
+  }
+  
+  .title i {
+    font-size: 28px;
+  }
+  
+  .balance-value {
+    font-size: 24px;
+  }
+  
+  .summary-box {
+    padding: 15px;
+  }
+  
+  .summary-item {
+    font-size: 13px;
+  }
 }
 </style>
