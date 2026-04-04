@@ -1,128 +1,221 @@
 <template>
   <div class="profile-wrapper">
-    <h2 class="title">
-      <span class="title-gold">حسابي</span>
-      <span class="title-icon">👤</span>
-    </h2>
-
     <div v-if="loading" class="loading-container">
       <div class="gold-spinner"></div>
       <p class="loading-text">جاري تحميل بيانات الحساب...</p>
     </div>
 
-    <div v-else class="profile-box">
-      <!-- صورة المستخدم مع تأثير ذهبي -->
-      <div class="avatar-container">
-        <div class="avatar-glow"></div>
-        <div class="avatar">
-          {{ userData.username ? userData.username.charAt(0).toUpperCase() : 'U' }}
-        </div>
-        <div class="avatar-badge" v-if="userData.vipLevel">
-          VIP {{ userData.vipLevel }}
+    <div v-else class="profile-content">
+      <!-- رأس الصفحة مع الخلفية المتدرجة -->
+      <div class="profile-header">
+        <div class="header-background"></div>
+        
+        <div class="header-content">
+          <!-- صورة المستخدم -->
+          <div class="avatar-section">
+            <div class="avatar-container">
+              <div class="avatar-glow"></div>
+              <div class="avatar">
+                {{ userData.username ? userData.username.charAt(0).toUpperCase() : 'U' }}
+              </div>
+              <div class="avatar-badge" v-if="userData.vipLevel">
+                <i class="fas fa-crown"></i>
+                VIP {{ userData.vipLevel }}
+              </div>
+            </div>
+          </div>
+
+          <!-- معلومات المستخدم الأساسية -->
+          <div class="user-info-section">
+            <h1 class="username">{{ userData.username || "المستخدم" }}</h1>
+            <p class="user-id">ID: {{ userData.uid.substring(0, 12) }}...</p>
+            <div class="user-status">
+              <span class="status-badge active">
+                <i class="fas fa-circle"></i> نشط
+              </span>
+              <span class="status-date">
+                <i class="fas fa-calendar-alt"></i> {{ formattedDate }}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <h3 class="username">{{ userData.username || "المستخدم" }}</h3>
-
-      <!-- رقم الهاتف (إذا كان مسجلاً برقم هاتف) -->
-      <div class="info-card" v-if="userData.phoneNumber">
-        <div class="info-header">
-          <i class="fas fa-phone"></i>
-          <span class="info-label">رقم الهاتف</span>
+      <!-- البطاقات الرئيسية -->
+      <div class="main-cards">
+        <!-- بطاقة الرصيد -->
+        <div class="premium-card balance-card">
+          <div class="card-icon">
+            <i class="fas fa-wallet"></i>
+          </div>
+          <div class="card-content">
+            <span class="card-label">الرصيد المتاح</span>
+            <span class="card-value">{{ userData.balance }} USDT</span>
+          </div>
+          <div class="card-decoration"></div>
         </div>
-        <div class="info-content">
-          <span class="info-value">{{ userData.phoneNumber }}</span>
-          <button class="copy-btn" @click="copy(userData.phoneNumber)" title="نسخ">
-            <i class="fas fa-copy"></i>
+
+        <!-- بطاقة VIP -->
+        <div class="premium-card vip-card" v-if="userData.vipLevel">
+          <div class="card-icon">
+            <i class="fas fa-crown"></i>
+          </div>
+          <div class="card-content">
+            <span class="card-label">مستوى VIP</span>
+            <span class="card-value">المستوى {{ userData.vipLevel }}</span>
+          </div>
+          <div class="card-decoration"></div>
+        </div>
+
+        <!-- بطاقة الإحالات -->
+        <div class="premium-card referral-card" v-if="userData.totalReferrals">
+          <div class="card-icon">
+            <i class="fas fa-users"></i>
+          </div>
+          <div class="card-content">
+            <span class="card-label">عدد الإحالات</span>
+            <span class="card-value">{{ userData.totalReferrals }}</span>
+          </div>
+          <div class="card-decoration"></div>
+        </div>
+      </div>
+
+      <!-- قسم المعلومات الشخصية -->
+      <div class="section">
+        <h2 class="section-title">
+          <i class="fas fa-user-circle"></i>
+          المعلومات الشخصية
+        </h2>
+
+        <div class="info-grid">
+          <!-- البريد الإلكتروني -->
+          <div class="info-item">
+            <div class="info-header">
+              <i class="fas fa-envelope"></i>
+              <span>البريد الإلكتروني</span>
+            </div>
+            <div class="info-body">
+              <span class="info-value">{{ userData.email || 'غير مسجل' }}</span>
+              <button class="copy-btn" @click="copy(userData.email)" v-if="userData.email" title="نسخ">
+                <i class="fas fa-copy"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- رقم الهاتف -->
+          <div class="info-item">
+            <div class="info-header">
+              <i class="fas fa-phone"></i>
+              <span>رقم الهاتف</span>
+            </div>
+            <div class="info-body">
+              <span class="info-value">{{ userData.phoneNumber || 'غير مسجل' }}</span>
+              <button class="copy-btn" @click="copy(userData.phoneNumber)" v-if="userData.phoneNumber" title="نسخ">
+                <i class="fas fa-copy"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- معرف المستخدم -->
+          <div class="info-item">
+            <div class="info-header">
+              <i class="fas fa-id-card"></i>
+              <span>معرف المستخدم</span>
+            </div>
+            <div class="info-body">
+              <span class="info-value id-value">{{ userData.uid }}</span>
+              <button class="copy-btn" @click="copy(userData.uid)" title="نسخ">
+                <i class="fas fa-copy"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- كود الإحالة -->
+          <div class="info-item" v-if="userData.referralCode">
+            <div class="info-header">
+              <i class="fas fa-link"></i>
+              <span>كود الإحالة</span>
+            </div>
+            <div class="info-body">
+              <span class="info-value referral-code">{{ userData.referralCode }}</span>
+              <button class="copy-btn" @click="copy(userData.referralCode)" title="نسخ">
+                <i class="fas fa-copy"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- قسم الأمان والإعدادات -->
+      <div class="section">
+        <h2 class="section-title">
+          <i class="fas fa-lock"></i>
+          الأمان والإعدادات
+        </h2>
+
+        <div class="settings-grid">
+          <!-- زر تغيير كلمة المرور -->
+          <button class="setting-btn" @click="openChangePasswordModal">
+            <div class="setting-icon">
+              <i class="fas fa-key"></i>
+            </div>
+            <div class="setting-content">
+              <span class="setting-title">تغيير كلمة المرور</span>
+              <span class="setting-desc">قم بتحديث كلمة المرور الخاصة بك</span>
+            </div>
+            <i class="fas fa-chevron-left"></i>
           </button>
-        </div>
-      </div>
 
-      <!-- البريد الإلكتروني (إذا كان مسجلاً ببريد) -->
-      <div class="info-card" v-if="userData.email">
-        <div class="info-header">
-          <i class="fas fa-envelope"></i>
-          <span class="info-label">البريد الإلكتروني</span>
-        </div>
-        <div class="info-content">
-          <span class="info-value">{{ userData.email }}</span>
-          <button class="copy-btn" @click="copy(userData.email)" title="نسخ">
-            <i class="fas fa-copy"></i>
+          <!-- زر ربط رقم الهاتف (الميزة الجديدة) -->
+          <button class="setting-btn" @click="openPhoneModal">
+            <div class="setting-icon">
+              <i class="fas fa-mobile-alt"></i>
+            </div>
+            <div class="setting-content">
+              <span class="setting-title">ربط رقم الهاتف</span>
+              <span class="setting-desc">{{ userData.phoneNumber ? 'تحديث رقم الهاتف' : 'أضف رقم هاتفك للأمان' }}</span>
+            </div>
+            <i class="fas fa-chevron-left"></i>
           </button>
-        </div>
-      </div>
 
-      <!-- معرف المستخدم -->
-      <div class="info-card">
-        <div class="info-header">
-          <i class="fas fa-id-card"></i>
-          <span class="info-label">المعرّف (ID)</span>
-        </div>
-        <div class="info-content">
-          <span class="info-value id-value">{{ userData.uid }}</span>
-          <button class="copy-btn" @click="copy(userData.uid)" title="نسخ">
-            <i class="fas fa-copy"></i>
+          <!-- زر نسخ رابط الدعوة -->
+          <button class="setting-btn" @click="copyReferralLink" v-if="userData.referralCode">
+            <div class="setting-icon">
+              <i class="fas fa-share-alt"></i>
+            </div>
+            <div class="setting-content">
+              <span class="setting-title">نسخ رابط الدعوة</span>
+              <span class="setting-desc">شارك الرابط مع أصدقائك واحصل على عمولات</span>
+            </div>
+            <i class="fas fa-chevron-left"></i>
           </button>
-        </div>
-      </div>
 
-      <!-- كود الإحالة -->
-      <div class="info-card" v-if="userData.referralCode">
-        <div class="info-header">
-          <i class="fas fa-link"></i>
-          <span class="info-label">كود الإحالة</span>
-        </div>
-        <div class="info-content">
-          <span class="info-value referral-code">{{ userData.referralCode }}</span>
-          <button class="copy-btn" @click="copy(userData.referralCode)" title="نسخ">
-            <i class="fas fa-copy"></i>
+          <!-- زر تسجيل الخروج -->
+          <button class="setting-btn logout-btn" @click="logout">
+            <div class="setting-icon">
+              <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <div class="setting-content">
+              <span class="setting-title">تسجيل الخروج</span>
+              <span class="setting-desc">قم بإنهاء جلستك الحالية</span>
+            </div>
+            <i class="fas fa-chevron-left"></i>
           </button>
-        </div>
-      </div>
-
-      <!-- تاريخ التسجيل -->
-      <div class="info-card">
-        <div class="info-header">
-          <i class="fas fa-calendar-alt"></i>
-          <span class="info-label">تاريخ التسجيل</span>
-        </div>
-        <div class="info-content">
-          <span class="info-value">{{ formattedDate }}</span>
-        </div>
-      </div>
-
-      <!-- الرصيد -->
-      <div class="info-card balance-card">
-        <div class="info-header">
-          <i class="fas fa-coins"></i>
-          <span class="info-label">الرصيد المتاح</span>
-        </div>
-        <div class="info-content">
-          <span class="balance-value">{{ userData.balance }} USDT</span>
-        </div>
-      </div>
-
-      <!-- إحصائيات سريعة -->
-      <div class="stats-grid" v-if="userData.vipLevel || userData.totalReferrals">
-        <div class="stat-item" v-if="userData.vipLevel">
-          <i class="fas fa-crown"></i>
-          <span class="stat-label">مستوى VIP</span>
-          <span class="stat-number">{{ userData.vipLevel }}</span>
-        </div>
-        <div class="stat-item" v-if="userData.totalReferrals">
-          <i class="fas fa-users"></i>
-          <span class="stat-label">الإحالات</span>
-          <span class="stat-number">{{ userData.totalReferrals }}</span>
         </div>
       </div>
 
       <!-- نافذة تغيير كلمة المرور -->
       <div v-if="showChangePasswordModal" class="modal-overlay" @click.self="closeChangePasswordModal">
         <div class="modal-content">
-          <h3 class="modal-title">
-            <i class="fas fa-key"></i>
-            تغيير كلمة المرور
-          </h3>
+          <div class="modal-header">
+            <h3 class="modal-title">
+              <i class="fas fa-key"></i>
+              تغيير كلمة المرور
+            </h3>
+            <button class="modal-close" @click="closeChangePasswordModal">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
           
           <div class="modal-body">
             <div class="input-group">
@@ -155,16 +248,22 @@
               />
             </div>
             
-            <p v-if="passwordError" class="error-message">{{ passwordError }}</p>
-            <p v-if="passwordSuccess" class="success-message">{{ passwordSuccess }}</p>
+            <p v-if="passwordError" class="error-message">
+              <i class="fas fa-exclamation-circle"></i>
+              {{ passwordError }}
+            </p>
+            <p v-if="passwordSuccess" class="success-message">
+              <i class="fas fa-check-circle"></i>
+              {{ passwordSuccess }}
+            </p>
           </div>
           
           <div class="modal-actions">
             <button class="btn btn-gold" @click="updatePassword" :disabled="passwordLoading">
               <i class="fas fa-save"></i>
-              {{ passwordLoading ? 'جاري التغيير...' : 'تغيير كلمة المرور' }}
+              {{ passwordLoading ? 'جاري التغيير...' : 'تحديث كلمة المرور' }}
             </button>
-            <button class="btn btn-gold-outline" @click="closeChangePasswordModal">
+            <button class="btn btn-outline" @click="closeChangePasswordModal">
               <i class="fas fa-times"></i>
               إلغاء
             </button>
@@ -172,22 +271,69 @@
         </div>
       </div>
 
-      <!-- الأزرار -->
-      <div class="actions">
-        <button class="btn btn-gold" @click="openChangePasswordModal">
-          <i class="fas fa-key"></i>
-          تغيير كلمة المرور
-        </button>
+      <!-- نافذة ربط رقم الهاتف (الميزة الجديدة) -->
+      <div v-if="showPhoneModal" class="modal-overlay" @click.self="closePhoneModal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 class="modal-title">
+              <i class="fas fa-mobile-alt"></i>
+              {{ userData.phoneNumber ? 'تحديث رقم الهاتف' : 'ربط رقم الهاتف' }}
+            </h3>
+            <button class="modal-close" @click="closePhoneModal">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          
+          <div class="modal-body">
+            <p class="modal-description">
+              {{ userData.phoneNumber ? 'قم بتحديث رقم هاتفك لتحسين أمان حسابك' : 'ربط رقم هاتفك سيساعدك في استرجاع حسابك إذا نسيت كلمة المرور' }}
+            </p>
 
-        <button class="btn btn-gold-outline" @click="copyReferralLink" v-if="userData.referralCode">
-          <i class="fas fa-share-alt"></i>
-          نسخ رابط الدعوة
-        </button>
+            <div class="input-group">
+              <label class="input-label">رقم الهاتف</label>
+              <div class="phone-input-wrapper">
+                <span class="country-code">+966</span>
+                <input 
+                  type="tel" 
+                  v-model="phoneForm.phone" 
+                  class="modal-input phone-input"
+                  placeholder="5xxxxxxxx"
+                  @input="validatePhone"
+                />
+              </div>
+              <p v-if="phoneError" class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                {{ phoneError }}
+              </p>
+            </div>
 
-        <button class="btn btn-danger" @click="logout">
-          <i class="fas fa-sign-out-alt"></i>
-          تسجيل الخروج
-        </button>
+            <div class="input-group">
+              <label class="input-label">كلمة المرور (للتأكيد)</label>
+              <input 
+                type="password" 
+                v-model="phoneForm.password" 
+                class="modal-input"
+                placeholder="أدخل كلمة المرور الخاصة بك"
+              />
+            </div>
+
+            <p v-if="phoneSuccess" class="success-message">
+              <i class="fas fa-check-circle"></i>
+              {{ phoneSuccess }}
+            </p>
+          </div>
+          
+          <div class="modal-actions">
+            <button class="btn btn-gold" @click="updatePhoneNumber" :disabled="phoneLoading">
+              <i class="fas fa-check"></i>
+              {{ phoneLoading ? 'جاري التحديث...' : 'تأكيد وربط الهاتف' }}
+            </button>
+            <button class="btn btn-outline" @click="closePhoneModal">
+              <i class="fas fa-times"></i>
+              إلغاء
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -195,7 +341,7 @@
 
 <script>
 import { auth, db } from "../firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { onAuthStateChanged, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 
 export default {
@@ -205,13 +351,21 @@ export default {
     return {
       loading: true,
       showChangePasswordModal: false,
+      showPhoneModal: false,
       passwordLoading: false,
+      phoneLoading: false,
       passwordError: "",
       passwordSuccess: "",
+      phoneError: "",
+      phoneSuccess: "",
       passwordForm: {
         currentPassword: "",
         newPassword: "",
         confirmPassword: ""
+      },
+      phoneForm: {
+        phone: "",
+        password: ""
       },
       userData: {
         email: "",
@@ -284,7 +438,6 @@ export default {
               totalReferrals: data.totalReferrals || 0,
             };
           } else {
-            // بيانات افتراضية إذا لم يوجد المستند
             this.userData = {
               email: user.email || "",
               phoneNumber: "",
@@ -307,6 +460,7 @@ export default {
     },
 
     copy(text) {
+      if (!text) return;
       navigator.clipboard.writeText(text);
       this.showSuccessMessage("تم النسخ ✓");
     },
@@ -314,11 +468,10 @@ export default {
     copyReferralLink() {
       if (this.referralLink) {
         this.copy(this.referralLink);
-        this.showSuccessMessage("تم نسخ رابط الدعوة");
+        this.showSuccessMessage("تم نسخ رابط الدعوة ✓");
       }
     },
 
-    // فتح نافذة تغيير كلمة المرور
     openChangePasswordModal() {
       this.showChangePasswordModal = true;
       this.passwordError = "";
@@ -330,18 +483,28 @@ export default {
       };
     },
 
-    // إغلاق نافذة تغيير كلمة المرور
     closeChangePasswordModal() {
       this.showChangePasswordModal = false;
       this.passwordError = "";
       this.passwordSuccess = "";
+      this.passwordForm = {
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+      };
     },
 
-    // تحديث كلمة المرور
     async updatePassword() {
-      // التحقق من المدخلات
-      if (!this.passwordForm.currentPassword || !this.passwordForm.newPassword || !this.passwordForm.confirmPassword) {
-        this.passwordError = "جميع الحقول مطلوبة";
+      this.passwordError = "";
+      this.passwordSuccess = "";
+
+      if (!this.passwordForm.currentPassword) {
+        this.passwordError = "الرجاء إدخال كلمة المرور الحالية";
+        return;
+      }
+
+      if (!this.passwordForm.newPassword) {
+        this.passwordError = "الرجاء إدخال كلمة المرور الجديدة";
         return;
       }
 
@@ -351,51 +514,106 @@ export default {
       }
 
       if (this.passwordForm.newPassword !== this.passwordForm.confirmPassword) {
-        this.passwordError = "كلمة المرور الجديدة وتأكيدها غير متطابقين";
+        this.passwordError = "كلمات المرور الجديدة غير متطابقة";
         return;
       }
 
       this.passwordLoading = true;
-      this.passwordError = "";
-      this.passwordSuccess = "";
 
       try {
         const user = auth.currentUser;
-        
-        if (!user) {
-          throw new Error("المستخدم غير مسجل الدخول");
-        }
-
-        // إعادة المصادقة بكلمة المرور الحالية
         const credential = EmailAuthProvider.credential(
           user.email,
           this.passwordForm.currentPassword
         );
-        
+
         await reauthenticateWithCredential(user, credential);
-        
-        // تحديث كلمة المرور
         await updatePassword(user, this.passwordForm.newPassword);
-        
-        this.passwordSuccess = "تم تغيير كلمة المرور بنجاح";
-        
-        // إغلاق النافذة بعد 2 ثانية
+
+        this.passwordSuccess = "تم تحديث كلمة المرور بنجاح ✓";
         setTimeout(() => {
           this.closeChangePasswordModal();
         }, 2000);
-        
       } catch (error) {
-        console.error("Password update error:", error);
-        
-        if (error.code === 'auth/wrong-password') {
-          this.passwordError = "كلمة المرور الحالية غير صحيحة";
-        } else if (error.code === 'auth/weak-password') {
-          this.passwordError = "كلمة المرور الجديدة ضعيفة جداً";
-        } else {
-          this.passwordError = "حدث خطأ في تغيير كلمة المرور";
-        }
+        this.passwordError = error.message || "حدث خطأ في تحديث كلمة المرور";
       } finally {
         this.passwordLoading = false;
+      }
+    },
+
+    openPhoneModal() {
+      this.showPhoneModal = true;
+      this.phoneError = "";
+      this.phoneSuccess = "";
+      this.phoneForm = {
+        phone: this.userData.phoneNumber ? this.userData.phoneNumber.replace("+966", "") : "",
+        password: ""
+      };
+    },
+
+    closePhoneModal() {
+      this.showPhoneModal = false;
+      this.phoneError = "";
+      this.phoneSuccess = "";
+      this.phoneForm = {
+        phone: "",
+        password: ""
+      };
+    },
+
+    validatePhone() {
+      if (this.phoneForm.phone && !/^\d{9}$/.test(this.phoneForm.phone)) {
+        this.phoneError = "رقم الهاتف يجب أن يكون 9 أرقام";
+      } else {
+        this.phoneError = "";
+      }
+    },
+
+    async updatePhoneNumber() {
+      this.phoneError = "";
+      this.phoneSuccess = "";
+
+      if (!this.phoneForm.phone) {
+        this.phoneError = "الرجاء إدخال رقم الهاتف";
+        return;
+      }
+
+      if (!/^\d{9}$/.test(this.phoneForm.phone)) {
+        this.phoneError = "رقم الهاتف يجب أن يكون 9 أرقام";
+        return;
+      }
+
+      if (!this.phoneForm.password) {
+        this.phoneError = "الرجاء إدخال كلمة المرور للتأكيد";
+        return;
+      }
+
+      this.phoneLoading = true;
+
+      try {
+        const user = auth.currentUser;
+        const credential = EmailAuthProvider.credential(
+          user.email,
+          this.phoneForm.password
+        );
+
+        await reauthenticateWithCredential(user, credential);
+
+        const fullPhoneNumber = "+966" + this.phoneForm.phone;
+        await updateDoc(doc(db, "users", user.uid), {
+          phoneNumber: fullPhoneNumber
+        });
+
+        this.userData.phoneNumber = fullPhoneNumber;
+        this.phoneSuccess = "تم ربط رقم الهاتف بنجاح ✓";
+        
+        setTimeout(() => {
+          this.closePhoneModal();
+        }, 2000);
+      } catch (error) {
+        this.phoneError = error.message || "حدث خطأ في ربط رقم الهاتف";
+      } finally {
+        this.phoneLoading = false;
       }
     },
 
@@ -403,119 +621,125 @@ export default {
       try {
         await signOut(auth);
         this.$router.push("/login");
-      } catch (err) {
-        console.error("Logout error:", err);
-        this.showErrorMessage("حدث خطأ في تسجيل الخروج");
+      } catch (error) {
+        console.error("Error logging out:", error);
       }
     },
 
-    // دوال مساعدة للإشعارات (يمكن تطويرها لاحقاً)
     showSuccessMessage(msg) {
-      alert(msg);
+      // يمكن استبدال هذا بـ toast notification
+      console.log("Success:", msg);
     },
 
     showErrorMessage(msg) {
-      alert(msg);
-    },
-
-    showInfoMessage(msg) {
-      alert(msg);
+      // يمكن استبدال هذا بـ toast notification
+      console.error("Error:", msg);
     }
-  },
+  }
 };
 </script>
 
 <style scoped>
-/* الخلفية الرئيسية - أسود فاخر */
+* {
+  direction: rtl;
+}
+
 .profile-wrapper {
   min-height: 100vh;
-  background: #0A0C10;
-  padding: 30px 20px;
-  direction: rtl;
-  color: #ffffff;
-  font-family: 'Cairo', sans-serif;
+  background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 100%);
+  padding: 20px;
+  padding-top: 80px;
+  padding-bottom: 100px;
+}
+
+.loading-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-
-/* العنوان */
-.title {
-  font-size: 32px;
-  font-weight: 800;
-  margin-bottom: 30px;
-  display: flex;
-  align-items: center;
   justify-content: center;
-  gap: 15px;
+  gap: 20px;
+  padding: 100px 20px;
 }
 
-.title-gold {
-  background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.gold-spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(212, 175, 55, 0.1);
+  border-top: 4px solid #fcd535;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
-.title-icon {
-  font-size: 36px;
-  filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.3));
-}
-
-/* ===== بطاقة الملف الشخصي ===== */
-.profile-box {
-  background: #11151C;
-  width: 100%;
-  max-width: 500px;
-  border-radius: 30px;
-  padding: 30px;
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(212, 175, 55, 0.1);
-  position: relative;
-  overflow: hidden;
-}
-
-.profile-box::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  right: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(212, 175, 55, 0.03) 0%, transparent 70%);
-  animation: rotate 30s linear infinite;
-  pointer-events: none;
-}
-
-@keyframes rotate {
-  from { transform: rotate(0deg); }
+@keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-/* ===== صورة المستخدم ===== */
+.loading-text {
+  color: #fcd535;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.profile-content {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* رأس الصفحة */
+.profile-header {
+  position: relative;
+  background: linear-gradient(135deg, #1e2329 0%, #181a20 100%);
+  border-radius: 24px;
+  padding: 40px 30px;
+  margin-bottom: 30px;
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  overflow: hidden;
+}
+
+.header-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(212, 175, 55, 0.05));
+  filter: blur(20px);
+}
+
+.header-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 30px;
+}
+
+.avatar-section {
+  flex-shrink: 0;
+}
+
 .avatar-container {
   position: relative;
   width: 120px;
   height: 120px;
-  margin: 0 auto 20px;
 }
 
 .avatar-glow {
   position: absolute;
-  top: -5px;
-  left: -5px;
-  right: -5px;
-  bottom: -5px;
-  background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+  background: linear-gradient(135deg, #fcd535, #d4af37, #c5a028);
   border-radius: 50%;
-  filter: blur(10px);
-  opacity: 0.5;
-  animation: glowPulse 2s ease-in-out infinite;
+  filter: blur(15px);
+  opacity: 0.4;
+  animation: glowPulse 3s ease-in-out infinite;
 }
 
 @keyframes glowPulse {
-  0%, 100% { opacity: 0.5; transform: scale(1); }
-  50% { opacity: 0.8; transform: scale(1.05); }
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.1); }
 }
 
 .avatar {
@@ -529,122 +753,249 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 48px;
+  font-size: 56px;
   font-weight: 700;
-  color: #D4AF37;
-  border: 3px solid #D4AF37;
-  box-shadow: 0 5px 20px rgba(212, 175, 55, 0.3);
+  color: #fcd535;
+  border: 3px solid #fcd535;
+  box-shadow: 0 8px 25px rgba(212, 175, 55, 0.3);
   z-index: 1;
 }
 
 .avatar-badge {
   position: absolute;
-  bottom: 0;
-  right: -10px;
-  background: linear-gradient(135deg, #D4AF37, #F6E27A);
-  color: #0A0C10;
-  padding: 5px 12px;
+  bottom: -5px;
+  right: -5px;
+  background: linear-gradient(135deg, #fcd535, #d4af37);
+  color: #0f1419;
+  padding: 8px 16px;
   border-radius: 50px;
   font-size: 12px;
   font-weight: 700;
-  border: 2px solid #0A0C10;
+  border: 3px solid #0f1419;
   z-index: 2;
-  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-/* اسم المستخدم */
+.user-info-section {
+  flex: 1;
+  padding-top: 10px;
+}
+
 .username {
-  text-align: center;
-  font-size: 24px;
-  font-weight: 700;
-  margin-bottom: 25px;
-  color: #D4AF37;
-  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
-  padding-bottom: 15px;
+  font-size: 32px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 8px 0;
 }
 
-/* ===== بطاقات المعلومات ===== */
-.info-card {
-  background: #1A1F2A;
+.user-id {
+  font-size: 14px;
+  color: #848e9c;
+  margin: 0 0 12px 0;
+  font-family: monospace;
+}
+
+.user-status {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-badge i {
+  font-size: 8px;
+  animation: blink 2s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.status-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #848e9c;
+  font-size: 12px;
+}
+
+/* البطاقات الرئيسية */
+.main-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.premium-card {
+  background: linear-gradient(135deg, #1e2329 0%, #181a20 100%);
+  border-radius: 20px;
+  padding: 24px;
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.premium-card:hover {
+  border-color: rgba(212, 175, 55, 0.4);
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(212, 175, 55, 0.15);
+}
+
+.card-icon {
+  width: 60px;
+  height: 60px;
+  background: rgba(212, 175, 55, 0.1);
   border-radius: 16px;
-  padding: 15px;
-  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: #fcd535;
+  flex-shrink: 0;
+}
+
+.card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.card-label {
+  font-size: 12px;
+  color: #848e9c;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.card-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: #fcd535;
+}
+
+.card-decoration {
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.1), transparent);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* الأقسام */
+.section {
+  margin-bottom: 40px;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-title i {
+  color: #fcd535;
+  font-size: 24px;
+}
+
+/* شبكة المعلومات -->
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.info-item {
+  background: linear-gradient(135deg, #1e2329 0%, #181a20 100%);
+  border-radius: 16px;
+  padding: 16px;
   border: 1px solid rgba(212, 175, 55, 0.1);
   transition: all 0.3s ease;
 }
 
-.info-card:hover {
-  border-color: #D4AF37;
-  transform: translateX(-5px);
-  box-shadow: 0 5px 15px rgba(212, 175, 55, 0.1);
+.info-item:hover {
+  border-color: rgba(212, 175, 55, 0.3);
+  box-shadow: 0 8px 20px rgba(212, 175, 55, 0.1);
 }
 
 .info-header {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 10px;
-  color: #D4AF37;
+  margin-bottom: 12px;
+  color: #fcd535;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .info-header i {
-  font-size: 18px;
+  font-size: 16px;
 }
 
-.info-label {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.info-content {
+.info-body {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
+  justify-content: space-between;
 }
 
 .info-value {
-  font-size: 16px;
-  font-weight: 600;
-  color: #ffffff;
+  font-size: 14px;
+  color: #eaecef;
   word-break: break-all;
   flex: 1;
 }
 
 .id-value {
   font-family: monospace;
-  font-size: 14px;
-  background: rgba(0, 0, 0, 0.2);
-  padding: 5px 10px;
+  font-size: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 6px 10px;
   border-radius: 8px;
 }
 
 .referral-code {
   font-family: monospace;
-  font-size: 16px;
-  color: #D4AF37;
+  font-size: 14px;
+  color: #fcd535;
   letter-spacing: 1px;
 }
 
-/* بطاقة الرصيد */
-.balance-card {
-  background: linear-gradient(135deg, #1A1F2A, #11151C);
-  border: 2px solid #D4AF37;
-  margin: 20px 0;
-}
-
-.balance-value {
-  font-size: 24px;
-  font-weight: 800;
-  color: #D4AF37;
-  text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
-}
-
-/* زر النسخ */
 .copy-btn {
   background: rgba(212, 175, 55, 0.1);
   border: 1px solid rgba(212, 175, 55, 0.3);
-  color: #D4AF37;
+  color: #fcd535;
   width: 36px;
   height: 36px;
   border-radius: 10px;
@@ -653,51 +1004,93 @@ export default {
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
+  flex-shrink: 0;
 }
 
 .copy-btn:hover {
-  background: #D4AF37;
-  color: #0A0C10;
+  background: #fcd535;
+  color: #0f1419;
   transform: scale(1.1);
 }
 
-/* ===== شبكة الإحصائيات ===== */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 15px;
-  margin: 20px 0;
+/* شبكة الإعدادات */
+.settings-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.stat-item {
-  background: #1A1F2A;
-  border-radius: 16px;
-  padding: 15px;
-  text-align: center;
+.setting-btn {
+  background: linear-gradient(135deg, #1e2329 0%, #181a20 100%);
   border: 1px solid rgba(212, 175, 55, 0.1);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: inherit;
+  font-family: inherit;
 }
 
-.stat-item i {
-  font-size: 24px;
-  color: #D4AF37;
-  margin-bottom: 5px;
+.setting-btn:hover {
+  border-color: rgba(212, 175, 55, 0.3);
+  background: linear-gradient(135deg, #252b34 0%, #1e2329 100%);
+  transform: translateX(-8px);
 }
 
-.stat-label {
+.setting-btn.logout-btn:hover {
+  border-color: rgba(255, 75, 75, 0.3);
+  background: rgba(255, 75, 75, 0.05);
+}
+
+.setting-icon {
+  width: 50px;
+  height: 50px;
+  background: rgba(212, 175, 55, 0.1);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: #fcd535;
+  flex-shrink: 0;
+}
+
+.setting-btn.logout-btn .setting-icon {
+  background: rgba(255, 75, 75, 0.1);
+  color: #ff4b4b;
+}
+
+.setting-content {
+  flex: 1;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.setting-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #eaecef;
   display: block;
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.6);
-  margin-bottom: 5px;
 }
 
-.stat-number {
+.setting-desc {
+  font-size: 12px;
+  color: #848e9c;
   display: block;
-  font-size: 20px;
-  font-weight: 800;
-  color: #D4AF37;
 }
 
-/* ===== نافذة تغيير كلمة المرور ===== */
+.setting-btn i:last-child {
+  color: #848e9c;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+/* النوافذ المنبثقة */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -714,20 +1107,21 @@ export default {
 }
 
 .modal-content {
-  background: #11151C;
-  border-radius: 30px;
-  padding: 30px;
+  background: linear-gradient(135deg, #1e2329 0%, #181a20 100%);
+  border-radius: 24px;
+  padding: 0;
   width: 100%;
-  max-width: 450px;
-  border: 1px solid rgba(212, 175, 55, 0.3);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(212, 175, 55, 0.2);
-  animation: modalFadeIn 0.3s ease;
+  max-width: 500px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6), 0 0 40px rgba(212, 175, 55, 0.2);
+  animation: modalSlideIn 0.3s ease;
+  overflow: hidden;
 }
 
-@keyframes modalFadeIn {
+@keyframes modalSlideIn {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(30px);
   }
   to {
     opacity: 1;
@@ -735,20 +1129,52 @@ export default {
   }
 }
 
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+}
+
 .modal-title {
-  font-size: 24px;
-  font-weight: 700;
-  color: #D4AF37;
-  text-align: center;
-  margin-bottom: 25px;
+  font-size: 20px;
+  font-weight: 800;
+  color: #fcd535;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+
+.modal-close {
+  background: rgba(212, 175, 55, 0.1);
+  border: none;
+  color: #fcd535;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+  background: #fcd535;
+  color: #0f1419;
 }
 
 .modal-body {
-  margin-bottom: 25px;
+  padding: 24px;
+}
+
+.modal-description {
+  font-size: 14px;
+  color: #848e9c;
+  margin-bottom: 20px;
+  line-height: 1.6;
 }
 
 .input-group {
@@ -757,27 +1183,30 @@ export default {
 
 .input-label {
   display: block;
-  font-size: 14px;
-  color: #D4AF37;
+  font-size: 13px;
+  color: #fcd535;
   margin-bottom: 8px;
-  font-weight: 600;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .modal-input {
   width: 100%;
-  padding: 14px 16px;
-  background: #1A1F2A;
-  border: 2px solid rgba(212, 175, 55, 0.2);
+  padding: 12px 16px;
+  background: rgba(212, 175, 55, 0.05);
+  border: 1px solid rgba(212, 175, 55, 0.2);
   border-radius: 12px;
-  font-size: 16px;
-  color: #ffffff;
+  font-size: 14px;
+  color: #eaecef;
   transition: all 0.3s ease;
-  font-family: 'Cairo', sans-serif;
+  font-family: inherit;
 }
 
 .modal-input:focus {
   outline: none;
-  border-color: #D4AF37;
+  border-color: #fcd535;
+  background: rgba(212, 175, 55, 0.08);
   box-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
 }
 
@@ -785,49 +1214,71 @@ export default {
   color: rgba(255, 255, 255, 0.3);
 }
 
-.error-message {
-  color: #ff4b4b;
+.phone-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(212, 175, 55, 0.05);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 12px;
+  padding: 4px 8px;
+}
+
+.country-code {
+  color: #fcd535;
+  font-weight: 700;
   font-size: 14px;
-  margin-top: 10px;
-  text-align: center;
-  background: rgba(255, 75, 75, 0.1);
-  padding: 10px;
+  padding: 8px 12px;
+  background: rgba(212, 175, 55, 0.1);
   border-radius: 8px;
-  border: 1px solid rgba(255, 75, 75, 0.3);
+  white-space: nowrap;
+}
+
+.phone-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 8px 12px;
+}
+
+.error-message {
+  color: #ff6b6b;
+  font-size: 13px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: rgba(255, 107, 107, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 107, 107, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .success-message {
-  color: #4CAF50;
-  font-size: 14px;
-  margin-top: 10px;
-  text-align: center;
-  background: rgba(76, 175, 80, 0.1);
-  padding: 10px;
+  color: #51cf66;
+  font-size: 13px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: rgba(81, 207, 102, 0.1);
   border-radius: 8px;
-  border: 1px solid rgba(76, 175, 80, 0.3);
+  border: 1px solid rgba(81, 207, 102, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .modal-actions {
   display: flex;
   gap: 12px;
-}
-
-.modal-actions .btn {
-  flex: 1;
-}
-
-/* ===== الأزرار ===== */
-.actions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 25px;
+  padding: 24px;
+  border-top: 1px solid rgba(212, 175, 55, 0.1);
 }
 
 .btn {
-  padding: 14px 20px;
-  border-radius: 14px;
-  font-size: 16px;
+  flex: 1;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -835,19 +1286,20 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  width: 100%;
+  gap: 8px;
+  font-family: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  transform: none !important;
 }
 
 .btn-gold {
-  background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
-  color: #0A0C10;
+  background: linear-gradient(135deg, #fcd535 0%, #d4af37 100%);
+  color: #0f1419;
   box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
 }
 
@@ -856,70 +1308,60 @@ export default {
   box-shadow: 0 10px 25px rgba(212, 175, 55, 0.4);
 }
 
-.btn-gold-outline {
+.btn-outline {
   background: transparent;
-  border: 2px solid #D4AF37;
-  color: #D4AF37;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  color: #fcd535;
 }
 
-.btn-gold-outline:hover:not(:disabled) {
-  background: #D4AF37;
-  color: #0A0C10;
-  transform: translateY(-2px);
+.btn-outline:hover:not(:disabled) {
+  background: rgba(212, 175, 55, 0.1);
+  border-color: #fcd535;
 }
 
-.btn-danger {
-  background: rgba(255, 75, 75, 0.1);
-  border: 2px solid #ff4b4b;
-  color: #ff4b4b;
+/* تحسينات للجوال */
+@media (max-width: 768px) {
+  .profile-header {
+    padding: 24px;
+  }
+
+  .header-content {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .user-info-section {
+    padding-top: 0;
+  }
+
+  .username {
+    font-size: 24px;
+  }
+
+  .main-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-content {
+    max-width: 90vw;
+  }
 }
 
-.btn-danger:hover {
-  background: #ff4b4b;
-  color: #ffffff;
-  transform: translateY(-2px);
-}
-
-/* ===== حالات التحميل ===== */
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-  padding: 60px 0;
-}
-
-.gold-spinner {
-  width: 60px;
-  height: 60px;
-  border: 4px solid rgba(212, 175, 55, 0.1);
-  border-top: 4px solid #D4AF37;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.loading-text {
-  color: #D4AF37;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-/* ===== تحسينات للجوال ===== */
 @media (max-width: 480px) {
   .profile-wrapper {
-    padding: 20px 15px;
+    padding: 15px;
+    padding-top: 70px;
+    padding-bottom: 80px;
   }
 
-  .title {
-    font-size: 28px;
-  }
-
-  .profile-box {
-    padding: 20px;
+  .profile-header {
+    padding: 16px;
+    margin-bottom: 20px;
   }
 
   .avatar-container {
@@ -928,69 +1370,35 @@ export default {
   }
 
   .avatar {
-    font-size: 40px;
+    font-size: 48px;
   }
 
   .username {
     font-size: 20px;
   }
 
-  .info-value {
-    font-size: 14px;
-  }
-
-  .balance-value {
-    font-size: 20px;
-  }
-
-  .stats-grid {
-    gap: 10px;
-  }
-
-  .stat-item {
-    padding: 12px;
-  }
-
-  .btn {
-    padding: 12px 15px;
-    font-size: 15px;
+  .section-title {
+    font-size: 16px;
   }
 
   .modal-content {
-    padding: 20px;
+    max-width: 95vw;
+    border-radius: 16px;
+  }
+
+  .modal-header,
+  .modal-body,
+  .modal-actions {
+    padding: 16px;
   }
 
   .modal-title {
-    font-size: 20px;
+    font-size: 16px;
   }
 
-  .modal-actions {
-    flex-direction: column;
+  .btn {
+    padding: 10px 16px;
+    font-size: 12px;
   }
-}
-
-/* ===== تأثيرات إضافية ===== */
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-}
-
-.balance-card {
-  animation: pulse 2s ease-in-out infinite;
-}
-
-/* تخصيص شريط التمرير */
-.info-value::-webkit-scrollbar {
-  height: 4px;
-}
-
-.info-value::-webkit-scrollbar-track {
-  background: #1A1F2A;
-  border-radius: 4px;
-}
-
-.info-value::-webkit-scrollbar-thumb {
-  background: #D4AF37;
-  border-radius: 4px;
 }
 </style>
