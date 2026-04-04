@@ -130,14 +130,72 @@
             <label>اختر الدولة ورقم الهاتف</label>
             <div class="phone-input-box">
               <select v-model="phoneForm.countryCode" class="country-select">
-                <option value="+966">🇸🇦 +966</option>
-                <option value="+971">🇦🇪 +971</option>
-                <option value="+965">🇰🇼 +965</option>
-                <option value="+974">🇶🇦 +974</option>
-                <option value="+973">🇧🇭 +973</option>
-                <option value="+968">🇴🇲 +968</option>
-                <option value="+962">🇯🇴 +962</option>
-                <option value="+20">🇪🇬 +20</option>
+                <option value="">الرمز</option>
+                <option value="+964">🇮🇶 العراق (+964)</option>
+                <option value="+966">🇸🇦 السعودية (+966)</option>
+                <option value="+971">🇦🇪 الإمارات (+971)</option>
+                <option value="+965">🇰🇼 الكويت (+965)</option>
+                <option value="+974">🇶🇦 قطر (+974)</option>
+                <option value="+973">🇧🇭 البحرين (+973)</option>
+                <option value="+968">🇴🇲 عمان (+968)</option>
+                <option value="+962">🇯🇴 الأردن (+962)</option>
+                <option value="+20">🇪🇬 مصر (+20)</option>
+                <option value="+963">🇸🇾 سوريا (+963)</option>
+                <option value="+961">🇱🇧 لبنان (+961)</option>
+                <option value="+218">🇱🇾 ليبيا (+218)</option>
+                <option value="+216">🇹🇳 تونس (+216)</option>
+                <option value="+213">🇩🇿 الجزائر (+213)</option>
+                <option value="+212">🇲🇦 المغرب (+212)</option>
+                <option value="+222">🇲🇷 موريتانيا (+222)</option>
+                <option value="+249">🇸🇩 السودان (+249)</option>
+                <option value="+967">🇾🇪 اليمن (+967)</option>
+                <option value="+970">🇵🇸 فلسطين (+970)</option>
+                <option value="+90">🇹🇷 تركيا (+90)</option>
+                <option value="+44">🇬🇧 بريطانيا (+44)</option>
+                <option value="+1">🇺🇸 أمريكا (+1)</option>
+                <option value="+49">🇩🇪 ألمانيا (+49)</option>
+                <option value="+33">🇫🇷 فرنسا (+33)</option>
+                <option value="+39">🇮🇹 إيطاليا (+39)</option>
+                <option value="+34">🇪🇸 إسبانيا (+34)</option>
+                <option value="+31">🇳🇱 هولندا (+31)</option>
+                <option value="+46">🇸🇪 السويد (+46)</option>
+                <option value="+47">🇳🇴 النرويج (+47)</option>
+                <option value="+45">🇩🇰 الدنمارك (+45)</option>
+                <option value="+358">🇫🇮 فنلندا (+358)</option>
+                <option value="+41">🇨🇭 سويسرا (+41)</option>
+                <option value="+43">🇦🇹 النمسا (+43)</option>
+                <option value="+32">🇧🇪 بلجيكا (+32)</option>
+                <option value="+48">🇵🇱 بولندا (+48)</option>
+                <option value="+420">🇨🇿 التشيك (+420)</option>
+                <option value="+36">🇭🇺 المجر (+36)</option>
+                <option value="+40">🇷🇴 رومانيا (+40)</option>
+                <option value="+359">🇧🇬 بلغاريا (+359)</option>
+                <option value="+30">🇬🇷 اليونان (+30)</option>
+                <option value="+351">🇵🇹 البرتغال (+351)</option>
+                <option value="+7">🇷🇺 روسيا (+7)</option>
+                <option value="+380">🇺🇦 أوكرانيا (+380)</option>
+                <option value="+375">🇧🇾 بيلاروسيا (+375)</option>
+                <option value="+995">🇬🇪 جورجيا (+995)</option>
+                <option value="+994">🇦🇿 أذربيجان (+994)</option>
+                <option value="+374">🇦🇲 أرمينيا (+374)</option>
+                <option value="+998">🇺🇿 أوزبكستان (+998)</option>
+                <option value="+996">🇰🇬 قرغيزستان (+996)</option>
+                <option value="+992">🇹🇯 طاجيكستان (+992)</option>
+                <option value="+993">🇹🇲 تركمانستان (+993)</option>
+                <option value="+86">🇨🇳 الصين (+86)</option>
+                <option value="+91">🇮🇳 الهند (+91)</option>
+                <option value="+92">🇵🇰 باكستان (+92)</option>
+                <option value="+93">🇦🇫 أفغانستان (+93)</option>
+                <option value="+94">🇱🇰 سريلانكا (+94)</option>
+                <option value="+95">🇲🇲 ميانمار (+95)</option>
+                <option value="+66">🇹🇭 تايلاند (+66)</option>
+                <option value="+84">🇻🇳 فيتنام (+84)</option>
+                <option value="+60">🇲🇾 ماليزيا (+60)</option>
+                <option value="+65">🇸🇬 سنغافورة (+65)</option>
+                <option value="+62">🇮🇩 إندونيسيا (+62)</option>
+                <option value="+63">🇵🇭 الفلبين (+63)</option>
+                <option value="+82">🇰🇷 كوريا الجنوبية (+82)</option>
+                <option value="+81">🇯🇵 اليابان (+81)</option>
               </select>
               <input type="tel" v-model="phoneForm.phone" placeholder="رقم الهاتف" class="gold-input-field">
             </div>
@@ -188,7 +246,7 @@
 
 <script>
 import { auth, db } from "../firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { onAuthStateChanged, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 
 export default {
@@ -205,7 +263,7 @@ export default {
       phoneError: "",
       phoneSuccess: "",
       passwordForm: { currentPassword: "", newPassword: "", confirmPassword: "" },
-      phoneForm: { countryCode: "+966", phone: "", password: "" },
+      phoneForm: { countryCode: "", phone: "", password: "" },
       userData: { email: "", phoneNumber: "", uid: "", createdAt: "", balance: 0, username: "", referralCode: "", vipLevel: 0, totalReferrals: 0 }
     };
   },
@@ -223,22 +281,43 @@ export default {
       onAuthStateChanged(auth, async (user) => {
         if (!user) { this.loading = false; this.$router.push("/login"); return; }
         try {
-          const snap = await getDoc(doc(db, "users", user.uid));
-          if (snap.exists()) {
-            const data = snap.data();
+          // 1. جلب بيانات المستخدم الأساسية
+          const userSnap = await getDoc(doc(db, "users", user.uid));
+          if (userSnap.exists()) {
+            const data = userSnap.data();
+            
+            // 2. جلب مستوى VIP من الـ subcollection إذا لم يكن موجوداً في المستند الرئيسي
+            let vipLevel = data.vipLevel || 0;
+            if (!vipLevel) {
+              const vipSnap = await getDocs(collection(db, "users", user.uid, "vips"));
+              if (!vipSnap.empty) {
+                // نأخذ أعلى مستوى VIP مفعل
+                const vips = vipSnap.docs.map(d => d.data());
+                vipLevel = Math.max(...vips.map(v => v.level || 0));
+              }
+            }
+
+            // 3. جلب عدد الإحالات الفعلي من مجموعة المستخدمين
+            let totalReferrals = data.totalReferrals || 0;
+            if (!totalReferrals && data.referralCode) {
+              const q = query(collection(db, "users"), where("referredBy", "==", data.referralCode));
+              const referralSnap = await getDocs(q);
+              totalReferrals = referralSnap.size;
+            }
+
             this.userData = {
-              email: data.email || "",
+              email: data.email || user.email || "",
               phoneNumber: data.phoneNumber || "",
               uid: user.uid,
               createdAt: data.createdAt || user.metadata.creationTime,
               balance: data.balance ?? 0,
               username: data.username || (data.email ? data.email.split("@")[0] : "مستخدم"),
               referralCode: data.referralCode || user.uid.substring(0, 6),
-              vipLevel: data.vipLevel || 0,
-              totalReferrals: data.totalReferrals || 0,
+              vipLevel: vipLevel,
+              totalReferrals: totalReferrals,
             };
           }
-        } catch (err) { console.error(err); }
+        } catch (err) { console.error("Error loading profile:", err); }
         this.loading = false;
       });
     },
@@ -262,13 +341,14 @@ export default {
     openPhoneModal() { this.showPhoneModal = true; this.phoneError = ""; this.phoneSuccess = ""; },
     closePhoneModal() { this.showPhoneModal = false; },
     async updatePhoneNumber() {
+      if (!this.phoneForm.countryCode) { this.phoneError = "الرجاء اختيار رمز الدولة"; return; }
       if (!this.phoneForm.phone) { this.phoneError = "الرجاء إدخال رقم الهاتف"; return; }
       this.phoneLoading = true;
       try {
         const user = auth.currentUser;
         const credential = EmailAuthProvider.credential(user.email, this.phoneForm.password);
         await reauthenticateWithCredential(user, credential);
-        const fullPhone = this.phoneForm.countryCode + this.phoneForm.phone;
+        const fullPhone = this.phoneForm.countryCode + this.phoneForm.phone.replace(/\D/g, '');
         await updateDoc(doc(db, "users", user.uid), { phoneNumber: fullPhone });
         this.userData.phoneNumber = fullPhone;
         this.phoneSuccess = "تم الربط بنجاح ✓";
@@ -294,7 +374,7 @@ export default {
 }
 
 .profile-container {
-  max-width: 450px; /* تحديد العرض للسيطرة على الحقول */
+  max-width: 450px;
   margin: 0 auto;
 }
 
@@ -387,7 +467,7 @@ export default {
   font-size: 14px;
   outline: none;
   transition: all 0.3s ease;
-  width: 100%; /* ضمان عدم الخروج عن السيطرة */
+  width: 100%;
 }
 
 .gold-input-field:focus {
@@ -539,13 +619,13 @@ export default {
 }
 
 .phone-input-box {
-  display: flex; gap: 8px;
+  display: flex; flex-direction: column; gap: 10px;
 }
 
 .country-select {
   background: #111111; border: 1px solid #333333; border-radius: 10px;
   padding: 10px; color: #D4AF37; font-weight: bold; outline: none;
-  font-size: 13px;
+  font-size: 13px; width: 100%;
 }
 
 .error-txt { color: #ff4444; font-size: 12px; margin-bottom: 10px; text-align: center; }
