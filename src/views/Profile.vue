@@ -76,7 +76,7 @@
         <div class="gold-field balance-field">
           <label><i class="fas fa-wallet"></i> الرصيد المتاح (USDT)</label>
           <div class="field-input-group">
-            <input type="text" :value="userData.balance.toFixed(2)" readonly class="gold-input-field balance-text">
+            <input type="text" :value="Number(userData.balance).toFixed(2)" readonly class="gold-input-field balance-text">
             <span class="currency-tag">USDT</span>
           </div>
         </div>
@@ -270,7 +270,14 @@ export default {
   computed: {
     formattedDate() {
       if (!this.userData.createdAt) return "غير متوفر";
-      let date = this.userData.createdAt.toDate ? this.userData.createdAt.toDate() : new Date(this.userData.createdAt);
+      let date;
+      if (this.userData.createdAt.toDate) {
+        date = this.userData.createdAt.toDate();
+      } else if (this.userData.createdAt.seconds) {
+        date = new Date(this.userData.createdAt.seconds * 1000);
+      } else {
+        date = new Date(this.userData.createdAt);
+      }
       return isNaN(date.getTime()) ? "غير متوفر" : date.toLocaleDateString("ar-EG", { year: 'numeric', month: 'long', day: 'numeric' });
     },
     referralLink() { return `${window.location.origin}/register?ref=${this.userData.referralCode}`; }
@@ -281,30 +288,12 @@ export default {
       onAuthStateChanged(auth, async (user) => {
         if (!user) { this.loading = false; this.$router.push("/login"); return; }
         try {
-          // 1. جلب بيانات المستخدم الأساسية
+          // جلب البيانات الأساسية فوراً
           const userSnap = await getDoc(doc(db, "users", user.uid));
           if (userSnap.exists()) {
             const data = userSnap.data();
             
-            // 2. جلب مستوى VIP من الـ subcollection إذا لم يكن موجوداً في المستند الرئيسي
-            let vipLevel = data.vipLevel || 0;
-            if (!vipLevel) {
-              const vipSnap = await getDocs(collection(db, "users", user.uid, "vips"));
-              if (!vipSnap.empty) {
-                // نأخذ أعلى مستوى VIP مفعل
-                const vips = vipSnap.docs.map(d => d.data());
-                vipLevel = Math.max(...vips.map(v => v.level || 0));
-              }
-            }
-
-            // 3. جلب عدد الإحالات الفعلي من مجموعة المستخدمين
-            let totalReferrals = data.totalReferrals || 0;
-            if (!totalReferrals && data.referralCode) {
-              const q = query(collection(db, "users"), where("referredBy", "==", data.referralCode));
-              const referralSnap = await getDocs(q);
-              totalReferrals = referralSnap.size;
-            }
-
+            // تعيين البيانات الأساسية أولاً لضمان ظهورها
             this.userData = {
               email: data.email || user.email || "",
               phoneNumber: data.phoneNumber || "",
@@ -313,11 +302,28 @@ export default {
               balance: data.balance ?? 0,
               username: data.username || (data.email ? data.email.split("@")[0] : "مستخدم"),
               referralCode: data.referralCode || user.uid.substring(0, 6),
-              vipLevel: vipLevel,
-              totalReferrals: totalReferrals,
+              vipLevel: data.vipLevel || 0,
+              totalReferrals: data.totalReferrals || 0,
             };
+
+            // محاولة جلب الـ VIP والإحالات بشكل إضافي (اختياري)
+            try {
+              // جلب VIP من الـ subcollection
+              const vipSnap = await getDocs(collection(db, "users", user.uid, "vips"));
+              if (!vipSnap.empty) {
+                const vips = vipSnap.docs.map(d => d.data());
+                this.userData.vipLevel = Math.max(...vips.map(v => v.level || 0));
+              }
+
+              // جلب عدد الإحالات الفعلي
+              if (this.userData.referralCode) {
+                const q = query(collection(db, "users"), where("referredBy", "==", this.userData.referralCode));
+                const referralSnap = await getDocs(q);
+                this.userData.totalReferrals = referralSnap.size;
+              }
+            } catch (e) { console.warn("Optional data fetch failed:", e); }
           }
-        } catch (err) { console.error("Error loading profile:", err); }
+        } catch (err) { console.error("Critical error loading profile:", err); }
         this.loading = false;
       });
     },
