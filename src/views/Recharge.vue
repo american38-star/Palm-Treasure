@@ -1,569 +1,670 @@
 <template>
-  <div class="container">
-    <div class="card">
-      <!-- الشعار والعنوان -->
-      <div class="brand-header">
-        <img src="/favicon.svg" alt="Palm Treasure Logo" class="logo" />
-        <h1 class="brand-title">Palm Treasure</h1>
+  <div class="recharge-page">
+    <!-- Header -->
+    <div class="top-nav">
+      <div class="nav-left" @click="$router.back()">
+        <i class="fas fa-arrow-right"></i>
       </div>
-      <h2 class="title">تسجيل الدخول</h2>
-      <!-- اختيار نوع الدخول -->
-      <div class="login-type-selector">
-        <button 
-          class="type-btn" 
-          :class="{ active: loginType === 'email' }"
-          @click="loginType = 'email'"
-        >
-          <i class="fas fa-envelope"></i>
-          البريد الإلكتروني
-        </button>
-        <button 
-          class="type-btn" 
-          :class="{ active: loginType === 'phone' }"
-          @click="loginType = 'phone'"
-        >
-          <i class="fas fa-phone"></i>
-          رقم الهاتف
-        </button>
+      <div class="nav-center">إيداع USDT</div>
+      <div class="nav-right" @click="$router.push('/transactions')">
+        <i class="fas fa-history"></i>
       </div>
-      <!-- تسجيل الدخول بالبريد الإلكتروني -->
-      <template v-if="loginType === 'email'">
-        <label class="label">البريد الإلكتروني</label>
-        <input
-          type="email"
-          v-model="email"
-          placeholder="البريد الإلكتروني"
-          class="input"
-          @keyup.enter="loginUser"
-        />
-      </template>
-      <!-- تسجيل الدخول برقم الهاتف -->
-      <template v-if="loginType === 'phone'">
-        <label class="label">رقم الهاتف مع رمز الدولة</label>
-        <div class="phone-input-container">
-          <select v-model="countryCode" class="country-select">
-            <option value="">اختر الرمز</option>
-            <option value="+964">🇮🇶 العراق (+964)</option>
-            <option value="+966">🇸🇦 السعودية (+966)</option>
-            <option value="+971">🇦🇪 الإمارات (+971)</option>
-            <option value="+20">🇪🇬 مصر (+20)</option>
-            <option value="+962">🇯🇴 الأردن (+962)</option>
-            <option value="+965">🇰🇼 الكويت (+965)</option>
-            <option value="+974">🇶🇦 قطر (+974)</option>
-            <option value="+973">🇧🇭 البحرين (+973)</option>
-            <option value="+968">🇴🇲 عمان (+968)</option>
-            <option value="+212">🇲🇦 المغرب (+212)</option>
-            <option value="+213">🇩🇿 الجزائر (+213)</option>
-            <option value="+216">🇹🇳 تونس (+216)</option>
-            <option value="+218">🇱🇾 ليبيا (+218)</option>
-            <option value="+961">🇱🇧 لبنان (+961)</option>
-            <option value="+963">🇸🇾 سوريا (+963)</option>
-            <option value="+970">🇵🇸 فلسطين (+970)</option>
-            <option value="+249">🇸🇩 السودان (+249)</option>
-            <option value="+967">🇾🇪 اليمن (+967)</option>
-            <option value="+222">🇲🇷 موريتانيا (+222)</option>
-            <option value="+252">🇸🇴 الصومال (+252)</option>
-            <option value="+253">🇩🇯 جيبوتي (+253)</option>
-            <option value="+269">🇰🇲 جزر القمر (+269)</option>
-            <option value="+1">🇺🇸 أمريكا (+1)</option>
-            <option value="+44">🇬🇧 بريطانيا (+44)</option>
-            <option value="+33">🇫🇷 فرنسا (+33)</option>
-            <option value="+49">🇩🇪 ألمانيا (+49)</option>
-            <option value="+39">🇮🇹 إيطاليا (+39)</option>
-            <option value="+34">🇪🇸 إسبانيا (+34)</option>
-            <option value="+7">🇷🇺 روسيا (+7)</option>
-            <option value="+86">🇨🇳 الصين (+86)</option>
-            <option value="+91">🇮🇳 الهند (+9 India)</option>
-            <option value="+92">🇵🇰 باكستان (+92)</option>
-            <option value="+90">🇹🇷 تركيا (+90)</option>
-            <option value="+60">🇲🇾 ماليزيا (+60)</option>
-            <option value="+62">🇮🇩 إندونيسيا (+62)</option>
-            <option value="+63">🇵🇭 الفلبين (+63)</option>
-            <option value="+82">🇰🇷 كوريا الجنوبية (+82)</option>
-            <option value="+81">🇯ﭘ اليابان (+81)</option>
-          </select>
-          <input
-            type="tel"
-            v-model="phoneNumber"
-            placeholder="رقم الهاتف"
-            class="phone-input"
-            :disabled="!countryCode"
-            @input="validatePhoneNumber"
-            @keyup.enter="loginUser"
-          />
-        </div>
-        <span v-if="phoneError" class="error-message">{{ phoneError }}</span>
-      </template>
-      <!-- كلمة المرور -->
-      <label class="label">كلمة المرور</label>
-      <div class="input-box">
-        <input
-          :type="showPassword ? 'text' : 'password'"
-          v-model="password"
-          placeholder="كلمة المرور"
-          class="input"
-          @keyup.enter="loginUser"
-        />
-        <span class="toggle" @click="togglePassword">
-          {{ showPassword ? "إخفاء" : "إظهار" }}
-        </span>
-      </div>
-      <!-- زر تسجيل الدخول مع Loader -->
-      <button class="btn" @click="loginUser" :disabled="loading">
-        <span v-if="!loading">تسجيل الدخول</span>
-        <span v-else class="loader"></span>
-      </button>
-      <!-- تسجيل الدخول عبر جوجل -->
-      <div class="divider">
-        <span>أو</span>
-      </div>
-      
-      <button class="google-btn" @click="loginWithGoogle" :disabled="loading">
-        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
-        تسجيل الدخول عبر جوجل
-      </button>
-      <p class="link">
-        ليس لديك حساب؟
-        <router-link to="/register">إنشاء حساب</router-link>
-      </p>
     </div>
-  </div>
-  <!-- Popup إعلان -->
-  <div id="companyAd" class="ad-overlay" v-if="showAd">
-    <div class="ad-box">
-      <h2>✨ إعلان ✨</h2>
-      <div class="ad-content">
-        <p>🎉🎉🎉🎉 مرحبا بالجميع! تأسست Palm Treasure في سنغافورة في 20 أغسطس 2021 ومقرها حاليًا في منطقة الأعمال المركزية في سنغافورة. نحن شركة استثمار في التجارة الإلكترونية مع فريق تقني قوي وقوة مالية قوية.
-          <br><br>
-          يتعاون Palm Treasure مع عشرات شركات التجارة الإلكترونية مثل Amazon و eBay و Tiktok و Aliexpress و Alibaba و Shopee ، إلخ. لمساعدة التجار على زيادة مبيعات المنتجات الخاصة بهم ، ويمكننا أيضًا تحقيق أرباح منه. عندما تتصاعد على منصتنا ، تشارك في مساعدة البائعين على زيادة المبيعات ، بحيث يمكنك أيضًا كسب المال منها. حتى يتمكن الجميع من إعادة الشحن بثقة ، هذا مشروع جيد لجني الأموال. 🔇🔇🔇
-          <br><br>
-          👍1: الحد الأدنى لمبلغ إعادة الشحن: 12 USDT ، الحد الأدنى للسحب النقدي: 3 USDT
-          <br>
-          💰2: تستثمر المنصة على مستوى العالم ، لذا فإن الاستثمار يدعم فقط إعادة شحن العملة المشفرة.
-          <br>
-          🌈3: وقت إعادة تعيين المهمة هو الساعة 12 ظهراً في سنغافورة. يمكنك الحصول على الربح من خلال استكمال أوامر التاجر كل يوم (مرة واحدة في اليوم ، صالحة لمدة 365 يومًا).
-          <br>
-          🕯4: يمكنك سحب النقد مرة واحدة فقط في اليوم ، لا يوجد حد زمني ، يمكنك سحب النقد في أي وقت ، ووقت الانسحاب هو 1 إلى 5 دقائق ، والحد الأدنى لمبلغ السحب هو 3 USDT ، ولا يوجد حد أعلى.
-          <br><br>
-          عندما يصل مبلغ إعادة الشحن إلى المبلغ المقابل التالي ، سيتم ترقية الحساب تلقائيًا إلى VIP. كلما زادت مبلغ إعادة الشحن ، كلما زاد عدد USDT في اليوم!
-        </p>
+
+    <div class="main-content">
+      <!-- Asset Display -->
+      <div class="asset-card">
+        <div class="asset-main">
+          <img src="https://cryptologos.cc/logos/tether-usdt-logo.png" alt="USDT" class="coin-logo">
+          <div class="asset-text">
+            <span class="coin-symbol">USDT</span>
+            <span class="coin-name">TetherUS</span>
+          </div>
+        </div>
+        <div class="balance-info">
+          <span class="label">الرصيد الحالي</span>
+          <span class="value">0.00 USDT</span>
+        </div>
       </div>
-      <button @click="closeAd" class="ad-btn">أنا أعرف</button>
+
+      <!-- Network Selector Dropdown -->
+      <div class="input-section">
+        <label class="section-label">الشبكة</label>
+        <div class="dropdown-container" @click="toggleDropdown" v-click-outside="closeDropdown">
+          <div class="dropdown-selected" :class="{ 'is-open': isDropdownOpen }">
+            <div class="selected-info">
+              <img :src="getNetworkIcon(network)" class="net-icon" alt="">
+              <span class="net-name">{{ network }}</span>
+            </div>
+            <i class="fas fa-chevron-down arrow-icon"></i>
+          </div>
+          
+          <transition name="slide-fade">
+            <div v-if="isDropdownOpen" class="dropdown-list">
+              <div 
+                v-for="(addr, net) in addresses" 
+                :key="net" 
+                class="dropdown-item"
+                :class="{ 'active': network === net }"
+                @click.stop="selectNetwork(net)"
+              >
+                <div class="item-left">
+                  <img :src="getNetworkIcon(net)" class="net-icon" alt="">
+                  <div class="item-text">
+                    <span class="net-title">{{ net }}</span>
+                    <span class="net-desc">{{ getNetworkDesc(net) }}</span>
+                  </div>
+                </div>
+                <i v-if="network === net" class="fas fa-check"></i>
+              </div>
+            </div>
+          </transition>
+        </div>
+      </div>
+
+      <!-- Deposit Details Card -->
+      <div class="deposit-card">
+        <div class="qr-section">
+          <div class="qr-frame">
+            <img :src="getQr(network)" :alt="network" class="qr-code">
+            <div v-if="loading" class="qr-loader">
+              <i class="fas fa-spinner fa-spin"></i>
+            </div>
+          </div>
+          <p class="qr-tip">حفظ رمز QR</p>
+        </div>
+
+        <div class="address-section">
+          <div class="label-row">
+            <span class="addr-label">عنوان الإيداع</span>
+            <span class="network-tag">{{ network }}</span>
+          </div>
+          <div class="address-display">
+            <div class="address-text">{{ getAddress(network) }}</div>
+            <button class="copy-icon-btn" @click="copyAddress">
+              <i :class="copied ? 'fas fa-check' : 'far fa-copy'"></i>
+            </button>
+          </div>
+          <transition name="fade">
+            <div v-if="copied" class="copy-toast">تم النسخ بنجاح</div>
+          </transition>
+        </div>
+      </div>
+
+      <!-- Form Inputs -->
+      <div class="form-section">
+        <div class="input-group">
+          <label>المبلغ</label>
+          <div class="input-field">
+            <input type="number" v-model.number="amount" placeholder="الحد الأدنى 10">
+            <span class="suffix">USDT</span>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label>معرف العملية (TxID)</label>
+          <div class="input-field">
+            <input type="text" v-model="txid" placeholder="أدخل Hash العملية">
+          </div>
+        </div>
+
+        <button class="main-btn" @click="submit" :disabled="loading">
+          <span v-if="!loading">تأكيد الإيداع</span>
+          <i v-else class="fas fa-circle-notch fa-spin"></i>
+        </button>
+
+        <transition name="fade">
+          <div v-if="message" :class="['alert', messageType]">
+            <i :class="messageType === 'error' ? 'fas fa-times-circle' : 'fas fa-check-circle'"></i>
+            {{ message }}
+          </div>
+        </transition>
+      </div>
+
+      <!-- Instructions -->
+      <div class="tips-box">
+        <div class="tips-header">
+          <i class="fas fa-lightbulb"></i>
+          <span>نصائح هامة</span>
+        </div>
+        <ul class="tips-list">
+          <li>يرجى التأكد من اختيار شبكة <strong>{{ network }}</strong> عند التحويل.</li>
+          <li>سيتم إضافة الرصيد تلقائياً بعد تأكيد الشبكة.</li>
+          <li>لا تقم بإيداع أي عملات أخرى غير USDT لهذا العنوان.</li>
+        </ul>
+      </div>
     </div>
   </div>
 </template>
+
 <script>
-import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { db, googleProvider } from "../firebase";
-import router from "../router";
+import { getAuth } from "firebase/auth";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "../firebase";
+
 export default {
-  data() {
-    return {
-      loginType: 'email', // 'email' أو 'phone'
-      email: "",
-      countryCode: "",
-      phoneNumber: "",
-      fullPhoneNumber: "",
-      password: "",
-      showPassword: false,
-      loading: false,
-      showAd: false,
-      adTimer: null,
-      phoneError: "",
-    };
-  },
-  mounted() {
-    document.addEventListener('keydown', this.handleEscKey);
-  },
-  beforeUnmount() {
-    document.removeEventListener('keydown', this.handleEscKey);
-    if (this.adTimer) {
-      clearTimeout(this.adTimer);
+  name: "Recharge",
+  directives: {
+    'click-outside': {
+      beforeMount(el, binding) {
+        el.clickOutsideEvent = (event) => {
+          if (!(el === event.target || el.contains(event.target))) {
+            binding.value();
+          }
+        };
+        document.addEventListener('click', el.clickOutsideEvent);
+      },
+      unmounted(el) {
+        document.removeEventListener('click', el.clickOutsideEvent);
+      }
     }
   },
+  data() {
+    return {
+      network: "TRC20",
+      isDropdownOpen: false,
+      amount: null,
+      txid: "",
+      copied: false,
+      loading: false,
+      message: "",
+      messageType: "info",
+      addresses: {
+        TRC20: "TC9YKMxacLkvJLA6JbQVGofnjumTqkaUjD",
+        ERC20: "0x17e488f699CC96E4dd05e4E2c869789534E2F634",
+        BEP20: "0x17e488f699CC96E4dd05e4E2c869789534E2F634",
+        SOL: "GgVi3xNRUQeJrNqt8Hg3eBJx5B8yuyggjNvvHxxKVnTR",
+      },
+      userEmail: "",
+      userId: "",
+    };
+  },
+  created() {
+    const auth = getAuth();
+    auth.onAuthStateChanged((u) => {
+      if (u) {
+        this.userEmail = u.email;
+        this.userId = u.uid;
+      }
+    });
+  },
   methods: {
-    togglePassword() {
-      this.showPassword = !this.showPassword;
+    toggleDropdown() {
+      this.isDropdownOpen = !this.isDropdownOpen;
     },
-    validateEmail(email) {
-      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      return re.test(email);
+    closeDropdown() {
+      this.isDropdownOpen = false;
     },
-    validatePhoneNumber() {
-      if (!this.countryCode) {
-        this.phoneError = "الرجاء اختيار رمز الدولة";
-        return false;
-      }
-      if (!this.phoneNumber) {
-        this.phoneError = "الرجاء إدخال رقم الهاتف";
-        return false;
-      }
-      const cleanPhone = this.phoneNumber.replace(/[^0-9]/g, '');
-      if (cleanPhone.length < 7 || cleanPhone.length > 15) {
-        this.phoneError = "رقم الهاتف يجب أن يكون بين 7 و 15 رقم";
-        return false;
-      }
-      this.fullPhoneNumber = this.countryCode + cleanPhone;
-      this.phoneError = "";
-      return true;
+    selectNetwork(net) {
+      this.network = net;
+      this.isDropdownOpen = false;
     },
-    generatePhoneEmail(phoneNumber) {
-      const cleanPhone = phoneNumber.replace(/\+/g, '');
-      return `${cleanPhone}@phone.app`;
+    getQr(net) {
+      return `/qr/${net}.png`;
     },
-    getErrorMessage(error) {
-      const errorMessages = {
-        'auth/user-not-found': 'رقم الهاتف أو البريد الإلكتروني غير مسجل',
-        'auth/wrong-password': 'كلمة المرور غير صحيحة',
-        'auth/invalid-email': 'البريد الإلكتروني غير صالح',
-        'auth/user-disabled': 'هذا الحساب معطل',
-        'auth/popup-closed-by-user': 'تم إغلاق نافذة تسجيل الدخول',
-        'auth/cancelled-by-user': 'تم إلغاء العملية'
+    getAddress(net) {
+      return this.addresses[net] || "";
+    },
+    getNetworkIcon(net) {
+      const icons = {
+        TRC20: "https://cryptologos.cc/logos/tron-trx-logo.png",
+        ERC20: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+        BEP20: "https://cryptologos.cc/logos/bnb-bnb-logo.png",
+        SOL: "https://cryptologos.cc/logos/solana-sol-logo.png"
       };
-      return errorMessages[error.code] || 'حدث خطأ غير متوقع: ' + error.message;
+      return icons[net] || "";
     },
-    handleEscKey(event) {
-      if (event.key === 'Escape' && this.showAd) {
-        this.closeAd();
-      }
+    getNetworkDesc(net) {
+      const descs = {
+        TRC20: "Tron Network (TRX)",
+        ERC20: "Ethereum Network (ETH)",
+        BEP20: "BNB Smart Chain (BSC)",
+        SOL: "Solana Network"
+      };
+      return descs[net] || "";
     },
-    async loginWithGoogle() {
-      this.loading = true;
-      const auth = getAuth();
+    async copyAddress() {
+      const text = this.getAddress(this.network);
       try {
-        const result = await signInWithPopup(auth, googleProvider);
-        const user = result.user;
-        
-        // التحقق من وجود المستخدم في Firestore أو إنشاؤه
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        
-        if (!userDoc.exists()) {
-          // إنشاء مستخدم جديد إذا لم يكن موجوداً
-          await setDoc(doc(db, "users", user.uid), {
-            uid: user.uid,
-            email: user.email,
-            displayName: user.displayName,
-            photoURL: user.photoURL,
-            balance: 0,
-            vipLevel: 0,
-            createdAt: serverTimestamp(),
-            referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
-            invitedBy: ""
-          });
-        }
-        
-        // توجيه الأدمن لصفحة الإدارة
-        const admins = ["azad.333388@gmail.com", "admin2@gmail.com", "owner@gmail.com"];
-        if (admins.includes(user.email)) {
-          router.push("/admin");
-        } else {
-          router.push("/home");
-        }
-      } catch (error) {
-        console.error("Google Login Error:", error);
-        alert(this.getErrorMessage(error));
-      } finally {
-        this.loading = false;
+        await navigator.clipboard.writeText(text);
+        this.copied = true;
+        setTimeout(() => (this.copied = false), 2000);
+      } catch (err) {
+        console.error("Copy failed");
       }
     },
-    async loginUser() {
-      let loginEmail = this.email;
-      
-      if (this.loginType === 'phone') {
-        if (!this.validatePhoneNumber()) return;
-        loginEmail = this.generatePhoneEmail(this.fullPhoneNumber);
-      } else {
-        if (!this.validateEmail(this.email)) {
-          alert("الرجاء إدخال بريد إلكتروني صحيح");
-          return;
-        }
-      }
-
-      if (this.password.length < 6) {
-        alert("كلمة المرور يجب أن تكون 6 أحرف على الأقل");
+    async submit() {
+      if (!this.userId) {
+        this.message = "يرجى تسجيل الدخول";
+        this.messageType = "error";
         return;
       }
-
+      if (!this.amount || this.amount < 10) {
+        this.message = "الحد الأدنى للإيداع 10 USDT";
+        this.messageType = "error";
+        return;
+      }
+      if (!this.txid) {
+        this.message = "يرجى إدخال TxID";
+        this.messageType = "error";
+      }
       this.loading = true;
-      const auth = getAuth();
       try {
-        const userCredential = await signInWithEmailAndPassword(auth, loginEmail, this.password);
-        const user = userCredential.user;
-        
-        // توجيه الأدمن لصفحة الإدارة
-        const admins = ["azad.333388@gmail.com", "admin2@gmail.com", "owner@gmail.com"];
-        if (admins.includes(user.email)) {
-          router.push("/admin");
-        } else {
-          router.push("/home");
-        }
-      } catch (error) {
-        alert(this.getErrorMessage(error));
+        await addDoc(collection(db, "payments"), {
+          userId: this.userId,
+          email: this.userEmail,
+          amount: this.amount,
+          txid: this.txid,
+          network: this.network,
+          status: "pending",
+          createdAt: serverTimestamp(),
+        });
+        await addDoc(collection(db, "transactions"), {
+          userId: this.userId,
+          email: this.userEmail,
+          type: "recharge",
+          amount: this.amount,
+          network: this.network,
+          txid: this.txid,
+          status: "pending",
+          createdAt: serverTimestamp(),
+        });
+        this.message = "تم إرسال الطلب بنجاح";
+        this.messageType = "success";
+        this.amount = null;
+        this.txid = "";
+      } catch (e) {
+        this.message = "حدث خطأ في الإرسال";
+        this.messageType = "error";
       } finally {
         this.loading = false;
       }
-    },
-    closeAd() {
-      this.showAd = false;
     }
   }
 };
 </script>
+
 <style scoped>
-/* التنسيقات العامة */
-.container {
+.recharge-page {
   min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #0A0C10;
-  padding: 20px;
+  background: #0b0e11;
+  color: #eaecef;
   direction: rtl;
+  font-family: 'Cairo', sans-serif;
 }
-.card {
-  background: #11151C;
-  width: 100%;
-  max-width: 380px; /* تصغير عرض البطاقة */
-  padding: 30px 25px;
+
+/* Top Nav */
+.top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 20px;
+  background: #181a20;
+  border-bottom: 1px solid #2b2f36;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.nav-center {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.nav-left, .nav-right {
+  font-size: 20px;
+  cursor: pointer;
+  color: #848e9c;
+}
+
+.main-content {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Asset Card */
+.asset-card {
+  background: #1e2329;
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.asset-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.coin-logo {
+  width: 40px;
+  height: 40px;
+}
+
+.coin-symbol {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.coin-name {
+  font-size: 12px;
+  color: #848e9c;
+}
+
+.balance-info {
+  text-align: left;
+}
+
+.balance-info .label {
+  display: block;
+  font-size: 12px;
+  color: #848e9c;
+}
+
+.balance-info .value {
+  font-weight: 700;
+  color: #fcd535;
+}
+
+/* Dropdown */
+.input-section {
+  margin-bottom: 20px;
+}
+
+.section-label {
+  display: block;
+  font-size: 14px;
+  color: #848e9c;
+  margin-bottom: 8px;
+}
+
+.dropdown-container {
+  position: relative;
+  cursor: pointer;
+}
+
+.dropdown-selected {
+  background: #2b2f36;
+  border-radius: 12px;
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.dropdown-selected.is-open {
+  border-color: #fcd535;
+}
+
+.selected-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.net-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.net-name {
+  font-weight: 600;
+}
+
+.dropdown-list {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: #2b2f36;
+  border-radius: 12px;
+  overflow: hidden;
+  z-index: 100;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  border: 1px solid #3b3f46;
+}
+
+.dropdown-item {
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.2s;
+}
+
+.dropdown-item:hover {
+  background: #3b3f46;
+}
+
+.dropdown-item.active {
+  background: rgba(252, 213, 53, 0.1);
+}
+
+.item-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.net-title {
+  display: block;
+  font-weight: 600;
+}
+
+.net-desc {
+  font-size: 11px;
+  color: #848e9c;
+}
+
+.dropdown-item i {
+  color: #fcd535;
+}
+
+/* Deposit Card */
+.deposit-card {
+  background: #181a20;
   border-radius: 20px;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(212, 175, 55, 0.1);
+  padding: 25px;
+  border: 1px solid #2b2f36;
+  margin-bottom: 20px;
 }
-/* الشعار والعنوان */
-.brand-header {
+
+.qr-section {
   text-align: center;
   margin-bottom: 25px;
 }
-.logo {
-  width: 60px;
-  height: 60px;
+
+.qr-frame {
+  display: inline-block;
+  background: #fff;
+  padding: 10px;
+  border-radius: 12px;
+  position: relative;
+}
+
+.qr-code {
+  width: 150px;
+  height: 150px;
+  display: block;
+}
+
+.qr-tip {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #848e9c;
+}
+
+.address-section {
+  background: #2b2f36;
+  border-radius: 12px;
+  padding: 15px;
+  position: relative;
+}
+
+.label-row {
+  display: flex;
+  justify-content: space-between;
   margin-bottom: 10px;
 }
-.brand-title {
-  color: #D4AF37;
-  font-size: 22px;
-  font-weight: 800;
-  margin: 0;
-  letter-spacing: 1px;
+
+.addr-label {
+  font-size: 12px;
+  color: #848e9c;
 }
-.title {
-  color: #ffffff;
-  text-align: center;
-  font-size: 20px;
-  margin-bottom: 25px;
-  font-weight: 600;
+
+.network-tag {
+  font-size: 10px;
+  background: rgba(252, 213, 53, 0.1);
+  color: #fcd535;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 700;
 }
-/* اختيار نوع الدخول */
-.login-type-selector {
+
+.address-display {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 10px;
-  margin-bottom: 20px;
-  background: #1A1F2A;
-  padding: 5px;
-  border-radius: 12px;
 }
-.type-btn {
-  flex: 1;
-  padding: 10px;
-  border: none;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.6);
-  cursor: pointer;
-  border-radius: 8px;
+
+.address-text {
+  font-family: monospace;
   font-size: 13px;
-  font-weight: 600;
-  transition: all 0.3s ease;
+  word-break: break-all;
+  color: #eaecef;
+  line-height: 1.4;
+}
+
+.copy-icon-btn {
+  background: none;
+  border: none;
+  color: #fcd535;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.copy-toast {
+  position: absolute;
+  bottom: -25px;
+  right: 15px;
+  font-size: 11px;
+  color: #0ecb81;
+}
+
+/* Form */
+.form-section {
+  margin-bottom: 30px;
+}
+
+.input-group {
+  margin-bottom: 15px;
+}
+
+.input-group label {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: #848e9c;
+}
+
+.input-field {
+  background: #2b2f36;
+  border-radius: 12px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  padding: 0 15px;
+  border: 1px solid transparent;
 }
-.type-btn.active {
-  background: #D4AF37;
-  color: #0A0C10;
+
+.input-field:focus-within {
+  border-color: #fcd535;
 }
-.label {
-  display: block;
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 8px;
-  font-size: 13px;
-  font-weight: 500;
-}
-/* حقول الإدخال المصغرة */
-.input, .country-select, .phone-input {
-  width: 100%;
-  padding: 10px 12px; /* تصغير الحشو */
-  margin-bottom: 15px;
-  border-radius: 10px;
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  background: #1A1F2A;
-  color: #ffffff;
-  font-size: 14px;
-  transition: all 0.3s ease;
-  box-sizing: border-box;
-}
-.phone-input-container {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 15px;
-}
-.country-select {
-  width: 120px;
-  margin-bottom: 0;
-}
-.phone-input {
-  margin-bottom: 0;
-}
-.input:focus, .country-select:focus, .phone-input:focus {
-  outline: none;
-  border-color: #D4AF37;
-  background: #1E2430;
-}
-/* حقل كلمة المرور */
-.input-box {
-  position: relative;
-  width: 100%;
-}
-.toggle {
-  position: absolute;
-  left: 12px;
-  top: 10px;
-  color: #D4AF37;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-}
-/* الأزرار */
-.btn {
-  width: 100%;
-  padding: 12px;
+
+.input-field input {
+  flex: 1;
+  background: none;
   border: none;
-  background: linear-gradient(135deg, #D4AF37, #F6E27A);
-  color: #0A0C10;
-  border-radius: 10px;
+  padding: 15px 0;
+  color: #fff;
+  font-size: 16px;
+  outline: none;
+}
+
+.suffix {
+  color: #848e9c;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.main-btn {
+  width: 100%;
+  background: #fcd535;
+  color: #0b0e11;
+  border: none;
+  padding: 16px;
+  border-radius: 12px;
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s ease;
   margin-top: 10px;
+  transition: opacity 0.2s;
 }
-.btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
+
+.main-btn:disabled {
+  opacity: 0.5;
 }
-/* فاصل */
-.divider {
-  display: flex;
-  align-items: center;
-  text-align: center;
-  margin: 20px 0;
-  color: rgba(255, 255, 255, 0.3);
-}
-.divider::before, .divider::after {
-  content: '';
-  flex: 1;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-.divider span {
-  padding: 0 10px;
-  font-size: 12px;
-}
-/* زر جوجل */
-.google-btn {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: #ffffff;
-  color: #333;
+
+.alert {
+  margin-top: 15px;
+  padding: 12px;
   border-radius: 10px;
   font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 10px;
-  transition: all 0.3s ease;
 }
-.google-btn img {
-  width: 18px;
-  height: 18px;
+
+.alert.success { background: rgba(14, 203, 129, 0.1); color: #0ecb81; }
+.alert.error { background: rgba(246, 70, 93, 0.1); color: #f6465d; }
+
+/* Tips */
+.tips-box {
+  background: rgba(252, 213, 53, 0.05);
+  border-radius: 12px;
+  padding: 15px;
+  border: 1px solid rgba(252, 213, 53, 0.1);
 }
-.google-btn:hover:not(:disabled) {
-  background: #f1f1f1;
-}
-.link {
-  text-align: center;
-  margin-top: 20px;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 14px;
-}
-.link a {
-  color: #D4AF37;
-  text-decoration: none;
-  font-weight: 600;
-}
-.loader {
-  width: 18px;
-  height: 18px;
-  border: 2px solid #0A0C10;
-  border-top: 2px solid #D4AF37;
-  border-radius: 50%;
-  display: inline-block;
-  animation: spin 0.8s linear infinite;
-}
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-/* الإعلان */
-.ad-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.8);
+
+.tips-header {
   display: flex;
-  justify-content: center;
   align-items: center;
-  z-index: 1000;
-}
-.ad-box {
-  background: #11151C;
-  width: 90%;
-  max-width: 400px;
-  border-radius: 20px;
-  border: 1px solid #D4AF37;
-  overflow: hidden;
-}
-.ad-box h2 {
-  background: #D4AF37;
-  color: #0A0C10;
-  margin: 0;
-  padding: 15px;
-  font-size: 18px;
-}
-.ad-content {
-  padding: 20px;
-  color: #fff;
-  font-size: 14px;
-  max-height: 300px;
-  overflow-y: auto;
-}
-.ad-btn {
-  width: 100%;
-  padding: 15px;
-  background: transparent;
-  border: none;
-  border-top: 1px solid rgba(212, 175, 55, 0.3);
-  color: #D4AF37;
-  cursor: pointer;
+  gap: 8px;
+  color: #fcd535;
   font-weight: 700;
+  margin-bottom: 10px;
 }
-@media (max-width: 480px) {
-  .card {
-    padding: 25px 20px;
-  }
+
+.tips-list {
+  margin: 0;
+  padding-right: 20px;
+  font-size: 12px;
+  color: #848e9c;
+  line-height: 1.8;
 }
+
+/* Animations */
+.slide-fade-enter-active { transition: all 0.2s ease-out; }
+.slide-fade-enter-from { transform: translateY(-10px); opacity: 0; }
+
+.fade-enter-active { transition: opacity 0.3s; }
+.fade-enter-from { opacity: 0; }
 </style>
