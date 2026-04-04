@@ -112,9 +112,8 @@
           <div class="gold-field">
             <label>اختر الدولة ورقم الهاتف</label>
             <div class="phone-input-box">
-              <select v-model="phoneForm.countryCode" class="country-select">
+              <select v-model="phoneForm.countryCode" class="country-select" @change="updatePhoneLimit">
                 <option value="">الرمز</option>
-                <option value="+964">🇮🇶 العراق (+964)</option>
                 <option value="+966">🇸🇦 السعودية (+966)</option>
                 <option value="+971">🇦🇪 الإمارات (+971)</option>
                 <option value="+965">🇰🇼 الكويت (+965)</option>
@@ -123,6 +122,7 @@
                 <option value="+968">🇴🇲 عمان (+968)</option>
                 <option value="+962">🇯🇴 الأردن (+962)</option>
                 <option value="+20">🇪🇬 مصر (+20)</option>
+                <option value="+964">🇮🇶 العراق (+964)</option>
                 <option value="+963">🇸🇾 سوريا (+963)</option>
                 <option value="+961">🇱🇧 لبنان (+961)</option>
                 <option value="+218">🇱🇾 ليبيا (+218)</option>
@@ -134,53 +134,14 @@
                 <option value="+967">🇾🇪 اليمن (+967)</option>
                 <option value="+970">🇵🇸 فلسطين (+970)</option>
                 <option value="+90">🇹🇷 تركيا (+90)</option>
-                <option value="+44">🇬🇧 بريطانيا (+44)</option>
-                <option value="+1">🇺🇸 أمريكا (+1)</option>
-                <option value="+49">🇩🇪 ألمانيا (+49)</option>
-                <option value="+33">🇫🇷 فرنسا (+33)</option>
-                <option value="+39">🇮🇹 إيطاليا (+39)</option>
-                <option value="+34">🇪🇸 إسبانيا (+34)</option>
-                <option value="+31">🇳🇱 هولندا (+31)</option>
-                <option value="+46">🇸🇪 السويد (+46)</option>
-                <option value="+47">🇳🇴 النرويج (+47)</option>
-                <option value="+45">🇩🇰 الدنمارك (+45)</option>
-                <option value="+358">🇫🇮 فنلندا (+358)</option>
-                <option value="+41">🇨🇭 سويسرا (+41)</option>
-                <option value="+43">🇦🇹 النمسا (+43)</option>
-                <option value="+32">🇧🇪 بلجيكا (+32)</option>
-                <option value="+48">🇵🇱 بولندا (+48)</option>
-                <option value="+420">🇨🇿 التشيك (+420)</option>
-                <option value="+36">🇭🇺 المجر (+36)</option>
-                <option value="+40">🇷🇴 رومانيا (+40)</option>
-                <option value="+359">🇧🇬 بلغاريا (+359)</option>
-                <option value="+30">🇬🇷 اليونان (+30)</option>
-                <option value="+351">🇵🇹 البرتغال (+351)</option>
-                <option value="+7">🇷🇺 روسيا (+7)</option>
-                <option value="+380">🇺🇦 أوكرانيا (+380)</option>
-                <option value="+375">🇧🇾 بيلاروسيا (+375)</option>
-                <option value="+995">🇬🇪 جورجيا (+995)</option>
-                <option value="+994">🇦🇿 أذربيجان (+994)</option>
-                <option value="+374">🇦🇲 أرمينيا (+374)</option>
-                <option value="+998">🇺🇿 أوزبكستان (+998)</option>
-                <option value="+996">🇰🇬 قرغيزستان (+996)</option>
-                <option value="+992">🇹🇯 طاجيكستان (+992)</option>
-                <option value="+993">🇹🇲 تركمانستان (+993)</option>
-                <option value="+86">🇨🇳 الصين (+86)</option>
-                <option value="+91">🇮🇳 الهند (+91)</option>
-                <option value="+92">🇵🇰 باكستان (+92)</option>
-                <option value="+93">🇦🇫 أفغانستان (+93)</option>
-                <option value="+94">🇱🇰 سريلانكا (+94)</option>
-                <option value="+95">🇲🇲 ميانمار (+95)</option>
-                <option value="+66">🇹🇭 تايلاند (+66)</option>
-                <option value="+84">🇻🇳 فيتنام (+84)</option>
-                <option value="+60">🇲🇾 ماليزيا (+60)</option>
-                <option value="+65">🇸🇬 سنغافورة (+65)</option>
-                <option value="+62">🇮🇩 إندونيسيا (+62)</option>
-                <option value="+63">🇵🇭 الفلبين (+63)</option>
-                <option value="+82">🇰🇷 كوريا الجنوبية (+82)</option>
-                <option value="+81">🇯🇵 اليابان (+81)</option>
               </select>
-              <input type="tel" v-model="phoneForm.phone" placeholder="رقم الهاتف" class="gold-input-field">
+              <input 
+                type="tel" 
+                v-model="phoneForm.phone" 
+                :placeholder="'رقم الهاتف (' + phoneLimit + ' أرقام)'" 
+                class="gold-input-field"
+                @input="handlePhoneInput"
+              >
             </div>
           </div>
           <div class="gold-field">
@@ -245,8 +206,9 @@ export default {
       passwordSuccess: "",
       phoneError: "",
       phoneSuccess: "",
+      phoneLimit: 9, // الافتراضي للسعودية
       passwordForm: { currentPassword: "", newPassword: "", confirmPassword: "" },
-      phoneForm: { countryCode: "", phone: "", password: "" },
+      phoneForm: { countryCode: "+966", phone: "", password: "" },
       userData: { email: "", phoneNumber: "", uid: "", createdAt: "", balance: 0, username: "", referralCode: "" }
     };
   },
@@ -292,35 +254,87 @@ export default {
     copyReferralLink() { this.copy(this.referralLink); },
     openChangePasswordModal() { this.showChangePasswordModal = true; this.passwordError = ""; this.passwordSuccess = ""; },
     closeChangePasswordModal() { this.showChangePasswordModal = false; },
+    
+    // تحويل رسائل خطأ Firebase إلى العربية
+    translateError(code) {
+      switch (code) {
+        case 'auth/wrong-password': return 'كلمة المرور الحالية غير صحيحة';
+        case 'auth/user-not-found': return 'المستخدم غير موجود';
+        case 'auth/too-many-requests': return 'محاولات كثيرة جداً، يرجى المحاولة لاحقاً';
+        case 'auth/network-request-failed': return 'خطأ في الاتصال بالشبكة';
+        case 'auth/weak-password': return 'كلمة المرور الجديدة ضعيفة جداً';
+        default: return 'حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى';
+      }
+    },
+
     async updatePassword() {
-      if (this.passwordForm.newPassword !== this.passwordForm.confirmPassword) { this.passwordError = "كلمات المرور غير متطابقة"; return; }
+      this.passwordError = "";
+      if (!this.passwordForm.currentPassword) { this.passwordError = "يرجى إدخال كلمة المرور الحالية"; return; }
+      if (this.passwordForm.newPassword !== this.passwordForm.confirmPassword) { this.passwordError = "كلمات المرور الجديدة غير متطابقة"; return; }
+      if (this.passwordForm.newPassword.length < 6) { this.passwordError = "كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل"; return; }
+      
       this.passwordLoading = true;
       try {
         const user = auth.currentUser;
         const credential = EmailAuthProvider.credential(user.email, this.passwordForm.currentPassword);
         await reauthenticateWithCredential(user, credential);
         await updatePassword(user, this.passwordForm.newPassword);
-        this.passwordSuccess = "تم التحديث بنجاح ✓";
+        this.passwordSuccess = "تم تحديث كلمة المرور بنجاح ✓";
         setTimeout(() => this.closeChangePasswordModal(), 2000);
-      } catch (e) { this.passwordError = e.message; }
+      } catch (e) { 
+        this.passwordError = this.translateError(e.code);
+      }
       this.passwordLoading = false;
     },
-    openPhoneModal() { this.showPhoneModal = true; this.phoneError = ""; this.phoneSuccess = ""; },
+
+    openPhoneModal() { this.showPhoneModal = true; this.phoneError = ""; this.phoneSuccess = ""; this.updatePhoneLimit(); },
     closePhoneModal() { this.showPhoneModal = false; },
+    
+    updatePhoneLimit() {
+      const limits = {
+        "+966": 9, "+971": 9, "+965": 8, "+974": 8, "+973": 8, "+968": 8, 
+        "+962": 9, "+20": 10, "+964": 10, "+963": 9, "+961": 8, "+218": 9,
+        "+216": 8, "+213": 9, "+212": 9, "+222": 8, "+249": 9, "+967": 9,
+        "+970": 9, "+90": 10
+      };
+      this.phoneLimit = limits[this.phoneForm.countryCode] || 10;
+      // تنظيف الرقم إذا تجاوز الحد الجديد
+      if (this.phoneForm.phone.length > this.phoneLimit) {
+        this.phoneForm.phone = this.phoneForm.phone.substring(0, this.phoneLimit);
+      }
+    },
+
+    handlePhoneInput(e) {
+      // السماح بالأرقام فقط
+      this.phoneForm.phone = e.target.value.replace(/\D/g, '');
+      // الالتزام بالحد الأقصى
+      if (this.phoneForm.phone.length > this.phoneLimit) {
+        this.phoneForm.phone = this.phoneForm.phone.substring(0, this.phoneLimit);
+      }
+    },
+
     async updatePhoneNumber() {
+      this.phoneError = "";
       if (!this.phoneForm.countryCode) { this.phoneError = "الرجاء اختيار رمز الدولة"; return; }
-      if (!this.phoneForm.phone) { this.phoneError = "الرجاء إدخال رقم الهاتف"; return; }
+      if (this.phoneForm.phone.length !== this.phoneLimit) { 
+        this.phoneError = `رقم الهاتف لهذه الدولة يجب أن يكون ${this.phoneLimit} أرقام`; 
+        return; 
+      }
+      if (!this.phoneForm.password) { this.phoneError = "الرجاء إدخال كلمة المرور للتأكيد"; return; }
+      
       this.phoneLoading = true;
       try {
         const user = auth.currentUser;
         const credential = EmailAuthProvider.credential(user.email, this.phoneForm.password);
         await reauthenticateWithCredential(user, credential);
-        const fullPhone = this.phoneForm.countryCode + this.phoneForm.phone.replace(/\D/g, '');
+        const fullPhone = this.phoneForm.countryCode + this.phoneForm.phone;
         await updateDoc(doc(db, "users", user.uid), { phoneNumber: fullPhone });
         this.userData.phoneNumber = fullPhone;
-        this.phoneSuccess = "تم الربط بنجاح ✓";
+        this.phoneSuccess = "تم ربط رقم الهاتف بنجاح ✓";
         setTimeout(() => this.closePhoneModal(), 2000);
-      } catch (e) { this.phoneError = e.message; }
+      } catch (e) { 
+        this.phoneError = this.translateError(e.code);
+      }
       this.phoneLoading = false;
     },
     async logout() { await signOut(auth); this.$router.push("/login"); }
@@ -568,8 +582,8 @@ export default {
   font-size: 13px; width: 100%;
 }
 
-.error-txt { color: #ff4444; font-size: 12px; margin-bottom: 10px; text-align: center; }
-.success-txt { color: #44ff44; font-size: 12px; margin-bottom: 10px; text-align: center; }
+.error-txt { color: #ff4444; font-size: 12px; margin-bottom: 10px; text-align: center; background: rgba(255,68,68,0.1); padding: 8px; border-radius: 8px; }
+.success-txt { color: #44ff44; font-size: 12px; margin-bottom: 10px; text-align: center; background: rgba(68,255,68,0.1); padding: 8px; border-radius: 8px; }
 
 .loading-container { text-align: center; padding: 80px 0; }
 .gold-spinner {
