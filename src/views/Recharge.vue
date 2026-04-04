@@ -15,7 +15,7 @@
       <!-- Asset Display -->
       <div class="asset-card">
         <div class="asset-main">
-          <img src="https://cryptologos.cc/logos/tether-usdt-logo.png" alt="USDT" class="coin-logo">
+          <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%2326A69D'/%3E%3Ctext x='12' y='16' font-size='12' font-weight='bold' fill='white' text-anchor='middle'%3EUSDT%3C/text%3E%3C/svg%3E" alt="USDT" class="coin-logo">
           <div class="asset-text">
             <span class="coin-symbol">USDT</span>
             <span class="coin-name">TetherUS</span>
@@ -33,7 +33,7 @@
         <div class="dropdown-container" @click="toggleDropdown" v-click-outside="closeDropdown">
           <div class="dropdown-selected" :class="{ 'is-open': isDropdownOpen }">
             <div class="selected-info">
-              <img :src="getNetworkIcon(network)" class="net-icon" alt="">
+              <img :src="getNetworkIcon(network)" class="net-icon" alt="" @error="handleImageError">
               <span class="net-name">{{ network }}</span>
             </div>
             <i class="fas fa-chevron-down arrow-icon"></i>
@@ -49,7 +49,7 @@
                 @click.stop="selectNetwork(net)"
               >
                 <div class="item-left">
-                  <img :src="getNetworkIcon(net)" class="net-icon" alt="">
+                  <img :src="getNetworkIcon(net)" class="net-icon" alt="" @error="handleImageError">
                   <div class="item-text">
                     <span class="net-title">{{ net }}</span>
                     <span class="net-desc">{{ getNetworkDesc(net) }}</span>
@@ -179,16 +179,18 @@ export default {
       userId: "",
     };
   },
-  created() {
-    const auth = getAuth();
-    auth.onAuthStateChanged((u) => {
-      if (u) {
-        this.userEmail = u.email;
-        this.userId = u.uid;
-      }
-    });
+  mounted() {
+    this.initializeUser();
   },
   methods: {
+    initializeUser() {
+      const auth = getAuth();
+      const user = auth.currentUser;
+      if (user) {
+        this.userEmail = user.email;
+        this.userId = user.uid;
+      }
+    },
     toggleDropdown() {
       this.isDropdownOpen = !this.isDropdownOpen;
     },
@@ -207,10 +209,10 @@ export default {
     },
     getNetworkIcon(net) {
       const icons = {
-        TRC20: "https://cryptologos.cc/logos/tron-trx-logo.png",
-        ERC20: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
-        BEP20: "https://cryptologos.cc/logos/bnb-bnb-logo.png",
-        SOL: "https://cryptologos.cc/logos/solana-sol-logo.png"
+        TRC20: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%2326A17B'/%3E%3Ctext x='12' y='16' font-size='14' font-weight='bold' fill='white' text-anchor='middle'%3ETR%3C/text%3E%3C/svg%3E",
+        ERC20: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%23627EEA'/%3E%3Ctext x='12' y='16' font-size='14' font-weight='bold' fill='white' text-anchor='middle'%3EETH%3C/text%3E%3C/svg%3E",
+        BEP20: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%23F3BA2F'/%3E%3Ctext x='12' y='16' font-size='14' font-weight='bold' fill='%23111111' text-anchor='middle'%3EBNB%3C/text%3E%3C/svg%3E",
+        SOL: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%2300D4AA'/%3E%3Ctext x='12' y='16' font-size='14' font-weight='bold' fill='white' text-anchor='middle'%3ESOL%3C/text%3E%3C/svg%3E"
       };
       return icons[net] || "";
     },
@@ -223,6 +225,9 @@ export default {
       };
       return descs[net] || "";
     },
+    handleImageError(e) {
+      e.target.style.display = 'none';
+    },
     async copyAddress() {
       const text = this.getAddress(this.network);
       try {
@@ -234,11 +239,6 @@ export default {
       }
     },
     async submit() {
-      if (!this.userId) {
-        this.message = "يرجى تسجيل الدخول";
-        this.messageType = "error";
-        return;
-      }
       if (!this.amount || this.amount < 10) {
         this.message = "الحد الأدنى للإيداع 10 USDT";
         this.messageType = "error";
@@ -247,6 +247,7 @@ export default {
       if (!this.txid) {
         this.message = "يرجى إدخال TxID";
         this.messageType = "error";
+        return;
       }
       this.loading = true;
       try {
