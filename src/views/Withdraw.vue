@@ -118,7 +118,6 @@
           <i class="fas fa-qrcode"></i>
           عنوان المحفظة
         </label>
-        <!-- تم إضافة wrapper هنا لإظهار الحقل كمربع -->
         <div class="wallet-input-wrapper">
           <input 
             type="text" 
@@ -345,16 +344,22 @@ export default {
           this.balance = userData.balance || 0;
           this.userPhone = userData.phoneNumber || "";
           this.userEmail = userData.email || "";
+          
+          // قراءة مستوى VIP من بيانات المستخدم مباشرةً (الوظيفة الأصلية)
+          if (userData.vipLevel) {
+            this.userVipLevel = userData.vipLevel;
+          }
         }
 
-        // تحميل مستوى VIP
-        const vipRef = doc(db, "users", user.uid, "vip", "current");
-        const vipSnap = await getDoc(vipRef);
-        
-        if (vipSnap.exists()) {
-          this.userVipLevel = vipSnap.data().level;
-        } else {
-          this.showMessage("لا يوجد اشتراك VIP نشط", "error");
+        // إذا لم يكن VIP موجوداً في بيانات المستخدم، نحاول من subcollection (الوظيفة الأصلية)
+        if (!this.userVipLevel) {
+          const vipRef = doc(db, "users", user.uid, "vip", "current");
+          const vipSnap = await getDoc(vipRef);
+          if (vipSnap.exists()) {
+            this.userVipLevel = vipSnap.data().level;
+          } else {
+            this.showMessage("لا يوجد اشتراك VIP نشط", "error");
+          }
         }
       } catch (error) {
         console.error("خطأ:", error);
@@ -365,8 +370,8 @@ export default {
     validateAmount() {
       if (!this.amount) {
         this.amountError = "الرجاء إدخال المبلغ";
-      } else if (this.amount < this.minWithdrawAmount) {
-        this.amountError = `الحد الأدنى للسحب هو ${this.minWithdrawAmount} USDT`;
+      } else if (Number(this.amount) !== this.minWithdrawAmount) {
+        this.amountError = `مبلغ السحب يجب أن يكون بالضبط ${this.minWithdrawAmount} USDT`;
       } else if (this.amount > this.balance) {
         this.amountError = "المبلغ أكبر من رصيدك";
       } else {
@@ -431,75 +436,94 @@ export default {
     },
 
     async submitWithdraw() {
-      if (!this.isFormValid) {
-        this.showMessage("يرجى ملء جميع الحقول بشكل صحيح", "error");
-        return;
-      }
+      if (!this.isFormValid) return;
 
       this.isLoading = true;
+      const user = auth.currentUser;
+      const withdrawAmount = Number(this.amount);
+      const transactionId = "WITHDRAW_" + Date.now() + "_" + Math.random().toString(36).substring(2, 9);
 
       try {
-        const user = auth.currentUser;
-        if (!user) {
-          this.showMessage("يجب تسجيل الدخول أولاً", "error");
-          this.isLoading = false;
-          return;
-        }
-
         // ===================================================
-        // الإصلاح: استخدام transaction.set() بدلاً من addDoc داخل runTransaction
-        // addDoc لا تعمل داخل runTransaction وتسبب خطأ الأذونات
+        // الإصلاح النهائي: استخدام مراجع المستندات مسبقاً
+        // لتجنب خطأ الأذونات داخل runTransaction
         // ===================================================
-        const withdrawDocRef = doc(collection(db, "users", user.uid, "withdrawals"));
+        const userRef = doc(db, "users", user.uid);
+        const withdrawDocRef = doc(collection(db, "withdraw_requests"));
         const transactionDocRef = doc(collection(db, "transactions"));
 
         await runTransaction(db, async (transaction) => {
-          const userRef = doc(db, "users", user.uid);
           const userSnap = await transaction.get(userRef);
 
           if (!userSnap.exists()) {
             throw new Error("المستخدم غير موجود");
           }
 
-          const currentBalance = userSnap.data().balance || 0;
-
-          if (currentBalance < this.amount) {
+          const userData = userSnap.data();
+          if (userData.balance < withdrawAmount) {
             throw new Error("الرصيد غير كافي");
           }
 
-          // تحديث الرصيد
+          if (userData.blocked) {
+            throw new Error("حسابك محظور من السحب");
+          }
+
+          // 1. تحديث الرصيد
           transaction.update(userRef, {
-            balance: currentBalance - this.amount
+            balance: userData.balance - withdrawAmount
           });
 
-          // إضافة سجل الطلب في subcollection المستخدم باستخدام transaction.set()
+          // 2. إنشاء طلب السحب (الوظيفة الأصلية)
           transaction.set(withdrawDocRef, {
-            amount: this.amount,
+            transactionId: transactionId,
+            userId: user.uid,
+            userPhone: this.userPhone || null,
+            userEmail: this.userEmail || null,
+            amount: withdrawAmount,
             network: this.network,
             wallet: this.wallet,
+            walletAddress: this.wallet,
             status: "pending",
-            createdAt: serverTimestamp()
+            createdAt: serverTimestamp(),
+            vipLevel: this.userVipLevel,
+            withdrawDay: this.withdrawDay,
+            adminAction: "",
+            adminMessage: "",
+            userMessage: "",
+            reason: ""
           });
 
-          // إضافة في جدول المعاملات العام باستخدام transaction.set()
+          // 3. إنشاء سجل المعاملة (الوظيفة الأصلية)
           transaction.set(transactionDocRef, {
+            transactionId: transactionId,
             userId: user.uid,
-            type: "withdrawal",
-            amount: this.amount,
+            userPhone: this.userPhone || null,
+            userEmail: this.userEmail || null,
+            type: "withdraw",
+            amount: withdrawAmount,
+            currency: "USDT",
             network: this.network,
             wallet: this.wallet,
+            walletAddress: this.wallet,
             status: "pending",
-            createdAt: serverTimestamp()
+            vipLevel: this.userVipLevel,
+            withdrawDay: this.withdrawDay,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
           });
         });
 
-        this.showMessage("تم تقديم طلب السحب بنجاح", "success");
-        setTimeout(() => {
-          this.$router.push("/");
-        }, 2000);
+        this.balance -= withdrawAmount;
+        this.showMessage("✅ تم إرسال طلب السحب بنجاح", "success");
+        
+        // تفريغ الحقول
+        this.amount = "";
+        this.network = "";
+        this.wallet = "";
+
       } catch (error) {
         console.error("خطأ:", error);
-        this.showMessage(error.message || "حدث خطأ في تقديم الطلب", "error");
+        this.showMessage(error.message || "حدث خطأ أثناء السحب", "error");
       } finally {
         this.isLoading = false;
       }
@@ -518,6 +542,7 @@ export default {
   justify-content: center;
   padding-top: 80px;
   padding-bottom: 100px;
+  direction: rtl;
 }
 
 .card {
@@ -603,9 +628,6 @@ export default {
   color: #fcd535;
   font-family: 'Courier New', monospace;
   letter-spacing: -0.5px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 150px;
 }
 
 .balance-currency-badge {
@@ -615,7 +637,6 @@ export default {
   background: rgba(212, 175, 55, 0.15);
   padding: 4px 8px;
   border-radius: 6px;
-  white-space: nowrap;
 }
 
 /* حالة VIP */
@@ -684,7 +705,6 @@ export default {
   gap: 10px;
   font-size: 13px;
   font-weight: 600;
-  animation: slideIn 0.3s ease;
 }
 
 .message.error {
@@ -712,41 +732,20 @@ export default {
   font-weight: 700;
   color: #eaecef;
   margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
 }
 
 .input-group label i {
   color: #fcd535;
-  font-size: 14px;
 }
 
-.amount-input-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(212, 175, 55, 0.05);
-  border-radius: 12px;
-  padding: 4px 8px;
-  border: 1px solid rgba(212, 175, 55, 0.15);
-}
-
-/* ===== إصلاح حقل عنوان المحفظة - إضافة الإطار المرئي ===== */
-.wallet-input-wrapper {
+.amount-input-wrapper, .wallet-input-wrapper {
   display: flex;
   align-items: center;
   background: rgba(212, 175, 55, 0.05);
   border-radius: 12px;
   padding: 4px 8px;
   border: 1px solid rgba(212, 175, 55, 0.15);
-  transition: border-color 0.3s ease;
 }
-
-.wallet-input-wrapper:focus-within {
-  border-color: rgba(212, 175, 55, 0.4);
-  background: rgba(212, 175, 55, 0.08);
-}
-/* ===================================================== */
 
 .gold-input {
   flex: 1;
@@ -757,13 +756,6 @@ export default {
   font-size: 14px;
   outline: none;
   font-weight: 600;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.gold-input::placeholder {
-  color: #5a6370;
 }
 
 .input-currency-badge {
@@ -773,9 +765,6 @@ export default {
   background: rgba(212, 175, 55, 0.1);
   padding: 4px 6px;
   border-radius: 5px;
-  white-space: nowrap;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
 }
 
 .input-error {
@@ -783,14 +772,9 @@ export default {
   color: #fca5a5;
   font-size: 12px;
   margin-top: 6px;
-  font-weight: 500;
 }
 
 /* قائمة مخصصة للشبكات */
-.custom-dropdown-wrapper {
-  width: 100%;
-}
-
 .custom-dropdown {
   position: relative;
 }
@@ -799,25 +783,17 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
   background: rgba(212, 175, 55, 0.05);
   border: 1px solid rgba(212, 175, 55, 0.15);
   border-radius: 12px;
   padding: 12px 14px;
   cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.dropdown-trigger:hover {
-  background: rgba(212, 175, 55, 0.08);
-  border-color: rgba(212, 175, 55, 0.25);
 }
 
 .selected-network {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex: 1;
   color: #eaecef;
   font-weight: 600;
   font-size: 14px;
@@ -826,24 +802,11 @@ export default {
 .dropdown-icon {
   width: 24px;
   height: 24px;
-  object-fit: contain;
 }
 
 .placeholder {
   color: #5a6370;
-  font-weight: 600;
   font-size: 14px;
-  flex: 1;
-}
-
-.dropdown-trigger i {
-  color: #fcd535;
-  font-size: 12px;
-  transition: transform 0.3s ease;
-}
-
-.dropdown-trigger i.rotate {
-  transform: rotate(180deg);
 }
 
 .dropdown-menu {
@@ -851,24 +814,11 @@ export default {
   top: calc(100% + 8px);
   left: 0;
   right: 0;
-  background: linear-gradient(135deg, #1e2329 0%, #181a20 100%);
+  background: #1e2329;
   border: 1px solid rgba(212, 175, 55, 0.2);
   border-radius: 12px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
   z-index: 100;
   overflow: hidden;
-  animation: slideDown 0.3s ease;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .dropdown-item {
@@ -877,12 +827,6 @@ export default {
   gap: 12px;
   padding: 12px 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  border-bottom: 1px solid rgba(212, 175, 55, 0.1);
-}
-
-.dropdown-item:last-child {
-  border-bottom: none;
 }
 
 .dropdown-item:hover {
@@ -891,22 +835,15 @@ export default {
 
 .dropdown-item.active {
   background: rgba(212, 175, 55, 0.15);
-  border-left: 3px solid #fcd535;
-  padding-left: 11px;
 }
 
 .dropdown-item-icon {
   width: 28px;
   height: 28px;
-  object-fit: contain;
-  flex-shrink: 0;
 }
 
 .dropdown-item-content {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
 }
 
 .dropdown-item-name {
@@ -918,15 +855,6 @@ export default {
 .dropdown-item-symbol {
   color: #848e9c;
   font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
-.dropdown-item i {
-  color: #10b981;
-  font-size: 14px;
-  flex-shrink: 0;
 }
 
 /* صندوق الملخص */
@@ -943,43 +871,26 @@ export default {
   font-weight: 700;
   color: #fcd535;
   margin: 0 0 12px 0;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
 }
 
 .summary-item {
   display: flex;
   justify-content: space-between;
-  align-items: center;
   padding: 8px 0;
   font-size: 12px;
   color: #eaecef;
   border-bottom: 1px solid rgba(212, 175, 55, 0.1);
 }
 
-.summary-item:last-child {
-  border-bottom: none;
-}
-
 .summary-item.total {
   font-weight: 700;
   color: #fcd535;
-  padding-top: 12px;
-  padding-bottom: 12px;
   border-top: 1px solid rgba(212, 175, 55, 0.2);
 }
 
 .summary-value {
   color: #fcd535;
   font-weight: 600;
-  word-break: break-word;
-  max-width: 200px;
-  text-align: right;
-}
-
-.summary-value.address {
-  font-family: 'Courier New', monospace;
-  font-size: 11px;
 }
 
 /* صندوق التحذير */
@@ -995,22 +906,12 @@ export default {
 
 .warning-box i {
   color: #d97706;
-  font-size: 16px;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.warning-text {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
 
 .warning-text p {
   margin: 0;
   font-size: 12px;
   color: #eaecef;
-  font-weight: 500;
 }
 
 .warning-text p.small {
@@ -1029,44 +930,20 @@ export default {
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.gold-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(212, 175, 55, 0.3);
 }
 
 .gold-button:disabled {
   opacity: 0.5;
-  cursor: not-allowed;
 }
 
-/* الانتقالات */
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.fade-enter-active,
-.fade-leave-active {
+.fade-enter-active, .fade-leave-active {
   transition: opacity 0.3s ease;
 }
-
-.fade-enter-from,
-.fade-leave-to {
+.fade-enter-from, .fade-leave-to {
   opacity: 0;
 }
 </style>
