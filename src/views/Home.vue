@@ -3,11 +3,6 @@
 
     <!-- الشريط العلوي -->
     <div class="top-bar">
-      <div class="top-left">
-        <i class="fas fa-headset icon"></i>
-        <i class="fas fa-envelope icon"></i>
-      </div>
-
       <div class="user-info-card">
         <div class="info-header">
           <div class="greeting">مرحباً 👋</div>
@@ -483,14 +478,15 @@ export default {
 }
 
 .balance-card {
-  background: rgba(212, 175, 55, 0.08);
-  border-radius: 14px;
-  padding: 14px 12px;
-  border: 1px solid rgba(212, 175, 55, 0.15);
+  background: rgba(212, 175, 55, 0.12);
+  border-radius: 16px;
+  padding: 16px 14px;
+  border: 1.5px solid rgba(212, 175, 55, 0.25);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.1);
 }
 
 .balance-label {
@@ -503,8 +499,8 @@ export default {
 }
 
 .balance-amount {
-  font-size: 18px;
-  font-weight: 800;
+  font-size: 26px;
+  font-weight: 900;
   color: #fcd535;
   font-family: 'Courier New', monospace;
   letter-spacing: -0.5px;
@@ -512,7 +508,7 @@ export default {
   text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 120px;
+  max-width: 140px;
 }
 
 .balance-currency {
