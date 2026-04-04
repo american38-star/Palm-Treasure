@@ -113,7 +113,8 @@
             <label>اختر الدولة ورقم الهاتف</label>
             <div class="phone-input-box">
               <select v-model="phoneForm.countryCode" class="country-select" @change="updatePhoneLimit">
-                <option value="">الرمز</option>
+                <option value="">اختر الرمز</option>
+                <option value="+964">🇮🇶 العراق (+964)</option>
                 <option value="+966">🇸🇦 السعودية (+966)</option>
                 <option value="+971">🇦🇪 الإمارات (+971)</option>
                 <option value="+965">🇰🇼 الكويت (+965)</option>
@@ -122,7 +123,6 @@
                 <option value="+968">🇴🇲 عمان (+968)</option>
                 <option value="+962">🇯🇴 الأردن (+962)</option>
                 <option value="+20">🇪🇬 مصر (+20)</option>
-                <option value="+964">🇮🇶 العراق (+964)</option>
                 <option value="+963">🇸🇾 سوريا (+963)</option>
                 <option value="+961">🇱🇧 لبنان (+961)</option>
                 <option value="+218">🇱🇾 ليبيا (+218)</option>
@@ -134,6 +134,51 @@
                 <option value="+967">🇾🇪 اليمن (+967)</option>
                 <option value="+970">🇵🇸 فلسطين (+970)</option>
                 <option value="+90">🇹🇷 تركيا (+90)</option>
+                <option value="+44">🇬🇧 بريطانيا (+44)</option>
+                <option value="+1">🇺🇸 أمريكا (+1)</option>
+                <option value="+49">🇩🇪 ألمانيا (+49)</option>
+                <option value="+33">🇫🇷 فرنسا (+33)</option>
+                <option value="+39">🇮🇹 إيطاليا (+39)</option>
+                <option value="+34">🇪🇸 إسبانيا (+34)</option>
+                <option value="+31">🇳🇱 هولندا (+31)</option>
+                <option value="+46">🇸🇪 السويد (+46)</option>
+                <option value="+47">🇳🇴 النرويج (+47)</option>
+                <option value="+45">🇩🇰 الدنمارك (+45)</option>
+                <option value="+358">🇫🇮 فنلندا (+358)</option>
+                <option value="+41">🇨🇭 سويسرا (+41)</option>
+                <option value="+43">🇦🇹 النمسا (+43)</option>
+                <option value="+32">🇧🇪 بلجيكا (+32)</option>
+                <option value="+48">🇵🇱 بولندا (+48)</option>
+                <option value="+420">🇨🇿 التشيك (+420)</option>
+                <option value="+36">🇭🇺 المجر (+36)</option>
+                <option value="+40">🇷🇴 رومانيا (+40)</option>
+                <option value="+359">🇧🇬 بلغاريا (+359)</option>
+                <option value="+30">🇬🇷 اليونان (+30)</option>
+                <option value="+351">🇵🇹 البرتغال (+351)</option>
+                <option value="+7">🇷🇺 روسيا (+7)</option>
+                <option value="+380">🇺🇦 أوكرانيا (+380)</option>
+                <option value="+375">🇧🇾 بيلاروسيا (+375)</option>
+                <option value="+995">🇬🇪 جورجيا (+995)</option>
+                <option value="+994">🇦🇿 أذربيجان (+994)</option>
+                <option value="+374">🇦🇲 أرمينيا (+374)</option>
+                <option value="+998">🇺🇿 أوزبكستان (+998)</option>
+                <option value="+996">🇰🇬 قرغيزستان (+996)</option>
+                <option value="+992">🇹🇯 طاجيكستان (+992)</option>
+                <option value="+993">🇹🇲 تركمانستان (+993)</option>
+                <option value="+86">🇨🇳 الصين (+86)</option>
+                <option value="+91">🇮🇳 الهند (+91)</option>
+                <option value="+92">🇵🇰 باكستان (+92)</option>
+                <option value="+93">🇦🇫 أفغانستان (+93)</option>
+                <option value="+94">🇱🇰 سريلانكا (+94)</option>
+                <option value="+95">🇲🇲 ميانمار (+95)</option>
+                <option value="+66">🇹🇭 تايلاند (+66)</option>
+                <option value="+84">🇻🇳 فيتنام (+84)</option>
+                <option value="+60">🇲🇾 ماليزيا (+60)</option>
+                <option value="+65">🇸🇬 سنغافورة (+65)</option>
+                <option value="+62">🇮🇩 إندونيسيا (+62)</option>
+                <option value="+63">🇵🇭 الفلبين (+63)</option>
+                <option value="+82">🇰🇷 كوريا الجنوبية (+82)</option>
+                <option value="+81">🇯🇵 اليابان (+81)</option>
               </select>
               <input 
                 type="tel" 
@@ -297,10 +342,17 @@ export default {
     
     updatePhoneLimit() {
       const limits = {
-        "+966": 9, "+971": 9, "+965": 8, "+974": 8, "+973": 8, "+968": 8, 
-        "+962": 9, "+20": 10, "+964": 10, "+963": 9, "+961": 8, "+218": 9,
+        "+964": 10, "+966": 9, "+971": 9, "+965": 8, "+974": 8, "+973": 8, 
+        "+968": 8, "+962": 9, "+20": 10, "+963": 9, "+961": 8, "+218": 9,
         "+216": 8, "+213": 9, "+212": 9, "+222": 8, "+249": 9, "+967": 9,
-        "+970": 9, "+90": 10
+        "+970": 9, "+90": 10, "+44": 10, "+1": 10, "+49": 11, "+33": 9,
+        "+39": 10, "+34": 9, "+31": 9, "+46": 9, "+47": 8, "+45": 8,
+        "+358": 9, "+41": 9, "+43": 10, "+32": 9, "+48": 9, "+420": 9,
+        "+36": 9, "+40": 9, "+359": 9, "+30": 10, "+351": 9, "+7": 10,
+        "+380": 9, "+375": 9, "+995": 9, "+994": 9, "+374": 8, "+998": 9,
+        "+996": 9, "+992": 9, "+993": 8, "+86": 11, "+91": 10, "+92": 10,
+        "+93": 9, "+94": 10, "+95": 10, "+66": 9, "+84": 10, "+60": 9,
+        "+65": 8, "+62": 10, "+63": 10, "+82": 10, "+81": 10
       };
       this.phoneLimit = limits[this.phoneForm.countryCode] || 10;
       if (this.phoneForm.phone.length > this.phoneLimit) {
@@ -347,7 +399,7 @@ export default {
 <style scoped>
 .profile-page {
   min-height: 100vh;
-  background-color: #0A0C10; /* نفس لون خلفية الصفحة الرئيسية */
+  background-color: #0A0C10;
   color: #ffffff;
   padding: 20px;
   padding-top: 60px;
@@ -376,7 +428,7 @@ export default {
 .avatar-circle {
   width: 90px;
   height: 90px;
-  background-color: #1A1F2A; /* نفس لون الكروت في الصفحة الرئيسية */
+  background-color: #1A1F2A;
   border: 1px solid rgba(212, 175, 55, 0.3);
   border-radius: 50%;
   display: flex;
@@ -397,7 +449,7 @@ export default {
 /* نظام الحقول المخططة بالذهبي */
 .fields-section {
   margin-bottom: 25px;
-  background: #1A1F2A; /* نفس لون الكروت في الصفحة الرئيسية */
+  background: #1A1F2A;
   padding: 20px;
   border-radius: 16px;
   border: 1px solid rgba(212, 175, 55, 0.2);
@@ -433,7 +485,7 @@ export default {
 .gold-input-field {
   flex: 1;
   background-color: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(212, 175, 55, 0.3); /* حقول مخططة بالذهبي */
+  border: 1px solid rgba(212, 175, 55, 0.3);
   border-radius: 10px;
   padding: 12px;
   color: #ffffff;
@@ -514,7 +566,7 @@ export default {
   background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
   color: #0A0C10;
   border: none;
-  border-radius: 50px; /* نفس شكل أزرار الصفحة الرئيسية */
+  border-radius: 50px;
   padding: 14px;
   font-size: 16px;
   font-weight: 800;
