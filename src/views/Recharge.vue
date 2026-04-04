@@ -96,7 +96,7 @@
         <div class="input-group">
           <label>المبلغ</label>
           <div class="input-field">
-            <input type="number" v-model.number="amount" placeholder="الحد الأدنى 10">
+            <input type="number" v-model.number="amount" placeholder="أدخل المبلغ">
             <span class="suffix">USDT</span>
           </div>
         </div>
@@ -131,6 +131,7 @@
           <li>يرجى التأكد من اختيار شبكة <strong>{{ network }}</strong> عند التحويل.</li>
           <li>سيتم إضافة الرصيد تلقائياً بعد تأكيد الشبكة.</li>
           <li>لا تقم بإيداع أي عملات أخرى غير USDT لهذا العنوان.</li>
+          <li>لا يوجد حد أدنى للإيداع - يمكنك إيداع أي مبلغ تريده.</li>
         </ul>
       </div>
     </div>
@@ -253,8 +254,8 @@ export default {
       }
     },
     async submit() {
-      if (!this.amount || this.amount < 10) {
-        this.message = "الحد الأدنى للإيداع 10 USDT";
+      if (!this.amount || this.amount <= 0) {
+        this.message = "يرجى إدخال مبلغ صحيح";
         this.messageType = "error";
         return;
       }
