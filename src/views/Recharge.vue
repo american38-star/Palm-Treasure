@@ -15,9 +15,7 @@
       <!-- Asset Display -->
       <div class="asset-card">
         <div class="asset-main">
-          <div class="coin-logo-fa">
-            <i class="fab fa-ethereum" style="color: #26a17b;"></i>
-          </div>
+          <img src="https://assets.coingecko.com/coins/images/325/large/Tether.png" alt="USDT" class="coin-logo-real">
           <div class="asset-text">
             <span class="coin-symbol">USDT</span>
             <span class="coin-name">TetherUS</span>
@@ -35,7 +33,7 @@
         <div class="dropdown-container" @click="toggleDropdown" v-click-outside="closeDropdown">
           <div class="dropdown-selected" :class="{ 'is-open': isDropdownOpen }">
             <div class="selected-info">
-              <i :class="getNetworkIconClass(network)" class="net-icon-fa"></i>
+              <img :src="getNetworkIconUrl(network)" class="net-icon-real" alt="">
               <span class="net-name">{{ network }}</span>
             </div>
             <i class="fas fa-chevron-down arrow-icon"></i>
@@ -51,7 +49,7 @@
                 @click.stop="selectNetwork(net)"
               >
                 <div class="item-left">
-                  <i :class="getNetworkIconClass(net)" class="net-icon-fa"></i>
+                  <img :src="getNetworkIconUrl(net)" class="net-icon-real" alt="">
                   <div class="item-text">
                     <span class="net-title">{{ net }}</span>
                     <span class="net-desc">{{ getNetworkDesc(net) }}</span>
@@ -209,14 +207,14 @@ export default {
     getAddress(net) {
       return this.addresses[net] || "";
     },
-    getNetworkIconClass(net) {
+    getNetworkIconUrl(net) {
       const icons = {
-        TRC20: "fab fa-vimeo-v", // Tron-like icon
-        ERC20: "fab fa-ethereum",
-        BEP20: "fas fa-coins", // BNB-like icon
-        SOL: "fas fa-bolt" // Solana-like icon
+        TRC20: "https://assets.coingecko.com/coins/images/1094/large/tron-logo.png",
+        ERC20: "https://assets.coingecko.com/coins/images/279/large/ethereum.png",
+        BEP20: "https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png",
+        SOL: "https://assets.coingecko.com/coins/images/4128/large/solana.png"
       };
-      return icons[net] || "fas fa-circle";
+      return icons[net] || "";
     },
     getNetworkDesc(net) {
       const descs = {
@@ -343,27 +341,19 @@ export default {
   gap: 12px;
 }
 
-.coin-logo-fa {
+.coin-logo-real {
   width: 40px;
   height: 40px;
-  background: rgba(38, 161, 123, 0.1);
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
+  object-fit: contain;
 }
 
-.net-icon-fa {
-  font-size: 20px;
+.net-icon-real {
   width: 24px;
-  text-align: center;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: contain;
 }
-
-.fa-ethereum { color: #627eea; }
-.fa-vimeo-v { color: #ff0013; } /* Tron Red */
-.fa-coins { color: #f3ba2f; } /* BNB Gold */
-.fa-bolt { color: #14f195; } /* Solana Green */
 
 .coin-symbol {
   display: block;
