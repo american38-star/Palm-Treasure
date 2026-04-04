@@ -85,13 +85,13 @@
           <!-- حقل مستوى VIP -->
           <div class="gold-field half">
             <label><i class="fas fa-crown"></i> مستوى VIP</label>
-            <input type="text" :value="'VIP ' + userData.vipLevel" readonly class="gold-input-field center-text">
+            <input type="text" :value="'VIP ' + (userData.vipLevel || 0)" readonly class="gold-input-field center-text highlight-gold">
           </div>
 
           <!-- حقل الإحالات -->
           <div class="gold-field half">
             <label><i class="fas fa-users"></i> إجمالي الإحالات</label>
-            <input type="text" :value="userData.totalReferrals" readonly class="gold-input-field center-text">
+            <input type="text" :value="userData.totalReferrals || 0" readonly class="gold-input-field center-text highlight-gold">
           </div>
         </div>
 
@@ -127,10 +127,19 @@
         </div>
         <div class="modal-body">
           <div class="gold-field">
-            <label>رقم الهاتف الجديد</label>
+            <label>اختر الدولة ورقم الهاتف</label>
             <div class="phone-input-box">
-              <span class="prefix">+966</span>
-              <input type="tel" v-model="phoneForm.phone" placeholder="5xxxxxxxx" class="gold-input-field">
+              <select v-model="phoneForm.countryCode" class="country-select">
+                <option value="+966">🇸🇦 +966</option>
+                <option value="+971">🇦🇪 +971</option>
+                <option value="+965">🇰🇼 +965</option>
+                <option value="+974">🇶🇦 +974</option>
+                <option value="+973">🇧🇭 +973</option>
+                <option value="+968">🇴🇲 +968</option>
+                <option value="+962">🇯🇴 +962</option>
+                <option value="+20">🇪🇬 +20</option>
+              </select>
+              <input type="tel" v-model="phoneForm.phone" placeholder="رقم الهاتف" class="gold-input-field">
             </div>
           </div>
           <div class="gold-field">
@@ -196,7 +205,7 @@ export default {
       phoneError: "",
       phoneSuccess: "",
       passwordForm: { currentPassword: "", newPassword: "", confirmPassword: "" },
-      phoneForm: { phone: "", password: "" },
+      phoneForm: { countryCode: "+966", phone: "", password: "" },
       userData: { email: "", phoneNumber: "", uid: "", createdAt: "", balance: 0, username: "", referralCode: "", vipLevel: 0, totalReferrals: 0 }
     };
   },
@@ -253,13 +262,13 @@ export default {
     openPhoneModal() { this.showPhoneModal = true; this.phoneError = ""; this.phoneSuccess = ""; },
     closePhoneModal() { this.showPhoneModal = false; },
     async updatePhoneNumber() {
-      if (!/^\d{9}$/.test(this.phoneForm.phone)) { this.phoneError = "رقم الهاتف يجب أن يكون 9 أرقام"; return; }
+      if (!this.phoneForm.phone) { this.phoneError = "الرجاء إدخال رقم الهاتف"; return; }
       this.phoneLoading = true;
       try {
         const user = auth.currentUser;
         const credential = EmailAuthProvider.credential(user.email, this.phoneForm.password);
         await reauthenticateWithCredential(user, credential);
-        const fullPhone = "+966" + this.phoneForm.phone;
+        const fullPhone = this.phoneForm.countryCode + this.phoneForm.phone;
         await updateDoc(doc(db, "users", user.uid), { phoneNumber: fullPhone });
         this.userData.phoneNumber = fullPhone;
         this.phoneSuccess = "تم الربط بنجاح ✓";
@@ -285,7 +294,7 @@ export default {
 }
 
 .profile-container {
-  max-width: 500px;
+  max-width: 450px; /* تحديد العرض للسيطرة على الحقول */
   margin: 0 auto;
 }
 
@@ -302,18 +311,18 @@ export default {
 }
 
 .avatar-circle {
-  width: 100px;
-  height: 100px;
+  width: 90px;
+  height: 90px;
   background-color: #111111;
-  border: 3px solid #D4AF37;
+  border: 2px solid #D4AF37;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 40px;
+  font-size: 36px;
   font-weight: bold;
   color: #D4AF37;
-  box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
 }
 
 .vip-tag {
@@ -322,15 +331,15 @@ export default {
   right: -5px;
   background: #D4AF37;
   color: #000000;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 20px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   border: 2px solid #000000;
 }
 
 .username-display {
-  font-size: 22px;
+  font-size: 20px;
   color: #D4AF37;
   font-weight: 700;
 }
@@ -341,25 +350,25 @@ export default {
 }
 
 .section-label {
-  font-size: 16px;
+  font-size: 15px;
   color: #D4AF37;
   margin-bottom: 15px;
   display: flex;
   align-items: center;
   gap: 10px;
-  border-right: 4px solid #D4AF37;
+  border-right: 3px solid #D4AF37;
   padding-right: 10px;
 }
 
 .gold-field {
-  margin-bottom: 18px;
+  margin-bottom: 15px;
 }
 
 .gold-field label {
   display: block;
-  font-size: 13px;
+  font-size: 12px;
   color: #888888;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
   margin-right: 5px;
 }
 
@@ -372,21 +381,21 @@ export default {
   flex: 1;
   background-color: #111111;
   border: 1px solid #333333;
-  border-radius: 12px;
-  padding: 12px 15px;
+  border-radius: 10px;
+  padding: 10px 12px;
   color: #ffffff;
-  font-size: 15px;
+  font-size: 14px;
   outline: none;
   transition: all 0.3s ease;
+  width: 100%; /* ضمان عدم الخروج عن السيطرة */
 }
 
 .gold-input-field:focus {
   border-color: #D4AF37;
-  box-shadow: 0 0 10px rgba(212, 175, 55, 0.1);
 }
 
 .highlight-gold {
-  color: #D4AF37;
+  color: #D4AF37 !important;
   font-weight: bold;
 }
 
@@ -394,14 +403,14 @@ export default {
   background-color: #111111;
   border: 1px solid #D4AF37;
   color: #D4AF37;
-  padding: 0 15px;
-  border-radius: 12px;
+  padding: 0 12px;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .field-action-btn:hover {
@@ -410,7 +419,7 @@ export default {
 }
 
 .link-btn {
-  min-width: 100px;
+  min-width: 80px;
   justify-content: center;
 }
 
@@ -421,7 +430,7 @@ export default {
 }
 
 .balance-text {
-  font-size: 24px !important;
+  font-size: 22px !important;
   font-weight: 900 !important;
   color: #D4AF37 !important;
   text-align: center;
@@ -430,16 +439,17 @@ export default {
 .currency-tag {
   background-color: #D4AF37;
   color: #000000;
-  padding: 0 15px;
-  border-radius: 12px;
+  padding: 0 12px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   font-weight: 800;
+  font-size: 13px;
 }
 
 .stats-row {
   display: flex;
-  gap: 15px;
+  gap: 12px;
 }
 
 .half {
@@ -455,56 +465,51 @@ export default {
 .action-buttons {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-top: 30px;
+  gap: 10px;
+  margin-top: 25px;
 }
 
 .main-gold-btn {
   background-color: #D4AF37;
   color: #000000;
   border: none;
-  border-radius: 12px;
-  padding: 15px;
-  font-size: 16px;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 15px;
   font-weight: 800;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   transition: all 0.3s ease;
-}
-
-.main-gold-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
 }
 
 .outline-gold-btn {
   background-color: transparent;
   border: 1px solid #D4AF37;
   color: #D4AF37;
-  border-radius: 12px;
-  padding: 15px;
-  font-size: 16px;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 15px;
   font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .danger-btn {
   background-color: transparent;
   border: 1px solid #ff4444;
   color: #ff4444;
-  border-radius: 12px;
-  padding: 15px;
-  font-size: 16px;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 15px;
   font-weight: 700;
   cursor: pointer;
-  margin-top: 10px;
+  margin-top: 5px;
 }
 
 /* النوافذ */
@@ -518,38 +523,39 @@ export default {
 
 .gold-modal {
   background: #000000;
-  border: 2px solid #D4AF37;
-  border-radius: 20px;
-  width: 100%; max-width: 400px;
-  padding: 25px;
+  border: 1px solid #D4AF37;
+  border-radius: 15px;
+  width: 100%; max-width: 380px;
+  padding: 20px;
 }
 
 .modal-head {
   display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 20px; color: #D4AF37;
+  margin-bottom: 15px; color: #D4AF37;
 }
 
 .close-x {
-  background: none; border: none; color: #D4AF37; font-size: 30px; cursor: pointer;
+  background: none; border: none; color: #D4AF37; font-size: 24px; cursor: pointer;
 }
 
 .phone-input-box {
-  display: flex; gap: 10px;
+  display: flex; gap: 8px;
 }
 
-.prefix {
-  background: #111111; border: 1px solid #333333; border-radius: 12px;
-  padding: 12px; color: #D4AF37; font-weight: bold;
+.country-select {
+  background: #111111; border: 1px solid #333333; border-radius: 10px;
+  padding: 10px; color: #D4AF37; font-weight: bold; outline: none;
+  font-size: 13px;
 }
 
-.error-txt { color: #ff4444; font-size: 13px; margin-bottom: 10px; text-align: center; }
-.success-txt { color: #44ff44; font-size: 13px; margin-bottom: 10px; text-align: center; }
+.error-txt { color: #ff4444; font-size: 12px; margin-bottom: 10px; text-align: center; }
+.success-txt { color: #44ff44; font-size: 12px; margin-bottom: 10px; text-align: center; }
 
-.loading-container { text-align: center; padding: 100px 0; }
+.loading-container { text-align: center; padding: 80px 0; }
 .gold-spinner {
-  width: 50px; height: 50px; border: 3px solid rgba(212, 175, 55, 0.1);
+  width: 40px; height: 40px; border: 2px solid rgba(212, 175, 55, 0.1);
   border-top-color: #D4AF37; border-radius: 50%; animation: spin 1s linear infinite;
-  margin: 0 auto 20px;
+  margin: 0 auto 15px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>
