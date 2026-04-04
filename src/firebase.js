@@ -6,7 +6,9 @@
 import { initializeApp } from "firebase/app";  
 import {  
   getAuth,  
-  sendPasswordResetEmail  
+  sendPasswordResetEmail,
+  GoogleAuthProvider,
+  signInWithPopup
 } from "firebase/auth";  
   
 import {   
@@ -69,6 +71,7 @@ isSupported().then((supported) => {
 // التصدير — جاهز للاستخدام  
 // -------------------------------------------  
 export const auth = getAuth(app);        // نظام تسجيل الدخول  
+export const googleProvider = new GoogleAuthProvider(); // مزود جوجل
 export const db = getFirestore(app);     // Firestore قاعدة البيانات  
 export const storage = getStorage(app);  // تخزين الملفات  
 export const functions = getFunctions(app); // Functions Cloud  
@@ -107,4 +110,4 @@ export const getTransactionsByUserId = async (userId) => {
 };  
   
 export { analytics };  
-export { sendPasswordResetEmail };
+export { sendPasswordResetEmail, signInWithPopup };
