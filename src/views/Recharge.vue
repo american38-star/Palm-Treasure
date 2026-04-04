@@ -15,7 +15,7 @@
       <!-- Asset Display -->
       <div class="asset-card">
         <div class="asset-main">
-          <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%2326A69D'/%3E%3Ctext x='12' y='16' font-size='12' font-weight='bold' fill='white' text-anchor='middle'%3EUSDT%3C/text%3E%3C/svg%3E" alt="USDT" class="coin-logo">
+          <img src="https://cryptologos.cc/logos/tether-usdt-logo.png?v=024" alt="USDT" class="coin-logo">
           <div class="asset-text">
             <span class="coin-symbol">USDT</span>
             <span class="coin-name">TetherUS</span>
@@ -209,10 +209,10 @@ export default {
     },
     getNetworkIcon(net) {
       const icons = {
-        TRC20: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%2326A17B'/%3E%3Ctext x='12' y='16' font-size='14' font-weight='bold' fill='white' text-anchor='middle'%3ETR%3C/text%3E%3C/svg%3E",
-        ERC20: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%23627EEA'/%3E%3Ctext x='12' y='16' font-size='14' font-weight='bold' fill='white' text-anchor='middle'%3EETH%3C/text%3E%3C/svg%3E",
-        BEP20: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%23F3BA2F'/%3E%3Ctext x='12' y='16' font-size='14' font-weight='bold' fill='%23111111' text-anchor='middle'%3EBNB%3C/text%3E%3C/svg%3E",
-        SOL: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%2300D4AA'/%3E%3Ctext x='12' y='16' font-size='14' font-weight='bold' fill='white' text-anchor='middle'%3ESOL%3C/text%3E%3C/svg%3E"
+        TRC20: "https://cryptologos.cc/logos/tron-trx-logo.png?v=024",
+        ERC20: "https://cryptologos.cc/logos/ethereum-eth-logo.png?v=024",
+        BEP20: "https://cryptologos.cc/logos/bnb-bnb-logo.png?v=024",
+        SOL: "https://cryptologos.cc/logos/solana-sol-logo.png?v=024"
       };
       return icons[net] || "";
     },
