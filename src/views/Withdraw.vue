@@ -69,7 +69,7 @@
             class="gold-input"
             @input="validateAmount"
           />
-          <span class="input-currency">USDT</span>
+          <span class="input-currency-badge">USDT</span>
         </div>
         <span v-if="amountError" class="input-error">{{ amountError }}</span>
       </div>
@@ -669,10 +669,10 @@ export default {
 .amount-input-wrapper {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: rgba(212, 175, 55, 0.05);
   border-radius: 12px;
-  padding: 2px;
+  padding: 4px 8px;
   border: 1px solid rgba(212, 175, 55, 0.15);
 }
 
@@ -681,10 +681,13 @@ export default {
   background: transparent;
   border: none;
   color: #eaecef;
-  padding: 12px 14px;
+  padding: 10px 8px;
   font-size: 14px;
   outline: none;
   font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .gold-input::placeholder {
@@ -698,6 +701,18 @@ export default {
   padding-right: 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.input-currency-badge {
+  color: #fcd535;
+  font-weight: 700;
+  font-size: 10px;
+  background: rgba(212, 175, 55, 0.1);
+  padding: 4px 6px;
+  border-radius: 5px;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .input-error {
@@ -757,17 +772,19 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
-  background: rgba(212, 175, 55, 0.1);
-  border-radius: 12px;
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.08) 100%);
+  border-radius: 14px;
+  border: 1.5px solid rgba(212, 175, 55, 0.25);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.1);
 }
 
 .network-icon {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
 /* صندوق الملخص */
