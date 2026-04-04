@@ -1,146 +1,67 @@
 <template>
   <div class="home-container">
-    <!-- الشريط العلوي الاحترافي -->
-    <header class="premium-header">
-      <div class="header-content">
-        <div class="user-profile">
-          <div class="avatar-wrapper">
-            <img src="/favicon.svg" alt="User Avatar" class="avatar-img" />
-            <div class="status-indicator"></div>
-          </div>
-          <div class="user-info">
-            <span class="welcome-text">مرحباً بك،</span>
-            <h2 class="username">{{ username }}</h2>
-          </div>
-        </div>
-        <div class="header-actions">
-          <button class="action-icon-btn" @click="go('/support')">
-            <i class="fas fa-headset"></i>
-          </button>
-          <button class="action-icon-btn" @click="go('/notifications')">
-            <i class="fas fa-bell"></i>
-            <span class="badge"></span>
-          </button>
-        </div>
-      </div>
-    </header>
 
-    <!-- بطاقة الرصيد الفاخرة -->
-    <section class="balance-card-section">
-      <div class="balance-card">
-        <div class="card-bg-pattern"></div>
-        <div class="balance-content">
-          <div class="balance-label">إجمالي الرصيد المتاح</div>
-          <div class="balance-amount">
-            <span class="currency">USDT</span>
-            <span class="value">{{ balance }}</span>
-          </div>
-          <div class="balance-stats">
-            <div class="stat-item">
-              <span class="stat-label">أرباح اليوم</span>
-              <span class="stat-value">+{{ todayEarnings || '0.00' }}</span>
-            </div>
-            <div class="stat-divider"></div>
-            <div class="stat-item">
-              <span class="stat-label">إجمالي السحب</span>
-              <span class="stat-value">{{ totalWithdraw || '0.00' }}</span>
-            </div>
-          </div>
-        </div>
-        <div class="card-actions">
-          <button class="card-btn deposit" @click="go('/recharge')">
-            <i class="fas fa-plus-circle"></i>
-            إيداع
-          </button>
-          <button class="card-btn withdraw" @click="go('/withdraw')">
-            <i class="fas fa-arrow-circle-down"></i>
-            سحب
-          </button>
-        </div>
+    <!-- الشريط العلوي -->
+    <div class="top-bar">
+      <div class="top-left">
+        <i class="fas fa-headset icon"></i>
+        <i class="fas fa-envelope icon"></i>
       </div>
-    </section>
 
-    <!-- شريط الإعلانات المتحرك -->
-    <div class="scrolling-notice">
-      <div class="notice-icon-wrapper">
-        <i class="fas fa-bullhorn"></i>
-      </div>
-      <div class="notice-text-container">
-        <marquee behavior="scroll" direction="right" scrollamount="5">
-          🌴 شراكة عالمية مع Amazon, eBay, TikTok, Aliexpress, Alibaba, Shopee | انضم الآن إلى Palm Treasure وابدأ رحلة الاستثمار الذكي | سحوبات فورية ودعم فني على مدار الساعة 🌴
-        </marquee>
+      <div class="user-box">
+        <div class="welcome">مرحباً، {{ username }}</div>
+        <div class="balance">الرصيد: <strong>{{ balance }} USDT</strong></div>
       </div>
     </div>
 
-    <!-- أزرار الوصول السريع -->
-    <section class="quick-access-grid">
-      <div class="quick-item" @click="go('/recharge')">
-        <div class="quick-icon-box recharge">
-          <i class="fas fa-wallet"></i>
-        </div>
-        <span>تعبئة رصيد</span>
-      </div>
-      <div class="quick-item" @click="go('/withdraw')">
-        <div class="quick-icon-box withdraw">
-          <i class="fas fa-money-bill-wave"></i>
-        </div>
-        <span>سحب نقدي</span>
-      </div>
-      <div class="quick-item" @click="go('/invite')">
-        <div class="quick-icon-box invite">
-          <i class="fas fa-user-plus"></i>
-        </div>
-        <span>دعوة أصدقاء</span>
-      </div>
-      <div class="quick-item" @click="showCompanyAd">
-        <div class="quick-icon-box company">
-          <i class="fas fa-info-circle"></i>
-        </div>
-        <span>عن الشركة</span>
-      </div>
-    </section>
+    <!-- شريط الأزرار -->
+    <div class="quick-buttons">
+      <button class="quick-btn">
+        <span class="btn-icon">⏱</span>
+        وفر الوقت
+      </button>
+      <button class="quick-btn">
+        <span class="btn-icon">💰</span>
+        وفر المال
+      </button>
+    </div>
 
-    <!-- قسم المهام والـ VIP -->
-    <section class="main-sections">
-      <div class="section-header">
-        <h3 class="section-title">قاعة المهام (VIP)</h3>
-        <button class="view-all-btn" @click="go('/vips')">عرض الكل</button>
-      </div>
-      
-      <div class="vip-horizontal-scroll">
-        <div 
-          v-for="vip in vipPlans.slice(0, 5)" 
-          :key="vip.level" 
-          class="vip-mini-card"
-          :class="getVipClass(vip.level)"
-          @click="go('/tasks')"
-        >
-          <div class="vip-badge">VIP {{ vip.level }}</div>
-          <div class="vip-price">{{ vip.recharge }} USDT</div>
-          <div class="vip-daily-profit">ربح يومي: {{ vip.daily }}</div>
-          <button class="unlock-btn">دخول</button>
-        </div>
-      </div>
-    </section>
+    <!-- شريط الإعلان -->
+    <div class="notice-bar">
+      <span class="notice-icon">🌴</span>
+      شراكة عالمية مع Amazon, eBay, TikTok, Aliexpress, Alibaba, Shopee
+    </div>
 
-    <!-- القائمة الشبكية المحسنة -->
-    <section class="grid-menu-section">
-      <div class="grid-menu">
-        <div class="menu-card" v-for="item in menu" :key="item.title" @click="go(item.route)">
-          <div class="menu-icon-wrapper">
-            <i :class="item.icon"></i>
-          </div>
-          <span class="menu-title">{{ item.title }}</span>
+    <!-- القائمة الرئيسية -->
+    <div class="grid-menu">
+      <div
+        class="item"
+        v-for="item in menu"
+        :key="item.title"
+        @click="go(item.route)"
+      >
+        <div class="icon-box">
+          <i :class="item.icon"></i>
         </div>
-        
-        <div class="menu-card special" @click="showTermsAd">
-          <div class="menu-icon-wrapper gold">
-            <i class="fas fa-scroll"></i>
-          </div>
-          <span class="menu-title">الشروط والأحكام</span>
-        </div>
+        <p>{{ item.title }}</p>
       </div>
-    </section>
+
+      <!-- زر الشركة لعرض الإعلان -->
+      <div class="item company-item" @click="showCompanyAd">
+        <div class="icon-box gold-glow">
+          <i class="fas fa-building"></i>
+        </div>
+        <p>الشركة</p>
+      </div>
+
+      <!-- زر الشروط والأحكام الجديد -->
+      <div class="item terms-item" @click="showTermsAd">
+        <div class="icon-box gold-glow">
+          <i class="fas fa-scroll"></i>
+        </div>
+        <p>الشروط والأحكام</p>
+      </div>
+    </div>
 
     <!-- إعلان Popup فاخر للشركة -->
     <div id="companyAd" class="ad-overlay" v-if="showAd" @click.self="closeAd">
@@ -168,683 +89,948 @@
           
           <div class="vip-section">
             <h3>📊 خطط العضوية والأرباح</h3>
+            
             <div class="vip-grid">
-              <div class="vip-card-full" v-for="vip in vipPlans" :key="vip.level">
-                <div class="vip-card-header" :class="getVipClass(vip.level)">
-                  <span class="vip-level-badge">VIP {{ vip.level }}</span>
+              <div class="vip-card" v-for="vip in vipPlans" :key="vip.level">
+                <div class="vip-header" :class="getVipClass(vip.level)">
+                  <span class="vip-level-badge">{{ vip.level }}</span>
                 </div>
-                <div class="vip-card-body">
-                  <div class="vip-info-row">
-                    <span>💰 الاشتراك:</span>
-                    <strong>{{ vip.recharge }} USDT</strong>
+                <div class="vip-details">
+                  <div class="vip-detail-item">
+                    <span class="detail-label">💰 الاشتراك:</span>
+                    <span class="detail-value">{{ vip.recharge }} USDT</span>
                   </div>
-                  <div class="vip-info-row">
-                    <span>📈 الربح اليومي:</span>
-                    <strong>{{ vip.daily }} USDT</strong>
+                  <div class="vip-detail-item">
+                    <span class="detail-label">📈 الربح اليومي:</span>
+                    <span class="detail-value">{{ vip.daily }} USDT</span>
                   </div>
-                  <div class="vip-info-row">
-                    <span>📅 الربح الشهري:</span>
-                    <strong>{{ vip.monthly }} USDT</strong>
+                  <div class="vip-detail-item">
+                    <span class="detail-label">📅 الربح الشهري:</span>
+                    <span class="detail-value">{{ vip.monthly }} USDT</span>
+                  </div>
+                  <div v-if="vip.yearly" class="vip-detail-item">
+                    <span class="detail-label">📊 الإجمالي السنوي:</span>
+                    <span class="detail-value">{{ vip.yearly }} USDT</span>
+                  </div>
+                  <div v-if="vip.percentage" class="vip-detail-item">
+                    <span class="detail-label">📊 نسبة الربح:</span>
+                    <span class="detail-value highlight">{{ vip.percentage }}</span>
+                  </div>
+                  <div v-if="vip.tasks" class="vip-detail-item">
+                    <span class="detail-label">📝 مهمة يومية:</span>
+                    <span class="detail-value">{{ vip.tasks }}</span>
+                  </div>
+                  <div v-if="vip.status" class="vip-detail-item">
+                    <span class="detail-label">✅ الحالة:</span>
+                    <span class="detail-value status-active">{{ vip.status }}</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+
+          <div class="commission-section">
+            <h3>🤝 نظام العمولات</h3>
+            <div class="commission-levels">
+              <div class="commission-level">المستوى 1: 6%</div>
+              <div class="commission-level">المستوى 2: 2%</div>
+              <div class="commission-level">المستوى 3: 1%</div>
+            </div>
+          </div>
+
+          <div class="partners-section">
+            <h3>🌐 شراكات عالمية</h3>
+            <p>Amazon, eBay, TikTok, Aliexpress, Alibaba, Shopee</p>
+          </div>
+
+          <div class="cta-message">
+            <p>🚀 اختر المستوى المناسب لك وابدأ اليوم، فكل خطوة صغيرة قد تكون بداية لنجاح كبير مع Palm Treasure 🌴</p>
+          </div>
         </div>
+
         <button class="ad-btn" @click="closeAd">أنا أعرف</button>
       </div>
     </div>
 
-    <!-- إعلان Popup للشروط والأحكام -->
+    <!-- إعلان Popup جديد للشروط والأحكام -->
     <div id="termsAd" class="ad-overlay" v-if="showTerms" @click.self="closeTerms">
       <div class="ad-box">
         <div class="ad-header">
           <h2>📜 الشروط والأحكام</h2>
           <button class="close-btn" @click="closeTerms">×</button>
         </div>
+
         <div class="ad-content">
           <div class="terms-message">
             <h3>📊 عقود رجال الأعمال</h3>
-            <p>عند وصول عدد أعضاء فريقك إلى 70 عضواً نشطاً أو أكثر، تقوم الشركة بإبرام عقد رسمي معك، وذلك لضمان حقوقك وتقديراً لجهودك في بناء فريق ناجح وإدارته بكفاءة.</p>
+            <p>
+              في عالم الأعمال الحديث، لا يُقاس النجاح فقط بما يحققه الشخص لنفسه، بل بقدرته على بناء فريق قوي وفعّال يقوده نحو التقدم والازدهار. ومن هذا المنطلق، تعتمد الشركة نظاماً مميزاً لتقدير القادة وتحفيزهم على تطوير فرقهم وتحقيق نتائج أفضل.<br><br>
+              عندما تتمكن من بناء فريق قوي وزيادة عدد الأعضاء النشطين، فإن الشركة تقوم بتقدير جهودك ومنحك مزايا إضافية تعكس مكانتك القيادية داخل الفريق.
+            </p>
+            
+            <h4>📌 عقود رجال الأعمال</h4>
+            <p>
+              عند وصول عدد أعضاء فريقك إلى 70 عضواً نشطاً أو أكثر، تقوم الشركة بإبرام عقد رسمي معك، وذلك لضمان حقوقك وتقديراً لجهودك في بناء فريق ناجح وإدارته بكفاءة. ويعد هذا العقد دليلاً على ثقة الشركة بك كقائد قادر على تحقيق النجاح والتطوير المستمر.
+            </p>
+            
+            <p>💼 إضافة إلى التقدير المعنوي، تمنحك الشركة راتباً شهرياً ثابتاً يتناسب مع حجم فريقك ونشاطه، وفق سلم الترقيات القيادية التالي:</p>
+            
             <div class="promotion-table">
               <div class="promotion-row">
-                <span>🔹 70 عضواً نشطاً</span>
-                <span class="highlight">💰 200 دولار</span>
+                <div class="promotion-cell">🔹 70 عضواً نشطاً</div>
+                <div class="promotion-cell">رتبة مساعد فريق</div>
+                <div class="promotion-cell highlight">💰 راتب شهري: 200 دولار</div>
               </div>
               <div class="promotion-row">
-                <span>🔹 140 عضواً نشطاً</span>
-                <span class="highlight">💰 350 دولاراً</span>
+                <div class="promotion-cell">🔹 140 عضواً نشطاً</div>
+                <div class="promotion-cell">رتبة مشرف فريق</div>
+                <div class="promotion-cell highlight">💰 راتب شهري: 350 دولاراً</div>
               </div>
               <div class="promotion-row">
-                <span>🔹 300 عضو نشط</span>
-                <span class="highlight">💰 500 دولار</span>
+                <div class="promotion-cell">🔹 300 عضو نشط</div>
+                <div class="promotion-cell">رتبة مدير فريق</div>
+                <div class="promotion-cell highlight">💰 راتب شهري: 500 دولار</div>
               </div>
+            </div>
+            
+            <p>
+              ⭐ يعكس هذا النظام التحفيزي رؤية الشركة في تشجيع روح القيادة والعمل الجماعي، حيث يتم مكافأة كل من يعمل بجد على توسيع فريقه وتطويره.
+            </p>
+            
+            <p>
+              🚀 إن بناء فريق قوي ليس مجرد مهمة عادية، بل هو طريق حقيقي نحو النجاح في عالم ريادة الأعمال، حيث يتحول العمل الجاد والطموح إلى إنجازات حقيقية تعود بالنفع على القائد وفريقه والشركة معاً.
+            </p>
+            
+            <h4>📢 مواعيد سحب الرواتب الخاصة بحسابات VIP</h4>
+            <p>
+              حرصًا منا على تنظيم عملية السحب وضمان سلاسة الإجراءات لجميع الأعضاء، تم اعتماد جدول أسبوعي ثابت لمواعيد سحب الرواتب الخاصة بحسابات VIP.<br><br>
+              يرجى من جميع الأعضاء الالتزام باليوم المحدد لكل مستوى، حيث يتم تنفيذ عمليات السحب فقط في اليوم المحدد لكل فئة.
+            </p>
+            
+            <h4>📅 جدول السحب الأسبوعي:</h4>
+            
+            <div class="withdraw-schedule">
+              <div class="schedule-day">
+                <div class="day-header">🔹 يوم السبت من كل أسبوع:</div>
+                <div class="vip-levels">VIP1 💸 VIP2 </div>
+              </div>
+              <div class="schedule-day">
+                <div class="day-header">🔹 يوم الأحد من كل أسبوع:</div>
+                <div class="vip-levels">VIP3 💸 VIP4 </div>
+              </div>
+              <div class="schedule-day">
+                <div class="day-header">🔹 يوم الاثنين من كل أسبوع:</div>
+                <div class="vip-levels">VIP5 💸 VIP6 </div>
+              </div>
+              <div class="schedule-day">
+                <div class="day-header">🔹 يوم الثلاثاء من كل أسبوع:</div>
+                <div class="vip-levels">VIP7 💸 VIP8 </div>
+              </div>
+              <div class="schedule-day">
+                <div class="day-header">🔹 يوم الأربعاء من كل أسبوع:</div>
+                <div class="vip-levels">VIP9 💸 VIP10 </div>
+              </div>
+              <div class="schedule-day">
+                <div class="day-header">🔹 يوم الخميس من كل أسبوع:</div>
+                <div class="vip-levels">VIP11 💸 VIP12 </div>
+              </div>
+              <div class="schedule-day">
+                <div class="day-header">🔹 يوم الجمعة من كل أسبوع:</div>
+                <div class="vip-levels">VIP13 💸 VIP14 </div>
+              </div>
+            </div>
+            
+            <div class="important-note">
+              <p>⚠️ ملاحظة مهمة:<br>
+              يرجى من جميع أعضاء VIP الالتزام باليوم المحدد لمستواهم لضمان تنفيذ عمليات السحب بسرعة وتنظيم، وتجنب أي تأخير في معالجة الطلبات.</p>
+            </div>
+            
+            <div class="cta-message">
+              <p>✨ نتمنى لكم تجربة مالية ناجحة ومليئة بالأرباح ونتمنى لكم دوام النجاح معنا.</p>
             </div>
           </div>
         </div>
+
         <button class="ad-btn" @click="closeTerms">موافق</button>
       </div>
     </div>
+
   </div>
 </template>
 
 <script>
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../firebase";
-import router from "../router";
+import { auth, db } from "../firebase";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 
 export default {
+  name: "Home",
+
   data() {
     return {
       username: "جاري التحميل...",
-      balance: "0.00",
-      todayEarnings: "0.00",
-      totalWithdraw: "0.00",
+      balance: 0,
       showAd: false,
       showTerms: false,
-      menu: [
-        { title: "سجل الشحن", icon: "fas fa-history", route: "/recharge-record" },
-        { title: "سجل السحب", icon: "fas fa-file-invoice-dollar", route: "/withdraw-record" },
-        { title: "الفريق", icon: "fas fa-users", route: "/team" },
-        { title: "المهام", icon: "fas fa-tasks", route: "/tasks" },
-        { title: "الملف الشخصي", icon: "fas fa-user-circle", route: "/profile" },
-        { title: "تطبيق الهاتف", icon: "fas fa-mobile-alt", route: "/download" },
-      ],
+      currentUserUid: null,
+      unsubscribeUser: null,
+      
       vipPlans: [
-        { level: 1, recharge: 12, daily: 3, monthly: 90, tasks: 1 },
-        { level: 2, recharge: 60, daily: 15, monthly: 450, tasks: 1 },
-        { level: 3, recharge: 160, daily: 40, monthly: 1200, tasks: 1 },
-        { level: 4, recharge: 500, daily: 125, monthly: 3750, tasks: 1 },
-        { level: 5, recharge: 1200, daily: 300, monthly: 9000, tasks: 1 },
-        { level: 6, recharge: 3000, daily: 750, monthly: 22500, tasks: 1 },
-        { level: 7, recharge: 6000, daily: 1500, monthly: 45000, tasks: 1 },
-        { level: 8, recharge: 12000, daily: 3000, monthly: 90000, tasks: 1 },
-        { level: 9, recharge: 25000, daily: 6250, monthly: 187500, tasks: 1 },
-        { level: 10, recharge: 50000, daily: 12500, monthly: 375000, tasks: 1 },
+        { level: 'VIP 1', recharge: '0', daily: '0.3', monthly: '9', yearly: '109.5', tasks: '1', status: 'مفعل الآن' },
+        { level: 'VIP 2', recharge: '50', daily: '1.6', monthly: '48', percentage: '96% شهرياً', yearly: '584' },
+        { level: 'VIP 3', recharge: '100', daily: '3.25', monthly: '97.5', percentage: '97.5% شهرياً', yearly: '1186.25' },
+        { level: 'VIP 4', recharge: '300', daily: '10', monthly: '300', percentage: '100% شهرياً', yearly: '3650' },
+        { level: 'VIP 5', recharge: '900', daily: '33', monthly: '990', percentage: '110% شهرياً' },
+        { level: 'VIP 6', recharge: '1350', daily: '51', monthly: '1530', percentage: '113% شهرياً' },
+        { level: 'VIP 7', recharge: '1800', daily: '70', monthly: '2100', percentage: '116% شهرياً' },
+        { level: 'VIP 8', recharge: '3600', daily: '150', monthly: '4500', percentage: '125% شهرياً' },
+        { level: 'VIP 9', recharge: '7200', daily: '330', monthly: '9900', percentage: '137% شهرياً' },
+        { level: 'VIP 10', recharge: '14400', daily: '700', monthly: '21000', percentage: '146% شهرياً' },
+        { level: 'VIP 11', recharge: '18800', daily: '1600', monthly: '48000', percentage: '255% شهرياً' },
+        { level: 'VIP 12', recharge: '37600', daily: '3500', monthly: '105000', percentage: '279% شهرياً' },
+        { level: 'VIP 13', recharge: '75200', daily: '7500', monthly: '225000', percentage: '299% شهرياً' },
+        { level: 'VIP 14', recharge: '150400', daily: '16000', monthly: '480000', percentage: '319% شهرياً' }
+      ],
+
+      menu: [
+        { title: "تعبئة رصيد", icon: "fas fa-coins", route: "/recharge" },
+        { title: "سحب", icon: "fas fa-wallet", route: "/withdraw" },
+        { title: "المعاملات", icon: "fas fa-history", route: "/transactions" },
+        { title: "برنامج", icon: "fas fa-download", route: "/program" },
+        { title: "الأصدقاء", icon: "fas fa-users", route: "/team" },
+        { title: "الوكالات", icon: "fas fa-id-card", route: "/agency" }
       ]
     };
   },
 
-  mounted() {
-    this.fetchUserData();
+  created() {
+    this.watchUser();
+  },
+
+  beforeUnmount() {
+    // إلغاء الاستماع للتحديثات عند مغادرة الصفحة
+    if (this.unsubscribeUser) {
+      this.unsubscribeUser();
+    }
+    document.body.style.overflow = 'auto';
   },
 
   methods: {
-    async fetchUserData() {
-      const auth = getAuth();
+    watchUser() {
       onAuthStateChanged(auth, async (user) => {
-        if (user) {
-          const userDoc = await getDoc(doc(db, "users", user.uid));
-          if (userDoc.exists()) {
-            const data = userDoc.data();
-            this.username = data.displayName || data.email || data.phoneNumber || "مستخدم";
-            this.balance = parseFloat(data.balance || 0).toFixed(2);
-            this.todayEarnings = parseFloat(data.todayEarnings || 0).toFixed(2);
-            this.totalWithdraw = parseFloat(data.totalWithdraw || 0).toFixed(2);
-          }
-        } else {
-          router.push("/login");
+        if (!user) {
+          this.username = "غير مسجل";
+          this.balance = 0;
+          this.$router.push("/login");
+          return;
         }
+
+        this.currentUserUid = user.uid;
+        await this.setupUserRealtimeListener(user.uid);
       });
     },
 
+    // إعداد مستمع للتحديثات المباشرة من Firebase
+    setupUserRealtimeListener(uid) {
+      // إلغاء المستمع القديم إذا وجد
+      if (this.unsubscribeUser) {
+        this.unsubscribeUser();
+      }
+
+      const userRef = doc(db, "users", uid);
+      
+      // الاستماع للتحديثات المباشرة من Firebase
+      this.unsubscribeUser = onSnapshot(userRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          
+          // تحديث اسم المستخدم
+          if (data.phoneNumber) {
+            this.username = data.phoneNumber;
+          } else if (data.email) {
+            this.username = data.email;
+          } else {
+            this.username = "مستخدم";
+          }
+          
+          // تحديث الرصيد مباشرة من Firebase
+          this.balance = data.balance ?? 0;
+          
+          console.log("تم تحديث الرصيد تلقائياً:", this.balance);
+        } else {
+          this.username = "مستخدم";
+          this.balance = 0;
+        }
+      }, (error) => {
+        console.error("خطأ في الاستماع لتحديثات المستخدم:", error);
+      });
+    },
+
+    getVipClass(level) {
+      if (level.includes('VIP 1')) return 'vip-bronze';
+      if (level.includes('VIP 2') || level.includes('VIP 3')) return 'vip-silver';
+      if (level.includes('VIP 4') || level.includes('VIP 5')) return 'vip-gold';
+      if (level.includes('VIP 6') || level.includes('VIP 7') || level.includes('VIP 8') || level.includes('VIP 9')) return 'vip-platinum';
+      if (level.includes('VIP 10') || level.includes('VIP 11') || level.includes('VIP 12') || level.includes('VIP 13') || level.includes('VIP 14')) return 'vip-elite';
+      return '';
+    },
+
     go(route) {
-      router.push(route);
+      this.$router.push(route);
     },
 
     showCompanyAd() {
       this.showAd = true;
+      document.body.style.overflow = 'hidden';
     },
 
     closeAd() {
       this.showAd = false;
+      document.body.style.overflow = 'auto';
     },
 
     showTermsAd() {
       this.showTerms = true;
+      document.body.style.overflow = 'hidden';
     },
 
     closeTerms() {
       this.showTerms = false;
-    },
-
-    getVipClass(level) {
-      if (level <= 2) return 'vip-bronze';
-      if (level <= 4) return 'vip-silver';
-      if (level <= 6) return 'vip-gold';
-      if (level <= 8) return 'vip-platinum';
-      return 'vip-elite';
+      document.body.style.overflow = 'auto';
     }
   }
 };
 </script>
 
 <style scoped>
+/* الخلفية الرئيسية - أسود فاخر */
 .home-container {
-  min-height: 100vh;
-  background: #0A0C10;
-  color: #ffffff;
-  padding-bottom: 80px;
   direction: rtl;
-  font-family: 'Tajawal', sans-serif;
-}
-
-/* Header */
-.premium-header {
-  padding: 20px;
-  background: linear-gradient(to bottom, #11151C, #0A0C10);
-}
-
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.user-profile {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.avatar-wrapper {
-  position: relative;
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  border: 2px solid #D4AF37;
-  padding: 2px;
-}
-
-.avatar-img {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.status-indicator {
-  position: absolute;
-  bottom: 2px;
-  left: 2px;
-  width: 10px;
-  height: 10px;
-  background: #4CAF50;
-  border: 2px solid #0A0C10;
-  border-radius: 50%;
-}
-
-.welcome-text {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.username {
-  font-size: 16px;
-  font-weight: 700;
-  margin: 0;
-  color: #D4AF37;
-}
-
-.header-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.action-icon-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  color: #D4AF37;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  cursor: pointer;
-}
-
-.badge {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 8px;
-  height: 8px;
-  background: #ff4d4d;
-  border-radius: 50%;
-}
-
-/* Balance Card */
-.balance-card-section {
-  padding: 0 20px;
-  margin-bottom: 20px;
-}
-
-.balance-card {
-  background: linear-gradient(135deg, #1A1F2A 0%, #11151C 100%);
-  border-radius: 24px;
-  padding: 25px;
-  position: relative;
-  overflow: hidden;
-  border: 1px solid rgba(212, 175, 55, 0.3);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-}
-
-.card-bg-pattern {
-  position: absolute;
-  top: -50%;
-  right: -20%;
-  width: 200px;
-  height: 200px;
-  background: radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-.balance-label {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.6);
-  margin-bottom: 10px;
-}
-
-.balance-amount {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  margin-bottom: 20px;
-}
-
-.currency {
-  font-size: 18px;
-  font-weight: 600;
-  color: #D4AF37;
-}
-
-.value {
-  font-size: 36px;
-  font-weight: 800;
-  letter-spacing: 1px;
-}
-
-.balance-stats {
-  display: flex;
-  justify-content: space-between;
-  background: rgba(0, 0, 0, 0.2);
-  padding: 15px;
-  border-radius: 16px;
-  margin-bottom: 20px;
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.stat-label {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.stat-value {
-  font-size: 14px;
-  font-weight: 700;
-  color: #F6E27A;
-}
-
-.stat-divider {
-  width: 1px;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.card-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.card-btn {
-  flex: 1;
-  padding: 12px;
-  border-radius: 12px;
-  border: none;
-  font-weight: 700;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.card-btn.deposit {
-  background: linear-gradient(135deg, #D4AF37, #F6E27A);
-  color: #0A0C10;
-}
-
-.card-btn.withdraw {
-  background: rgba(255, 255, 255, 0.05);
+  padding: 16px;
+  background: #0A0C10;
+  min-height: 100vh;
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-family: 'Cairo', sans-serif;
+  padding-bottom: 80px;
 }
 
-/* Notice Bar */
-.scrolling-notice {
-  margin: 0 20px 20px;
-  background: rgba(212, 175, 55, 0.05);
-  border-radius: 50px;
-  padding: 8px 15px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border: 1px solid rgba(212, 175, 55, 0.1);
-}
-
-.notice-icon-wrapper {
-  color: #D4AF37;
-  font-size: 14px;
-}
-
-.notice-text-container {
-  flex: 1;
-  overflow: hidden;
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-/* Quick Access */
-.quick-access-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  padding: 0 20px;
-  gap: 15px;
-  margin-bottom: 25px;
-}
-
-.quick-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-}
-
-.quick-icon-box {
-  width: 50px;
-  height: 50px;
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  transition: all 0.3s ease;
-}
-
-.quick-icon-box.recharge { background: rgba(76, 175, 80, 0.1); color: #4CAF50; }
-.quick-icon-box.withdraw { background: rgba(255, 152, 0, 0.1); color: #FF9800; }
-.quick-icon-box.invite { background: rgba(33, 150, 243, 0.1); color: #2196F3; }
-.quick-icon-box.company { background: rgba(212, 175, 55, 0.1); color: #D4AF37; }
-
-.quick-item span {
-  font-size: 11px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-/* VIP Section */
-.main-sections {
-  padding: 0 20px;
-  margin-bottom: 25px;
-}
-
-.section-header {
+/* الشريط العلوي */
+.top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
-}
-
-.section-title {
-  font-size: 18px;
-  font-weight: 700;
-  margin: 0;
-  color: #ffffff;
-}
-
-.view-all-btn {
-  background: transparent;
-  border: none;
-  color: #D4AF37;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.vip-horizontal-scroll {
-  display: flex;
-  gap: 15px;
-  overflow-x: auto;
-  padding-bottom: 10px;
-  scrollbar-width: none;
-}
-
-.vip-horizontal-scroll::-webkit-scrollbar {
-  display: none;
-}
-
-.vip-mini-card {
-  min-width: 140px;
   background: #11151C;
-  border-radius: 20px;
-  padding: 15px;
-  text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 15px 20px;
+  border-radius: 16px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.top-left {
+  display: flex;
+  gap: 15px;
+}
+
+.icon {
+  font-size: 24px;
+  color: #D4AF37;
+  cursor: pointer;
   transition: all 0.3s ease;
 }
 
-.vip-badge {
-  font-size: 12px;
-  font-weight: 800;
-  padding: 4px 10px;
-  border-radius: 50px;
-  display: inline-block;
-  margin-bottom: 10px;
-  color: #0A0C10;
+.icon:hover {
+  color: #F6E27A;
+  transform: scale(1.1);
 }
 
-.vip-bronze .vip-badge { background: #CD7F32; }
-.vip-silver .vip-badge { background: #C0C0C0; }
-.vip-gold .vip-badge { background: #D4AF37; }
-.vip-platinum .vip-badge { background: #E5E4E2; }
-.vip-elite .vip-badge { background: #8A2BE2; color: #fff; }
+.user-box {
+  text-align: left;
+}
 
-.vip-price {
-  font-size: 18px;
-  font-weight: 800;
+.welcome {
+  font-size: 16px;
+  font-weight: 600;
+  color: #D4AF37;
   margin-bottom: 5px;
 }
 
-.vip-daily-profit {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
-  margin-bottom: 12px;
+.balance {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
 }
 
-.unlock-btn {
-  width: 100%;
-  padding: 8px;
-  border-radius: 10px;
-  border: 1px solid rgba(212, 175, 55, 0.3);
-  background: transparent;
+.balance strong {
   color: #D4AF37;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
+  font-size: 18px;
 }
 
-/* Grid Menu */
-.grid-menu-section {
-  padding: 0 20px;
-}
-
-.grid-menu {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-
-.menu-card {
-  background: #11151C;
-  border-radius: 16px;
-  padding: 15px 10px;
+/* شريط الأزرار السريعة */
+.quick-buttons {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.03);
-  cursor: pointer;
+  gap: 15px;
+  margin-bottom: 20px;
 }
 
-.menu-icon-wrapper {
-  width: 40px;
-  height: 40px;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 12px;
+.quick-btn {
+  flex: 1;
+  padding: 14px;
+  background: linear-gradient(135deg, #11151C, #1A1F2A);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 14px;
+  font-weight: 700;
+  color: #D4AF37;
+  cursor: pointer;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
-  color: rgba(255, 255, 255, 0.6);
+  gap: 8px;
+  font-size: 15px;
 }
 
-.menu-icon-wrapper.gold {
-  color: #D4AF37;
-  background: rgba(212, 175, 55, 0.1);
+.btn-icon {
+  font-size: 20px;
 }
 
-.menu-title {
-  font-size: 11px;
-  font-weight: 600;
+.quick-btn:hover {
+  background: linear-gradient(135deg, #1A1F2A, #11151C);
+  border-color: #D4AF37;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
+}
+
+/* شريط الإعلان */
+.notice-bar {
+  background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
+  color: #0A0C10;
+  padding: 14px 20px;
+  border-radius: 50px;
   text-align: center;
+  margin-bottom: 25px;
+  font-weight: 700;
+  font-size: 15px;
+  box-shadow: 0 5px 20px rgba(212, 175, 55, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
 
-.menu-card.special {
-  background: linear-gradient(135deg, #11151C, #1A1F2A);
+.notice-icon {
+  font-size: 20px;
+}
+
+/* القائمة الرئيسية */
+.grid-menu {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.item {
+  background: #11151C;
+  color: #ffffff;
+  padding: 25px 15px;
+  border-radius: 20px;
+  text-align: center;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
   border: 1px solid rgba(212, 175, 55, 0.2);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
-/* Popups */
+.item:hover {
+  transform: translateY(-5px);
+  border-color: #D4AF37;
+  box-shadow: 0 10px 25px rgba(212, 175, 55, 0.2);
+}
+
+.icon-box {
+  font-size: 32px;
+  margin-bottom: 12px;
+  color: #D4AF37;
+  transition: all 0.3s ease;
+}
+
+.item:hover .icon-box {
+  transform: scale(1.1);
+  color: #F6E27A;
+}
+
+.gold-glow {
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+}
+
+.company-item {
+  background: linear-gradient(135deg, #11151C, #1A1F2A);
+  border: 1px solid #D4AF37;
+  animation: goldPulse 2s infinite;
+}
+
+.terms-item {
+  background: linear-gradient(135deg, #11151C, #1A1F2A);
+  border: 1px solid #D4AF37;
+  animation: goldPulse 2s infinite;
+}
+
+/* ===== إعلان فاخر ===== */
 .ad-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(8px);
+  background: rgba(10, 12, 16, 0.98);
+  backdrop-filter: blur(10px);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 2000;
+  z-index: 9999;
+  direction: rtl;
 }
 
 .ad-box {
   background: #11151C;
-  width: 90%;
-  max-width: 500px;
-  max-height: 80vh;
-  border-radius: 24px;
-  border: 1px solid #D4AF37;
+  width: 95%;
+  max-width: 900px;
+  max-height: 90vh;
+  border-radius: 30px;
+  overflow: hidden;
+  border: 2px solid #D4AF37;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.7), 0 0 30px rgba(212, 175, 55, 0.3);
+  animation: fadeInUp 0.5s ease;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .ad-header {
+  background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
   padding: 15px 20px;
-  background: #D4AF37;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: relative;
 }
 
 .ad-header h2 {
-  margin: 0;
-  font-size: 18px;
   color: #0A0C10;
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  flex: 1;
+  text-align: center;
 }
 
 .close-btn {
-  background: transparent;
+  background: rgba(10, 12, 16, 0.2);
   border: none;
-  font-size: 24px;
   color: #0A0C10;
+  font-size: 28px;
   cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  position: absolute;
+  left: 10px;
+  top: 10px;
+}
+
+.close-btn:hover {
+  background: rgba(10, 12, 16, 0.4);
+  transform: rotate(90deg);
 }
 
 .ad-content {
-  padding: 20px;
+  flex: 1;
   overflow-y: auto;
+  padding: 25px;
   color: rgba(255, 255, 255, 0.9);
   font-size: 14px;
-  line-height: 1.6;
+  line-height: 1.8;
+  scrollbar-width: thin;
+  scrollbar-color: #D4AF37 #1A1F2A;
 }
 
-.vip-card-full {
+.ad-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.ad-content::-webkit-scrollbar-track {
   background: #1A1F2A;
-  border-radius: 12px;
-  margin-bottom: 10px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.vip-card-header {
-  padding: 8px;
+.ad-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #D4AF37, #C5A028);
+  border-radius: 10px;
+}
+
+.company-message {
+  background: #1A1F2A;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 25px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.company-message p {
+  margin: 0;
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.terms-message {
+  background: #1A1F2A;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 25px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.terms-message h3 {
+  color: #D4AF37;
   text-align: center;
-  font-weight: 700;
+  margin-bottom: 20px;
+  font-size: 22px;
 }
 
-.vip-card-body {
-  padding: 12px;
+.terms-message h4 {
+  color: #F6E27A;
+  margin: 20px 0 10px 0;
+  font-size: 18px;
 }
 
-.vip-info-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 5px;
-  font-size: 13px;
+.terms-message p {
+  margin: 0 0 15px 0;
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 1.8;
 }
 
 .promotion-table {
-  background: rgba(0, 0, 0, 0.2);
+  background: #11151C;
   border-radius: 12px;
   padding: 15px;
+  margin: 20px 0;
+  border: 1px solid rgba(212, 175, 55, 0.3);
 }
 
 .promotion-row {
   display: flex;
   justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 12px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.1);
 }
 
-.promotion-row:last-child { border-bottom: none; }
+.promotion-row:last-child {
+  border-bottom: none;
+}
 
-.highlight { color: #F6E27A; font-weight: 700; }
+.promotion-cell {
+  color: #ffffff;
+}
+
+.promotion-cell.highlight {
+  color: #F6E27A;
+  font-weight: 700;
+}
+
+.withdraw-schedule {
+  background: #11151C;
+  border-radius: 12px;
+  padding: 15px;
+  margin: 20px 0;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.schedule-day {
+  padding: 10px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+}
+
+.schedule-day:last-child {
+  border-bottom: none;
+}
+
+.day-header {
+  color: #F6E27A;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.vip-levels {
+  color: #D4AF37;
+  padding-right: 20px;
+}
+
+.important-note {
+  background: rgba(212, 175, 55, 0.1);
+  border-right: 3px solid #D4AF37;
+  padding: 15px;
+  margin: 20px 0;
+  border-radius: 8px;
+}
+
+.important-note p {
+  margin: 0;
+  color: #F6E27A;
+}
+
+.vip-section {
+  margin-bottom: 25px;
+}
+
+.vip-section h3 {
+  color: #D4AF37;
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 22px;
+}
+
+.vip-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 15px;
+}
+
+.vip-card {
+  background: #1A1F2A;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  transition: all 0.3s ease;
+}
+
+.vip-card:hover {
+  transform: translateY(-5px);
+  border-color: #D4AF37;
+  box-shadow: 0 10px 20px rgba(212, 175, 55, 0.2);
+}
+
+.vip-header {
+  padding: 12px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.vip-level-badge {
+  font-size: 18px;
+}
+
+.vip-bronze {
+  background: linear-gradient(135deg, #CD7F32, #B87333);
+}
+.vip-silver {
+  background: linear-gradient(135deg, #C0C0C0, #A8A8A8);
+}
+.vip-gold {
+  background: linear-gradient(135deg, #D4AF37, #F6E27A);
+}
+.vip-platinum {
+  background: linear-gradient(135deg, #E5E4E2, #B0C4DE);
+}
+.vip-elite {
+  background: linear-gradient(135deg, #8A2BE2, #4B0082);
+}
+
+.vip-details {
+  padding: 15px;
+}
+
+.vip-detail-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+}
+
+.vip-detail-item:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.detail-value {
+  color: #D4AF37;
+  font-weight: 600;
+}
+
+.detail-value.highlight {
+  color: #F6E27A;
+  font-size: 16px;
+}
+
+.status-active {
+  color: #4CAF50;
+}
+
+.commission-section {
+  text-align: center;
+  margin: 25px 0;
+  padding: 20px;
+  background: #1A1F2A;
+  border-radius: 16px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.commission-section h3 {
+  color: #D4AF37;
+  margin-bottom: 15px;
+  font-size: 20px;
+}
+
+.commission-levels {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+
+.commission-level {
+  background: linear-gradient(135deg, #D4AF37, #F6E27A);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.partners-section {
+  text-align: center;
+  margin: 25px 0;
+  padding: 20px;
+  background: #1A1F2A;
+  border-radius: 16px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.partners-section h3 {
+  color: #D4AF37;
+  margin-bottom: 10px;
+  font-size: 20px;
+}
+
+.partners-section p {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.cta-message {
+  text-align: center;
+  margin: 25px 0;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(246, 226, 122, 0.1));
+  border-radius: 16px;
+  border: 1px solid #D4AF37;
+}
+
+.cta-message p {
+  color: #F6E27A;
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+}
 
 .ad-btn {
-  padding: 15px;
-  background: #D4AF37;
-  border: none;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
   color: #0A0C10;
-  font-weight: 700;
+  border: none;
+  padding: 16px 30px;
+  margin: 0 25px 25px 25px;
+  border-radius: 50px;
   cursor: pointer;
+  font-size: 18px;
+  font-weight: 700;
+  transition: all 0.3s ease;
+  width: calc(100% - 50px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 5px 20px rgba(212, 175, 55, 0.3);
+}
+
+.ad-btn:hover {
+  transform: scale(1.02);
+  box-shadow: 0 10px 30px rgba(212, 175, 55, 0.5);
+  background: linear-gradient(135deg, #C5A028, #F6E27A, #D4AF37);
+}
+
+/* تحسين للهواتف */
+@media (max-width: 768px) {
+  .ad-box {
+    width: 95%;
+    max-height: 95vh;
+  }
+  
+  .vip-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .commission-levels {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .ad-content {
+    padding: 15px;
+  }
+  
+  .promotion-row {
+    flex-direction: column;
+    gap: 5px;
+  }
 }
 
 @media (max-width: 480px) {
-  .balance-amount .value { font-size: 30px; }
-  .quick-access-grid { gap: 10px; }
-  .quick-icon-box { width: 45px; height: 45px; font-size: 18px; }
+  .home-container {
+    padding: 12px;
+    padding-bottom: 70px;
+  }
+  
+  .grid-menu {
+    gap: 12px;
+  }
+  
+  .item {
+    padding: 20px 10px;
+  }
+  
+  .icon-box {
+    font-size: 28px;
+  }
+  
+  .ad-header h2 {
+    font-size: 20px;
+  }
+  
+  .vip-section h3 {
+    font-size: 18px;
+  }
+}
+
+/* تأثيرات إضافية */
+@keyframes goldPulse {
+  0% { box-shadow: 0 0 5px rgba(212, 175, 55, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(212, 175, 55, 0.6); }
+  100% { box-shadow: 0 0 5px rgba(212, 175, 55, 0.3); }
 }
 </style>
