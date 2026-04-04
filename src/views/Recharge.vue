@@ -29,7 +29,7 @@
 
       <!-- Network Selector Dropdown -->
       <div class="input-section">
-        <label class="section-label">الشبكة</label>
+        <label class="section-label">اختر الشبكة</label>
         <div class="dropdown-container" @click="toggleDropdown" v-click-outside="closeDropdown">
           <div class="dropdown-selected" :class="{ 'is-open': isDropdownOpen }">
             <div class="selected-info">
