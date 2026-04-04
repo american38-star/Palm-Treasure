@@ -1,651 +1,569 @@
 <template>
-  <div class="recharge-container">
-    <!-- Header Section -->
-    <div class="header-section">
-      <div class="back-btn" @click="$router.back()">
-        <i class="fas fa-chevron-right"></i>
+  <div class="container">
+    <div class="card">
+      <!-- الشعار والعنوان -->
+      <div class="brand-header">
+        <img src="/favicon.svg" alt="Palm Treasure Logo" class="logo" />
+        <h1 class="brand-title">Palm Treasure</h1>
       </div>
-      <h1 class="page-title">إيداع العملات الرقمية</h1>
-      <div class="history-btn" @click="$router.push('/transactions')">
-        <i class="fas fa-history"></i>
-      </div>
-    </div>
-
-    <div class="content-wrapper">
-      <!-- Step 1: Select Asset & Network -->
-      <div class="section-card">
-        <div class="section-header">
-          <span class="step-num">1</span>
-          <h2 class="section-title">اختيار الشبكة</h2>
-        </div>
-        
-        <div class="asset-selector">
-          <div class="asset-icon">
-            <img src="https://cryptologos.cc/logos/tether-usdt-logo.png" alt="USDT">
-          </div>
-          <div class="asset-info">
-            <span class="asset-name">USDT</span>
-            <span class="asset-fullname">Tether US</span>
-          </div>
-        </div>
-
-        <div class="network-grid">
-          <div 
-            v-for="(addr, net) in addresses" 
-            :key="net"
-            class="network-item"
-            :class="{ active: network === net }"
-            @click="network = net"
-          >
-            <span class="network-name">{{ net }}</span>
-            <i v-if="network === net" class="fas fa-check-circle"></i>
-          </div>
-        </div>
-        
-        <div class="network-warning">
-          <i class="fas fa-exclamation-triangle"></i>
-          <span>تأكد من اختيار الشبكة الصحيحة لتجنب فقدان الأموال.</span>
-        </div>
-      </div>
-
-      <!-- Step 2: Deposit Details -->
-      <div class="section-card">
-        <div class="section-header">
-          <span class="step-num">2</span>
-          <h2 class="section-title">تفاصيل الإيداع</h2>
-        </div>
-
-        <div class="qr-container">
-          <div class="qr-wrapper">
-            <img :src="getQr(network)" :alt="network" class="qr-image" />
-            <div class="qr-overlay" v-if="loading">
-              <i class="fas fa-spinner fa-spin"></i>
-            </div>
-          </div>
-          <p class="qr-hint">امسح رمز QR للإيداع</p>
-        </div>
-
-        <div class="address-box">
-          <label class="input-label">عنوان الإيداع ({{ network }})</label>
-          <div class="address-input-wrapper">
-            <input 
-              type="text" 
-              :value="getAddress(network)" 
-              readonly 
-              class="address-field"
-              ref="addrInput"
-            />
-            <button class="copy-action" @click="copyAddress">
-              <i :class="copied ? 'fas fa-check' : 'far fa-copy'"></i>
-            </button>
-          </div>
-          <transition name="fade">
-            <span v-if="copied" class="copy-success">تم النسخ بنجاح!</span>
-          </transition>
-        </div>
-      </div>
-
-      <!-- Step 3: Confirm Transaction -->
-      <div class="section-card">
-        <div class="section-header">
-          <span class="step-num">3</span>
-          <h2 class="section-title">تأكيد العملية</h2>
-        </div>
-
-        <div class="form-group">
-          <label class="input-label">المبلغ المراد إيداعه</label>
-          <div class="input-wrapper">
-            <input 
-              type="number" 
-              v-model.number="amount" 
-              placeholder="0.00" 
-              class="main-input"
-            />
-            <span class="input-suffix">USDT</span>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="input-label">معرف المعاملة (TxID / Hash)</label>
-          <div class="input-wrapper">
-            <input 
-              type="text" 
-              v-model="txid" 
-              placeholder="أدخل معرف العملية هنا" 
-              class="main-input"
-            />
-          </div>
-          <p class="input-hint">أدخل الـ Hash الخاص بالعملية لضمان سرعة التأكيد.</p>
-        </div>
-
-        <button class="submit-btn" @click="submit" :disabled="loading">
-          <span v-if="!loading">تأكيد الإيداع</span>
-          <i v-else class="fas fa-circle-notch fa-spin"></i>
+      <h2 class="title">تسجيل الدخول</h2>
+      <!-- اختيار نوع الدخول -->
+      <div class="login-type-selector">
+        <button 
+          class="type-btn" 
+          :class="{ active: loginType === 'email' }"
+          @click="loginType = 'email'"
+        >
+          <i class="fas fa-envelope"></i>
+          البريد الإلكتروني
         </button>
-
-        <transition name="slide-up">
-          <div v-if="message" :class="['status-msg', messageType]">
-            <i :class="messageType === 'error' ? 'fas fa-times-circle' : 'fas fa-check-circle'"></i>
-            {{ message }}
-          </div>
-        </transition>
+        <button 
+          class="type-btn" 
+          :class="{ active: loginType === 'phone' }"
+          @click="loginType = 'phone'"
+        >
+          <i class="fas fa-phone"></i>
+          رقم الهاتف
+        </button>
       </div>
-
-      <!-- Important Notes -->
-      <div class="notes-section">
-        <h3 class="notes-title">ملاحظات هامة:</h3>
-        <ul class="notes-list">
-          <li>الحد الأدنى للإيداع هو <strong>10 USDT</strong>.</li>
-          <li>سيتم إضافة الرصيد بعد <strong>3 تأكيدات</strong> على الشبكة.</li>
-          <li>تأكد من إرسال <strong>USDT</strong> فقط إلى هذا العنوان.</li>
-        </ul>
+      <!-- تسجيل الدخول بالبريد الإلكتروني -->
+      <template v-if="loginType === 'email'">
+        <label class="label">البريد الإلكتروني</label>
+        <input
+          type="email"
+          v-model="email"
+          placeholder="البريد الإلكتروني"
+          class="input"
+          @keyup.enter="loginUser"
+        />
+      </template>
+      <!-- تسجيل الدخول برقم الهاتف -->
+      <template v-if="loginType === 'phone'">
+        <label class="label">رقم الهاتف مع رمز الدولة</label>
+        <div class="phone-input-container">
+          <select v-model="countryCode" class="country-select">
+            <option value="">اختر الرمز</option>
+            <option value="+964">🇮🇶 العراق (+964)</option>
+            <option value="+966">🇸🇦 السعودية (+966)</option>
+            <option value="+971">🇦🇪 الإمارات (+971)</option>
+            <option value="+20">🇪🇬 مصر (+20)</option>
+            <option value="+962">🇯🇴 الأردن (+962)</option>
+            <option value="+965">🇰🇼 الكويت (+965)</option>
+            <option value="+974">🇶🇦 قطر (+974)</option>
+            <option value="+973">🇧🇭 البحرين (+973)</option>
+            <option value="+968">🇴🇲 عمان (+968)</option>
+            <option value="+212">🇲🇦 المغرب (+212)</option>
+            <option value="+213">🇩🇿 الجزائر (+213)</option>
+            <option value="+216">🇹🇳 تونس (+216)</option>
+            <option value="+218">🇱🇾 ليبيا (+218)</option>
+            <option value="+961">🇱🇧 لبنان (+961)</option>
+            <option value="+963">🇸🇾 سوريا (+963)</option>
+            <option value="+970">🇵🇸 فلسطين (+970)</option>
+            <option value="+249">🇸🇩 السودان (+249)</option>
+            <option value="+967">🇾🇪 اليمن (+967)</option>
+            <option value="+222">🇲🇷 موريتانيا (+222)</option>
+            <option value="+252">🇸🇴 الصومال (+252)</option>
+            <option value="+253">🇩🇯 جيبوتي (+253)</option>
+            <option value="+269">🇰🇲 جزر القمر (+269)</option>
+            <option value="+1">🇺🇸 أمريكا (+1)</option>
+            <option value="+44">🇬🇧 بريطانيا (+44)</option>
+            <option value="+33">🇫🇷 فرنسا (+33)</option>
+            <option value="+49">🇩🇪 ألمانيا (+49)</option>
+            <option value="+39">🇮🇹 إيطاليا (+39)</option>
+            <option value="+34">🇪🇸 إسبانيا (+34)</option>
+            <option value="+7">🇷🇺 روسيا (+7)</option>
+            <option value="+86">🇨🇳 الصين (+86)</option>
+            <option value="+91">🇮🇳 الهند (+9 India)</option>
+            <option value="+92">🇵🇰 باكستان (+92)</option>
+            <option value="+90">🇹🇷 تركيا (+90)</option>
+            <option value="+60">🇲🇾 ماليزيا (+60)</option>
+            <option value="+62">🇮🇩 إندونيسيا (+62)</option>
+            <option value="+63">🇵🇭 الفلبين (+63)</option>
+            <option value="+82">🇰🇷 كوريا الجنوبية (+82)</option>
+            <option value="+81">🇯ﭘ اليابان (+81)</option>
+          </select>
+          <input
+            type="tel"
+            v-model="phoneNumber"
+            placeholder="رقم الهاتف"
+            class="phone-input"
+            :disabled="!countryCode"
+            @input="validatePhoneNumber"
+            @keyup.enter="loginUser"
+          />
+        </div>
+        <span v-if="phoneError" class="error-message">{{ phoneError }}</span>
+      </template>
+      <!-- كلمة المرور -->
+      <label class="label">كلمة المرور</label>
+      <div class="input-box">
+        <input
+          :type="showPassword ? 'text' : 'password'"
+          v-model="password"
+          placeholder="كلمة المرور"
+          class="input"
+          @keyup.enter="loginUser"
+        />
+        <span class="toggle" @click="togglePassword">
+          {{ showPassword ? "إخفاء" : "إظهار" }}
+        </span>
       </div>
+      <!-- زر تسجيل الدخول مع Loader -->
+      <button class="btn" @click="loginUser" :disabled="loading">
+        <span v-if="!loading">تسجيل الدخول</span>
+        <span v-else class="loader"></span>
+      </button>
+      <!-- تسجيل الدخول عبر جوجل -->
+      <div class="divider">
+        <span>أو</span>
+      </div>
+      
+      <button class="google-btn" @click="loginWithGoogle" :disabled="loading">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
+        تسجيل الدخول عبر جوجل
+      </button>
+      <p class="link">
+        ليس لديك حساب؟
+        <router-link to="/register">إنشاء حساب</router-link>
+      </p>
+    </div>
+  </div>
+  <!-- Popup إعلان -->
+  <div id="companyAd" class="ad-overlay" v-if="showAd">
+    <div class="ad-box">
+      <h2>✨ إعلان ✨</h2>
+      <div class="ad-content">
+        <p>🎉🎉🎉🎉 مرحبا بالجميع! تأسست Palm Treasure في سنغافورة في 20 أغسطس 2021 ومقرها حاليًا في منطقة الأعمال المركزية في سنغافورة. نحن شركة استثمار في التجارة الإلكترونية مع فريق تقني قوي وقوة مالية قوية.
+          <br><br>
+          يتعاون Palm Treasure مع عشرات شركات التجارة الإلكترونية مثل Amazon و eBay و Tiktok و Aliexpress و Alibaba و Shopee ، إلخ. لمساعدة التجار على زيادة مبيعات المنتجات الخاصة بهم ، ويمكننا أيضًا تحقيق أرباح منه. عندما تتصاعد على منصتنا ، تشارك في مساعدة البائعين على زيادة المبيعات ، بحيث يمكنك أيضًا كسب المال منها. حتى يتمكن الجميع من إعادة الشحن بثقة ، هذا مشروع جيد لجني الأموال. 🔇🔇🔇
+          <br><br>
+          👍1: الحد الأدنى لمبلغ إعادة الشحن: 12 USDT ، الحد الأدنى للسحب النقدي: 3 USDT
+          <br>
+          💰2: تستثمر المنصة على مستوى العالم ، لذا فإن الاستثمار يدعم فقط إعادة شحن العملة المشفرة.
+          <br>
+          🌈3: وقت إعادة تعيين المهمة هو الساعة 12 ظهراً في سنغافورة. يمكنك الحصول على الربح من خلال استكمال أوامر التاجر كل يوم (مرة واحدة في اليوم ، صالحة لمدة 365 يومًا).
+          <br>
+          🕯4: يمكنك سحب النقد مرة واحدة فقط في اليوم ، لا يوجد حد زمني ، يمكنك سحب النقد في أي وقت ، ووقت الانسحاب هو 1 إلى 5 دقائق ، والحد الأدنى لمبلغ السحب هو 3 USDT ، ولا يوجد حد أعلى.
+          <br><br>
+          عندما يصل مبلغ إعادة الشحن إلى المبلغ المقابل التالي ، سيتم ترقية الحساب تلقائيًا إلى VIP. كلما زادت مبلغ إعادة الشحن ، كلما زاد عدد USDT في اليوم!
+        </p>
+      </div>
+      <button @click="closeAd" class="ad-btn">أنا أعرف</button>
     </div>
   </div>
 </template>
-
 <script>
-import { getAuth } from "firebase/auth";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "../firebase";
-
+import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { db, googleProvider } from "../firebase";
+import router from "../router";
 export default {
-  name: "Recharge",
   data() {
     return {
-      network: "TRC20",
-      amount: null,
-      txid: "",
-      copied: false,
+      loginType: 'email', // 'email' أو 'phone'
+      email: "",
+      countryCode: "",
+      phoneNumber: "",
+      fullPhoneNumber: "",
+      password: "",
+      showPassword: false,
       loading: false,
-      message: "",
-      messageType: "info",
-      addresses: {
-        TRC20: "TC9YKMxacLkvJLA6JbQVGofnjumTqkaUjD",
-        ERC20: "0x17e488f699CC96E4dd05e4E2c869789534E2F634",
-        BEP20: "0x17e488f699CC96E4dd05e4E2c869789534E2F634",
-        SOL: "GgVi3xNRUQeJrNqt8Hg3eBJx5B8yuyggjNvvHxxKVnTR",
-      },
-      userEmail: "",
-      userId: "",
+      showAd: false,
+      adTimer: null,
+      phoneError: "",
     };
   },
-  created() {
-    const auth = getAuth();
-    auth.onAuthStateChanged((u) => {
-      if (u) {
-        this.userEmail = u.email;
-        this.userId = u.uid;
-      }
-    });
+  mounted() {
+    document.addEventListener('keydown', this.handleEscKey);
+  },
+  beforeUnmount() {
+    document.removeEventListener('keydown', this.handleEscKey);
+    if (this.adTimer) {
+      clearTimeout(this.adTimer);
+    }
   },
   methods: {
-    getQr(net) {
-      return `/qr/${net}.png`;
+    togglePassword() {
+      this.showPassword = !this.showPassword;
     },
-    getAddress(net) {
-      return this.addresses[net] || "";
+    validateEmail(email) {
+      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return re.test(email);
     },
-    async copyAddress() {
-      const text = this.getAddress(this.network);
-      if (!text) return;
-      try {
-        await navigator.clipboard.writeText(text);
-        this.copied = true;
-        setTimeout(() => (this.copied = false), 2000);
-      } catch (err) {
-        const input = this.$refs.addrInput;
-        input.select();
-        document.execCommand("copy");
-        this.copied = true;
-        setTimeout(() => (this.copied = false), 2000);
+    validatePhoneNumber() {
+      if (!this.countryCode) {
+        this.phoneError = "الرجاء اختيار رمز الدولة";
+        return false;
+      }
+      if (!this.phoneNumber) {
+        this.phoneError = "الرجاء إدخال رقم الهاتف";
+        return false;
+      }
+      const cleanPhone = this.phoneNumber.replace(/[^0-9]/g, '');
+      if (cleanPhone.length < 7 || cleanPhone.length > 15) {
+        this.phoneError = "رقم الهاتف يجب أن يكون بين 7 و 15 رقم";
+        return false;
+      }
+      this.fullPhoneNumber = this.countryCode + cleanPhone;
+      this.phoneError = "";
+      return true;
+    },
+    generatePhoneEmail(phoneNumber) {
+      const cleanPhone = phoneNumber.replace(/\+/g, '');
+      return `${cleanPhone}@phone.app`;
+    },
+    getErrorMessage(error) {
+      const errorMessages = {
+        'auth/user-not-found': 'رقم الهاتف أو البريد الإلكتروني غير مسجل',
+        'auth/wrong-password': 'كلمة المرور غير صحيحة',
+        'auth/invalid-email': 'البريد الإلكتروني غير صالح',
+        'auth/user-disabled': 'هذا الحساب معطل',
+        'auth/popup-closed-by-user': 'تم إغلاق نافذة تسجيل الدخول',
+        'auth/cancelled-by-user': 'تم إلغاء العملية'
+      };
+      return errorMessages[error.code] || 'حدث خطأ غير متوقع: ' + error.message;
+    },
+    handleEscKey(event) {
+      if (event.key === 'Escape' && this.showAd) {
+        this.closeAd();
       }
     },
-    async submit() {
-      this.message = "";
-      if (!this.userId) {
-        this.message = "يرجى تسجيل الدخول أولاً";
-        this.messageType = "error";
-        return;
-      }
-      if (!this.amount || this.amount <= 0) {
-        this.message = "الرجاء إدخال مبلغ صالح";
-        this.messageType = "error";
-        return;
-      }
-      if (!this.txid || this.txid.trim() === "") {
-        this.message = "الرجاء إدخال معرف التحويل (TxID)";
-        this.messageType = "error";
-        return;
-      }
+    async loginWithGoogle() {
       this.loading = true;
+      const auth = getAuth();
       try {
-        await addDoc(collection(db, "payments"), {
-          userId: this.userId,
-          email: this.userEmail,
-          amount: this.amount,
-          txid: this.txid,
-          network: this.network,
-          status: "pending",
-          createdAt: serverTimestamp(),
-        });
-        await addDoc(collection(db, "transactions"), {
-          userId: this.userId,
-          email: this.userEmail,
-          type: "recharge",
-          amount: this.amount,
-          network: this.network,
-          txid: this.txid,
-          status: "pending",
-          reason: "",
-          adminMessage: "",
-          createdAt: serverTimestamp(),
-        });
-        this.message = "تم إرسال طلب التعبئة بنجاح! سيتم التحقق منه قريباً.";
-        this.messageType = "success";
-        this.amount = null;
-        this.txid = "";
+        const result = await signInWithPopup(auth, googleProvider);
+        const user = result.user;
+        
+        // التحقق من وجود المستخدم في Firestore أو إنشاؤه
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        
+        if (!userDoc.exists()) {
+          // إنشاء مستخدم جديد إذا لم يكن موجوداً
+          await setDoc(doc(db, "users", user.uid), {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            balance: 0,
+            vipLevel: 0,
+            createdAt: serverTimestamp(),
+            referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+            invitedBy: ""
+          });
+        }
+        
+        // توجيه الأدمن لصفحة الإدارة
+        const admins = ["azad.333388@gmail.com", "admin2@gmail.com", "owner@gmail.com"];
+        if (admins.includes(user.email)) {
+          router.push("/admin");
+        } else {
+          router.push("/home");
+        }
       } catch (error) {
-        console.error(error);
-        this.message = "حدث خطأ أثناء الإرسال، يرجى المحاولة لاحقاً.";
-        this.messageType = "error";
+        console.error("Google Login Error:", error);
+        alert(this.getErrorMessage(error));
       } finally {
         this.loading = false;
       }
     },
-  },
+    async loginUser() {
+      let loginEmail = this.email;
+      
+      if (this.loginType === 'phone') {
+        if (!this.validatePhoneNumber()) return;
+        loginEmail = this.generatePhoneEmail(this.fullPhoneNumber);
+      } else {
+        if (!this.validateEmail(this.email)) {
+          alert("الرجاء إدخال بريد إلكتروني صحيح");
+          return;
+        }
+      }
+
+      if (this.password.length < 6) {
+        alert("كلمة المرور يجب أن تكون 6 أحرف على الأقل");
+        return;
+      }
+
+      this.loading = true;
+      const auth = getAuth();
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, loginEmail, this.password);
+        const user = userCredential.user;
+        
+        // توجيه الأدمن لصفحة الإدارة
+        const admins = ["azad.333388@gmail.com", "admin2@gmail.com", "owner@gmail.com"];
+        if (admins.includes(user.email)) {
+          router.push("/admin");
+        } else {
+          router.push("/home");
+        }
+      } catch (error) {
+        alert(this.getErrorMessage(error));
+      } finally {
+        this.loading = false;
+      }
+    },
+    closeAd() {
+      this.showAd = false;
+    }
+  }
 };
 </script>
-
 <style scoped>
-.recharge-container {
+/* التنسيقات العامة */
+.container {
   min-height: 100vh;
-  background-color: #0b0e11;
-  color: #eaecef;
-  padding-bottom: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #0A0C10;
+  padding: 20px;
   direction: rtl;
-  font-family: 'Cairo', sans-serif;
 }
-
-.header-section {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px;
-  background: #181a20;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  border-bottom: 1px solid #2b2f36;
+.card {
+  background: #11151C;
+  width: 100%;
+  max-width: 380px; /* تصغير عرض البطاقة */
+  padding: 30px 25px;
+  border-radius: 20px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(212, 175, 55, 0.1);
 }
-
-.page-title {
-  font-size: 18px;
-  font-weight: 600;
-  margin: 0;
-}
-
-.back-btn, .history-btn {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  border-radius: 50%;
-  transition: background 0.2s;
-}
-
-.back-btn:hover, .history-btn:hover {
-  background: #2b2f36;
-}
-
-.content-wrapper {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 15px;
-}
-
-.section-card {
-  background: #181a20;
-  border-radius: 16px;
-  padding: 20px;
-  margin-bottom: 16px;
-  border: 1px solid #2b2f36;
-}
-
-.section-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.step-num {
-  background: #fcd535;
-  color: #0b0e11;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 14px;
-}
-
-.section-title {
-  font-size: 16px;
-  font-weight: 600;
-  margin: 0;
-}
-
-.asset-selector {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background: #2b2f36;
-  border-radius: 12px;
-  margin-bottom: 20px;
-}
-
-.asset-icon img {
-  width: 32px;
-  height: 32px;
-}
-
-.asset-name {
-  display: block;
-  font-weight: 600;
-  font-size: 16px;
-}
-
-.asset-fullname {
-  display: block;
-  font-size: 12px;
-  color: #848e9c;
-}
-
-.network-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  margin-bottom: 15px;
-}
-
-.network-item {
-  padding: 12px;
-  background: #2b2f36;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  transition: all 0.2s;
-}
-
-.network-item.active {
-  border-color: #fcd535;
-  background: rgba(252, 213, 53, 0.05);
-}
-
-.network-item.active .network-name {
-  color: #fcd535;
-}
-
-.network-item i {
-  color: #fcd535;
-  font-size: 14px;
-}
-
-.network-name {
-  font-weight: 500;
-  font-size: 14px;
-}
-
-.network-warning {
-  display: flex;
-  gap: 8px;
-  background: rgba(240, 185, 11, 0.1);
-  padding: 10px;
-  border-radius: 8px;
-  font-size: 12px;
-  color: #f0b90b;
-}
-
-.qr-container {
+/* الشعار والعنوان */
+.brand-header {
   text-align: center;
   margin-bottom: 25px;
 }
-
-.qr-wrapper {
-  position: relative;
-  display: inline-block;
-  background: #fff;
-  padding: 10px;
-  border-radius: 12px;
+.logo {
+  width: 60px;
+  height: 60px;
   margin-bottom: 10px;
 }
-
-.qr-image {
-  width: 160px;
-  height: 160px;
-  display: block;
+.brand-title {
+  color: #D4AF37;
+  font-size: 22px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: 1px;
 }
-
-.qr-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(24, 26, 32, 0.8);
+.title {
+  color: #ffffff;
+  text-align: center;
+  font-size: 20px;
+  margin-bottom: 25px;
+  font-weight: 600;
+}
+/* اختيار نوع الدخول */
+.login-type-selector {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  background: #1A1F2A;
+  padding: 5px;
+  border-radius: 12px;
+}
+.type-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
+  gap: 8px;
 }
-
-.qr-hint {
-  font-size: 13px;
-  color: #848e9c;
+.type-btn.active {
+  background: #D4AF37;
+  color: #0A0C10;
 }
-
-.address-box {
-  position: relative;
-}
-
-.input-label {
+.label {
   display: block;
-  font-size: 13px;
-  color: #848e9c;
+  color: rgba(255, 255, 255, 0.7);
   margin-bottom: 8px;
-}
-
-.address-input-wrapper {
-  display: flex;
-  background: #2b2f36;
-  border-radius: 10px;
-  overflow: hidden;
-  border: 1px solid transparent;
-  transition: border-color 0.2s;
-}
-
-.address-input-wrapper:focus-within {
-  border-color: #fcd535;
-}
-
-.address-field {
-  flex: 1;
-  background: transparent;
-  border: none;
-  padding: 14px;
-  color: #eaecef;
-  font-family: monospace;
   font-size: 13px;
-  outline: none;
+  font-weight: 500;
 }
-
-.copy-action {
-  background: #3b3f46;
-  border: none;
-  color: #fcd535;
-  padding: 0 15px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.copy-action:hover {
-  background: #4b4f56;
-}
-
-.copy-success {
-  position: absolute;
-  bottom: -22px;
-  right: 0;
-  font-size: 11px;
-  color: #0ecb81;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.input-wrapper {
-  display: flex;
-  align-items: center;
-  background: #2b2f36;
-  border-radius: 10px;
-  border: 1px solid transparent;
-  transition: border-color 0.2s;
-}
-
-.input-wrapper:focus-within {
-  border-color: #fcd535;
-}
-
-.main-input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  padding: 14px;
-  color: #eaecef;
-  font-size: 15px;
-  outline: none;
-}
-
-.input-suffix {
-  padding: 0 15px;
-  color: #848e9c;
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.input-hint {
-  font-size: 12px;
-  color: #848e9c;
-  margin-top: 6px;
-}
-
-.submit-btn {
+/* حقول الإدخال المصغرة */
+.input, .country-select, .phone-input {
   width: 100%;
-  background: #fcd535;
-  color: #0b0e11;
+  padding: 10px 12px; /* تصغير الحشو */
+  margin-bottom: 15px;
+  border-radius: 10px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  background: #1A1F2A;
+  color: #ffffff;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+.phone-input-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+.country-select {
+  width: 120px;
+  margin-bottom: 0;
+}
+.phone-input {
+  margin-bottom: 0;
+}
+.input:focus, .country-select:focus, .phone-input:focus {
+  outline: none;
+  border-color: #D4AF37;
+  background: #1E2430;
+}
+/* حقل كلمة المرور */
+.input-box {
+  position: relative;
+  width: 100%;
+}
+.toggle {
+  position: absolute;
+  left: 12px;
+  top: 10px;
+  color: #D4AF37;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+/* الأزرار */
+.btn {
+  width: 100%;
+  padding: 12px;
   border: none;
-  padding: 16px;
-  border-radius: 12px;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A);
+  color: #0A0C10;
+  border-radius: 10px;
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 0.1s, opacity 0.2s;
+  transition: all 0.3s ease;
   margin-top: 10px;
 }
-
-.submit-btn:hover {
-  opacity: 0.9;
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
 }
-
-.submit-btn:active {
-  transform: scale(0.98);
-}
-
-.submit-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.status-msg {
-  margin-top: 15px;
-  padding: 12px;
-  border-radius: 10px;
-  font-size: 14px;
+/* فاصل */
+.divider {
   display: flex;
   align-items: center;
-  gap: 10px;
+  text-align: center;
+  margin: 20px 0;
+  color: rgba(255, 255, 255, 0.3);
 }
-
-.status-msg.success {
-  background: rgba(14, 203, 129, 0.1);
-  color: #0ecb81;
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
-
-.status-msg.error {
-  background: rgba(246, 70, 93, 0.1);
-  color: #f6465d;
+.divider span {
+  padding: 0 10px;
+  font-size: 12px;
 }
-
-.notes-section {
+/* زر جوجل */
+.google-btn {
+  width: 100%;
   padding: 10px;
-}
-
-.notes-title {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #ffffff;
+  color: #333;
+  border-radius: 10px;
   font-size: 14px;
   font-weight: 600;
-  color: #848e9c;
-  margin-bottom: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.3s ease;
 }
-
-.notes-list {
-  padding-right: 20px;
+.google-btn img {
+  width: 18px;
+  height: 18px;
+}
+.google-btn:hover:not(:disabled) {
+  background: #f1f1f1;
+}
+.link {
+  text-align: center;
+  margin-top: 20px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+}
+.link a {
+  color: #D4AF37;
+  text-decoration: none;
+  font-weight: 600;
+}
+.loader {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #0A0C10;
+  border-top: 2px solid #D4AF37;
+  border-radius: 50%;
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+/* الإعلان */
+.ad-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+.ad-box {
+  background: #11151C;
+  width: 90%;
+  max-width: 400px;
+  border-radius: 20px;
+  border: 1px solid #D4AF37;
+  overflow: hidden;
+}
+.ad-box h2 {
+  background: #D4AF37;
+  color: #0A0C10;
   margin: 0;
+  padding: 15px;
+  font-size: 18px;
 }
-
-.notes-list li {
-  font-size: 12px;
-  color: #848e9c;
-  margin-bottom: 6px;
-  line-height: 1.6;
+.ad-content {
+  padding: 20px;
+  color: #fff;
+  font-size: 14px;
+  max-height: 300px;
+  overflow-y: auto;
 }
-
-.notes-list li strong {
-  color: #eaecef;
+.ad-btn {
+  width: 100%;
+  padding: 15px;
+  background: transparent;
+  border: none;
+  border-top: 1px solid rgba(212, 175, 55, 0.3);
+  color: #D4AF37;
+  cursor: pointer;
+  font-weight: 700;
 }
-
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.3s;
-}
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
-}
-
-.slide-up-enter-active {
-  transition: all 0.3s ease-out;
-}
-.slide-up-enter-from {
-  transform: translateY(10px);
-  opacity: 0;
-}
-
 @media (max-width: 480px) {
-  .network-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .qr-image {
-    width: 140px;
-    height: 140px;
+  .card {
+    padding: 25px 20px;
   }
 }
 </style>
