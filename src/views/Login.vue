@@ -46,41 +46,68 @@
             <option value="+964">🇮🇶 العراق (+964)</option>
             <option value="+966">🇸🇦 السعودية (+966)</option>
             <option value="+971">🇦🇪 الإمارات (+971)</option>
-            <option value="+20">🇪🇬 مصر (+20)</option>
-            <option value="+962">🇯🇴 الأردن (+962)</option>
             <option value="+965">🇰🇼 الكويت (+965)</option>
             <option value="+974">🇶🇦 قطر (+974)</option>
             <option value="+973">🇧🇭 البحرين (+973)</option>
             <option value="+968">🇴🇲 عمان (+968)</option>
-            <option value="+212">🇲🇦 المغرب (+212)</option>
-            <option value="+213">🇩🇿 الجزائر (+213)</option>
-            <option value="+216">🇹🇳 تونس (+216)</option>
-            <option value="+218">🇱🇾 ليبيا (+218)</option>
-            <option value="+961">🇱🇧 لبنان (+961)</option>
+            <option value="+962">🇯🇴 الأردن (+962)</option>
+            <option value="+20">🇪🇬 مصر (+20)</option>
             <option value="+963">🇸🇾 سوريا (+963)</option>
-            <option value="+970">🇵🇸 فلسطين (+970)</option>
+            <option value="+961">🇱🇧 لبنان (+961)</option>
+            <option value="+218">🇱🇾 ليبيا (+218)</option>
+            <option value="+216">🇹🇳 تونس (+216)</option>
+            <option value="+213">🇩🇿 الجزائر (+213)</option>
+            <option value="+212">🇲🇦 المغرب (+212)</option>
+            <option value="+222">🇲🇷 موريتانيا (+222)</option>
             <option value="+249">🇸🇩 السودان (+249)</option>
             <option value="+967">🇾🇪 اليمن (+967)</option>
-            <option value="+222">🇲🇷 موريتانيا (+222)</option>
-            <option value="+252">🇸🇴 الصومال (+252)</option>
-            <option value="+253">🇩🇯 جيبوتي (+253)</option>
-            <option value="+269">🇰🇲 جزر القمر (+269)</option>
-            <option value="+1">🇺🇸 أمريكا (+1)</option>
+            <option value="+970">🇵🇸 فلسطين (+970)</option>
+            <option value="+90">🇹🇷 تركيا (+90)</option>
             <option value="+44">🇬🇧 بريطانيا (+44)</option>
-            <option value="+33">🇫🇷 فرنسا (+33)</option>
+            <option value="+1">🇺🇸 أمريكا (+1)</option>
             <option value="+49">🇩🇪 ألمانيا (+49)</option>
+            <option value="+33">🇫🇷 فرنسا (+33)</option>
             <option value="+39">🇮🇹 إيطاليا (+39)</option>
             <option value="+34">🇪🇸 إسبانيا (+34)</option>
+            <option value="+31">🇳🇱 هولندا (+31)</option>
+            <option value="+46">🇸🇪 السويد (+46)</option>
+            <option value="+47">🇳🇴 النرويج (+47)</option>
+            <option value="+45">🇩🇰 الدنمارك (+45)</option>
+            <option value="+358">🇫🇮 فنلندا (+358)</option>
+            <option value="+41">🇨🇭 سويسرا (+41)</option>
+            <option value="+43">🇦🇹 النمسا (+43)</option>
+            <option value="+32">🇧🇪 بلجيكا (+32)</option>
+            <option value="+48">🇵🇱 بولندا (+48)</option>
+            <option value="+420">🇨🇿 التشيك (+420)</option>
+            <option value="+36">🇭🇺 المجر (+36)</option>
+            <option value="+40">🇷🇴 رومانيا (+40)</option>
+            <option value="+359">🇧🇬 بلغاريا (+359)</option>
+            <option value="+30">🇬🇷 اليونان (+30)</option>
+            <option value="+351">🇵🇹 البرتغال (+351)</option>
             <option value="+7">🇷🇺 روسيا (+7)</option>
+            <option value="+380">🇺🇦 أوكرانيا (+380)</option>
+            <option value="+375">🇧🇾 بيلاروسيا (+375)</option>
+            <option value="+995">🇬🇪 جورجيا (+995)</option>
+            <option value="+994">🇦🇿 أذربيجان (+994)</option>
+            <option value="+374">🇦🇲 أرمينيا (+374)</option>
+            <option value="+998">🇺🇿 أوزبكستان (+998)</option>
+            <option value="+996">🇰🇬 قرغيزستان (+996)</option>
+            <option value="+992">🇹🇯 طاجيكستان (+992)</option>
+            <option value="+993">🇹🇲 تركمانستان (+993)</option>
             <option value="+86">🇨🇳 الصين (+86)</option>
-            <option value="+91">🇮🇳 الهند (+9 India)</option>
+            <option value="+91">🇮🇳 الهند (+91)</option>
             <option value="+92">🇵🇰 باكستان (+92)</option>
-            <option value="+90">🇹🇷 تركيا (+90)</option>
+            <option value="+93">🇦🇫 أفغانستان (+93)</option>
+            <option value="+94">🇱🇰 سريلانكا (+94)</option>
+            <option value="+95">🇲🇲 ميانمار (+95)</option>
+            <option value="+66">🇹🇭 تايلاند (+66)</option>
+            <option value="+84">🇻🇳 فيتنام (+84)</option>
             <option value="+60">🇲🇾 ماليزيا (+60)</option>
+            <option value="+65">🇸🇬 سنغافورة (+65)</option>
             <option value="+62">🇮🇩 إندونيسيا (+62)</option>
             <option value="+63">🇵🇭 الفلبين (+63)</option>
             <option value="+82">🇰🇷 كوريا الجنوبية (+82)</option>
-            <option value="+81">🇯ﭘ اليابان (+81)</option>
+            <option value="+81">🇯🇵 اليابان (+81)</option>
           </select>
           <input
             type="tel"
@@ -152,11 +179,13 @@
     </div>
   </div>
 </template>
+
 <script>
 import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db, googleProvider } from "../firebase";
 import router from "../router";
+
 export default {
   data() {
     return {
@@ -310,6 +339,7 @@ export default {
   }
 };
 </script>
+
 <style scoped>
 /* التنسيقات العامة */
 .container {
